@@ -1,0 +1,2028 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NTL | Digital Mail Service</title>
+    <!-- Tailwind CSS & FontAwesome Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Signature Pad Library สำหรับ E-Sign -->
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+    <!-- Barcode + OCR libraries -->
+    <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-fade-up { animation: fadeUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        /* ===== Hi-Tech Courier Hero (pure SVG / CSS, no external image) ===== */
+        @keyframes gridPan {
+            from { background-position: 0 0; }
+            to   { background-position: 80px 80px; }
+        }
+        @keyframes floatY {
+            0%, 100% { transform: translateY(0px); }
+            50%      { transform: translateY(-14px); }
+        }
+        @keyframes scanLine {
+            0%   { transform: translateY(-100%); opacity: 0; }
+            10%  { opacity: 1; }
+            90%  { opacity: 1; }
+            100% { transform: translateY(420px); opacity: 0; }
+        }
+        @keyframes pulseGlow {
+            0%, 100% { opacity: .55; }
+            50%      { opacity: 1; }
+        }
+        @keyframes dashMove {
+            to { stroke-dashoffset: -200; }
+        }
+        .bg-hero-grid {
+            background-image:
+                linear-gradient(rgba(99,102,241,0.18) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99,102,241,0.18) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: gridPan 6s linear infinite;
+        }
+        .hero-float { animation: floatY 5s ease-in-out infinite; }
+        .hero-scan { animation: scanLine 3.2s ease-in-out infinite; }
+        .hero-pulse { animation: pulseGlow 2.4s ease-in-out infinite; }
+        .hero-dash { stroke-dasharray: 6 10; animation: dashMove 4s linear infinite; }
+
+        .bg-courier-tech {
+            background:
+                radial-gradient(ellipse 90% 60% at 30% 0%, rgba(37,99,235,0.35), transparent 60%),
+                radial-gradient(ellipse 70% 50% at 90% 100%, rgba(79,70,229,0.30), transparent 60%),
+                linear-gradient(155deg, #020617 0%, #0b1224 45%, #131a3d 100%);
+        }
+
+        /* ===== Light / Dark Mode — scoped to the app shell only (login screen keeps its own dark theme) ===== */
+        #view-app { transition: background-color .2s ease, color .2s ease; }
+        #view-app.dark-mode { background-color: #0b1220; }
+        #view-app.dark-mode .bg-slate-50,
+        #view-app.dark-mode .bg-slate-100\/70 { background-color: #0b1220 !important; }
+        #view-app.dark-mode .bg-white { background-color: #111827 !important; }
+        #view-app.dark-mode .bg-slate-50\/50,
+        #view-app.dark-mode .bg-slate-50\/70 { background-color: rgba(30,41,59,0.6) !important; }
+        #view-app.dark-mode .text-slate-800 { color: #f1f5f9 !important; }
+        #view-app.dark-mode .text-slate-700 { color: #e2e8f0 !important; }
+        #view-app.dark-mode .text-slate-600 { color: #cbd5e1 !important; }
+        #view-app.dark-mode .text-slate-500 { color: #94a3b8 !important; }
+        #view-app.dark-mode .text-slate-400 { color: #64748b !important; }
+        #view-app.dark-mode .border-slate-200,
+        #view-app.dark-mode .border-slate-200\/80 { border-color: #334155 !important; }
+        #view-app.dark-mode .border-slate-100 { border-color: #1e293b !important; }
+        #view-app.dark-mode input,
+        #view-app.dark-mode select { background-color: #1e293b !important; color: #e2e8f0 !important; border-color: #334155 !important; }
+        #view-app.dark-mode .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.4) !important; }
+
+        /* ===== Role-based visibility (Operation Staff has no Insight & Automation) ===== */
+        body.role-staff .admin-only { display: none !important; }
+
+        .theme-toggle-btn i { transition: transform .3s ease; }
+    </style>
+</head>
+<body class="bg-slate-900 font-sans text-slate-800 h-screen overflow-hidden antialiased selection:bg-indigo-500 selection:text-white">
+    <!-- ================= STARTUP / SESSION RESTORE ================= -->
+    <div id="view-startup" class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950 text-white">
+        <div class="w-full max-w-sm px-6 text-center">
+            <div class="relative w-20 h-20 mx-auto mb-6">
+                <div class="absolute inset-0 rounded-2xl bg-indigo-500/20 animate-ping"></div>
+                <div class="relative w-full h-full rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-2xl shadow-indigo-900/50">
+                    <span class="font-black tracking-wider text-xl">NTL</span>
+                </div>
+            </div>
+            <h1 class="text-xl font-black tracking-wide">Digital Mail Service</h1>
+            <p id="startup-message" class="text-sm text-indigo-200 mt-2">กำลังตรวจสอบการเข้าใช้งาน...</p>
+            <div class="mt-6 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                <div class="h-full w-1/2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-pulse"></div>
+            </div>
+            <button id="startup-retry-btn" onclick="bootstrapApplication(true)" class="hidden mt-6 px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-sm font-bold hover:bg-slate-800 transition">
+                ลองเชื่อมต่ออีกครั้ง
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ================= VIEW 1: LOGIN PAGE ================= -->
+    <div id="view-login" class="hidden min-h-screen w-full bg-slate-950 overflow-hidden">
+
+        <!-- LEFT HERO PANEL — Hi-Tech Courier Illustration (desktop / iPad landscape) -->
+        <div class="hidden lg:flex lg:w-[54%] relative overflow-hidden bg-courier-tech">
+            <div class="absolute inset-0 bg-hero-grid opacity-60 pointer-events-none"></div>
+            <div class="absolute -top-32 -left-24 w-96 h-96 rounded-full bg-blue-600/30 blur-3xl hero-pulse pointer-events-none"></div>
+            <div class="absolute bottom-0 -right-24 w-[28rem] h-[28rem] rounded-full bg-indigo-600/30 blur-3xl hero-pulse pointer-events-none" style="animation-delay:1.1s"></div>
+
+            <div class="relative z-10 flex flex-col justify-between w-full p-12 xl:p-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-900/50">
+                        <span class="text-white font-black text-sm tracking-wider">NTL</span>
+                    </div>
+                    <div>
+                        <p class="text-white font-bold tracking-wide leading-none">Digital Mail Service</p>
+                        <p class="text-[11px] text-indigo-300 font-medium mt-1">Smart Document &amp; Parcel Tracking</p>
+                    </div>
+                </div>
+
+                <!-- SVG Hi-Tech Courier Illustration -->
+                <div class="flex-1 flex items-center justify-center py-6">
+                    <div class="relative hero-float">
+                        <svg viewBox="0 0 380 460" class="w-64 xl:w-80 h-auto drop-shadow-[0_0_45px_rgba(79,70,229,0.45)]" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="jacket" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#1e293b"/>
+                                    <stop offset="100%" stop-color="#0b1120"/>
+                                </linearGradient>
+                                <linearGradient id="badge" x1="0" y1="0" x2="1" y2="0">
+                                    <stop offset="0%" stop-color="#3b82f6"/>
+                                    <stop offset="100%" stop-color="#4f46e5"/>
+                                </linearGradient>
+                                <radialGradient id="haloGlow" cx="50%" cy="35%" r="60%">
+                                    <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.55"/>
+                                    <stop offset="100%" stop-color="#4f46e5" stop-opacity="0"/>
+                                </radialGradient>
+                            </defs>
+
+                            <!-- Halo -->
+                            <ellipse cx="190" cy="220" rx="170" ry="170" fill="url(#haloGlow)"/>
+
+                            <!-- Orbit rings (tech feel) -->
+                            <circle cx="190" cy="230" r="150" fill="none" stroke="#6366f1" stroke-opacity="0.35" stroke-width="1"/>
+                            <circle cx="190" cy="230" r="128" fill="none" stroke="#818cf8" stroke-opacity="0.5" stroke-width="1" class="hero-dash"/>
+
+                            <!-- Ground shadow -->
+                            <ellipse cx="190" cy="428" rx="86" ry="12" fill="#000000" opacity="0.35"/>
+
+                            <!-- Legs -->
+                            <rect x="150" y="330" width="26" height="90" rx="10" fill="#0b1120"/>
+                            <rect x="204" y="330" width="26" height="90" rx="10" fill="#0b1120"/>
+                            <rect x="146" y="410" width="34" height="16" rx="6" fill="#1e293b"/>
+                            <rect x="200" y="410" width="34" height="16" rx="6" fill="#1e293b"/>
+
+                            <!-- Bag strap -->
+                            <path d="M120 150 L245 340" stroke="#1e293b" stroke-width="18" stroke-linecap="round"/>
+                            <path d="M120 150 L245 340" stroke="#3b82f6" stroke-width="2" stroke-opacity="0.6"/>
+
+                            <!-- Torso / Jacket -->
+                            <path d="M118 165 C118 130 262 130 262 165 L275 335 C275 355 105 355 105 335 Z" fill="url(#jacket)" stroke="#334155" stroke-width="1.5"/>
+                            <!-- Jacket zip line -->
+                            <line x1="190" y1="150" x2="190" y2="330" stroke="#334155" stroke-width="2" stroke-dasharray="4 5"/>
+
+                            <!-- Chest Badge: NTL -->
+                            <rect x="152" y="200" width="76" height="34" rx="6" fill="url(#badge)"/>
+                            <text x="190" y="223" font-family="Arial, sans-serif" font-size="16" font-weight="900" fill="#ffffff" text-anchor="middle">NTL</text>
+
+                            <!-- Reflective stripe -->
+                            <rect x="105" y="290" width="170" height="10" fill="#4f46e5" opacity="0.85"/>
+                            <rect x="105" y="290" width="170" height="10" fill="#c7d2fe" opacity="0.25"/>
+
+                            <!-- Arms -->
+                            <path d="M118 175 C90 190 78 240 92 275" stroke="url(#jacket)" stroke-width="30" stroke-linecap="round" fill="none"/>
+                            <path d="M262 175 C292 195 300 235 282 262" stroke="url(#jacket)" stroke-width="30" stroke-linecap="round" fill="none"/>
+
+                            <!-- Parcel box held in hands -->
+                            <g transform="translate(246,235)">
+                                <rect x="0" y="0" width="64" height="52" rx="4" fill="#e2e8f0"/>
+                                <rect x="0" y="0" width="64" height="52" rx="4" fill="#4f46e5" opacity="0.12"/>
+                                <line x1="0" y1="26" x2="64" y2="26" stroke="#94a3b8" stroke-width="2"/>
+                                <line x1="32" y1="0" x2="32" y2="52" stroke="#94a3b8" stroke-width="2"/>
+                                <rect x="6" y="6" width="20" height="6" fill="#334155" opacity="0.6"/>
+                                <!-- scanning laser -->
+                                <rect x="0" y="0" width="64" height="2.5" fill="#22d3ee" opacity="0.9" class="hero-scan"/>
+                            </g>
+
+                            <!-- Neck -->
+                            <rect x="176" y="128" width="28" height="24" rx="8" fill="#f1c9a1"/>
+
+                            <!-- Head -->
+                            <circle cx="190" cy="100" r="38" fill="#f1c9a1"/>
+
+                            <!-- Cap -->
+                            <path d="M150 92 C150 62 230 62 230 92 L238 96 L142 96 Z" fill="#0b1120"/>
+                            <rect x="156" y="72" width="68" height="16" rx="4" fill="url(#badge)"/>
+                            <text x="190" y="84" font-family="Arial, sans-serif" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">NTL</text>
+                            <path d="M148 96 C168 108 212 108 232 96" stroke="#0b1120" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+                            <!-- Floating tech dots / circuit nodes -->
+                            <g stroke="#818cf8" stroke-opacity="0.7">
+                                <line x1="60" y1="120" x2="100" y2="150" stroke-dasharray="3 6"/>
+                                <line x1="320" y1="150" x2="280" y2="185" stroke-dasharray="3 6"/>
+                                <line x1="70" y1="330" x2="105" y2="300" stroke-dasharray="3 6"/>
+                            </g>
+                            <circle cx="60" cy="120" r="5" fill="#38bdf8"/>
+                            <circle cx="320" cy="150" r="5" fill="#818cf8"/>
+                            <circle cx="70" cy="330" r="5" fill="#38bdf8"/>
+                            <circle cx="330" cy="330" r="4" fill="#22d3ee"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="max-w-sm">
+                    <h3 class="text-white text-2xl font-black leading-tight">Fast. Transparent.<br>Fully Trackable.</h3>
+                    <p class="text-indigo-300 text-sm mt-2">An enterprise-grade digital document &amp; parcel management platform — from intake and scanning to e-signature and reporting, end to end.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT FORM PANEL -->
+        <div class="flex-1 flex items-center justify-center bg-courier-tech lg:bg-slate-950 p-4 relative overflow-hidden">
+
+            <!-- Ambient glow (mobile / tablet portrait, since hero panel is hidden) -->
+            <div class="lg:hidden absolute inset-0 bg-hero-grid opacity-40 pointer-events-none"></div>
+            <div class="lg:hidden absolute -top-40 -right-40 w-96 h-96 rounded-full bg-blue-600 blur-3xl opacity-25 hero-pulse pointer-events-none"></div>
+            <div class="lg:hidden absolute bottom-10 -left-20 w-80 h-80 rounded-full bg-indigo-600 blur-3xl opacity-25 pointer-events-none"></div>
+
+            <!-- Login Card -->
+            <div class="max-w-md w-full bg-slate-900/85 backdrop-blur-xl p-8 md:p-10 rounded-3xl shadow-2xl border border-slate-700/50 relative z-10 animate-fade-up">
+
+                <div class="text-center mb-8">
+                    <!-- Compact NTL Courier Avatar (mobile header of the card) -->
+                    <div class="relative w-24 h-24 mx-auto mb-4">
+                        <div class="w-full h-full rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 p-1 shadow-lg shadow-indigo-500/30">
+                            <div class="w-full h-full bg-slate-950 rounded-full flex items-center justify-center overflow-hidden relative">
+                                <svg class="w-20 h-20 text-indigo-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="50" cy="32" r="16" fill="#64748B" />
+                                    <path d="M30 30 C30 20, 70 20, 70 30 L75 32 L25 32 Z" fill="#1E293B" />
+                                    <rect x="32" y="22" width="36" height="8" rx="2" fill="#2563EB" />
+                                    <text x="50" y="28" font-size="6" font-weight="900" fill="#FFFFFF" text-anchor="middle">NTL</text>
+                                    <path d="M20 85 C20 55, 80 55, 80 85 Z" fill="#0F172A" />
+                                    <path d="M32 58 L68 58 L64 85 L36 85 Z" fill="#1E293B" />
+                                    <rect x="38" y="64" width="24" height="12" rx="2" fill="#2563EB" />
+                                    <text x="50" y="72" font-size="7" font-weight="900" fill="#FFFFFF" text-anchor="middle">NTL</text>
+                                </svg>
+                            </div>
+                        </div>
+                        <span class="absolute bottom-0 right-0 bg-emerald-500 w-5 h-5 rounded-full border-2 border-slate-900 shadow" title="System Online"></span>
+                    </div>
+
+                    <h2 class="text-2xl font-black text-white tracking-wide">Digital Mail Service</h2>
+                    <p class="text-indigo-300 text-xs md:text-sm mt-1 font-medium">Smart Document Tracking &amp; E-Signature</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Username / Corporate Email</label>
+                        <div class="relative">
+                            <i class="fa-regular fa-envelope absolute left-4 top-3.5 text-slate-400"></i>
+                            <input type="text" id="login-username" placeholder="name@ntl.co.th" class="w-full bg-slate-800/80 border border-slate-700 text-white pl-11 p-3 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all font-medium">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Password</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-400"></i>
+                            <input type="password" id="login-password" placeholder="กรอกรหัสผ่าน" class="w-full bg-slate-800/80 border border-slate-700 text-white pl-11 p-3 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all">
+                        </div>
+                    </div>
+                    <div class="bg-indigo-950/60 p-3.5 rounded-xl border border-indigo-800/50 mt-2">
+                        <div class="flex items-start gap-2.5 text-xs text-indigo-200">
+                            <i class="fa-solid fa-shield-halved text-indigo-400 mt-0.5"></i>
+                            <p><span class="font-bold">สิทธิ์การใช้งานกำหนดจากระบบ</span><br><span class="text-indigo-300/80">Role จะถูกตรวจสอบจาก Users ใน Google Sheets หลัง Sign In</span></p>
+                        </div>
+                    </div>
+
+                    <button onclick="handleLogin()" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-indigo-600/30 hover:from-blue-700 hover:to-indigo-800 active:scale-[0.98] transition-all duration-200 mt-2 flex items-center justify-center gap-2 cursor-pointer">
+                        <span>Sign In to Service</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <span class="text-[11px] text-slate-400 font-semibold tracking-wider uppercase">NTL Digital Mail Service</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= VIEW 2: MAIN APPLICATION ================= -->
+    <div id="view-app" class="hidden h-screen w-full flex bg-slate-50">
+
+        <!-- SIDEBAR (PC & Tablet View) -->
+        <aside class="w-64 bg-slate-900 text-slate-300 hidden md:flex flex-col shadow-2xl relative z-20 flex-shrink-0 border-r border-slate-800">
+            <div class="h-20 flex items-center px-6 border-b border-slate-800 bg-slate-950">
+                <div class="w-9 h-9 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-xl flex items-center justify-center mr-3 shadow-md shadow-indigo-500/20">
+                    <span class="text-white font-black text-xs tracking-wider">NTL</span>
+                </div>
+                <div>
+                    <h1 class="text-white font-bold text-base tracking-wide leading-none">Digital Mail</h1>
+                    <p class="text-[10px] text-indigo-400 font-medium mt-0.5">Digital Mail Service</p>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1 no-scrollbar">
+                <p class="px-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">Overview</p>
+                <button onclick="navigateTo('home')" id="side-home" class="sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
+                    <i class="fa-solid fa-house w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> หน้าแรก
+                </button>
+                <button onclick="navigateTo('dashboard')" id="side-dashboard" class="sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
+                    <i class="fa-solid fa-chart-pie w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> Executive Dashboard
+                </button>
+
+                <p class="px-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Operations System</p>
+                <button onclick="navigateTo('keyin')" id="side-keyin" class="sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
+                    <i class="fa-solid fa-keyboard w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> นำเข้าเอกสาร (Key In)
+                </button>
+                <button onclick="navigateTo('track')" id="side-track" class="sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
+                    <i class="fa-solid fa-map-location-dot w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> ติดตามสถานะ (Track)
+                </button>
+                <button onclick="navigateTo('esign')" id="side-esign" class="sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
+                    <i class="fa-solid fa-file-signature w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> ลายเซ็นดิจิทัล (E-Sign)
+                </button>
+                <button onclick="navigateTo('return')" id="side-return" class="sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
+                    <i class="fa-solid fa-rotate-left w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> เอกสารตีกลับ (Return)
+                </button>
+
+                <p class="admin-only px-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Insight &amp; Automation</p>
+                <button onclick="navigateTo('report')" id="side-report" class="admin-only sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
+                    <i class="fa-solid fa-chart-column w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> รายงาน (Report)
+                </button>
+                <button onclick="navigateTo('automail')" id="side-automail" class="admin-only sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
+                    <i class="fa-regular fa-envelope w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> Auto Mail
+                </button>
+                <button onclick="navigateTo('chatbot')" id="side-chatbot" class="admin-only sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
+                    <i class="fa-solid fa-robot w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> Chat Bot
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-800 bg-slate-950">
+                <div class="flex items-center justify-between bg-slate-900 p-3 rounded-xl border border-slate-800">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-indigo-950 text-indigo-400 flex items-center justify-center font-bold text-xs border border-indigo-800">
+                            <i class="fa-regular fa-user"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-white leading-tight" id="sidebar-user-role">Admin</p>
+                            <p class="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Active session</p>
+                        </div>
+                    </div>
+                    <button onclick="handleLogout()" class="text-slate-400 hover:text-rose-400 transition-colors p-2 rounded-lg hover:bg-slate-800" title="Logout">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT CONTAINER -->
+        <main class="flex-1 flex flex-col h-full w-full relative min-w-0 overflow-hidden">
+
+            <!-- Mobile Header Bar -->
+            <header class="md:hidden bg-slate-900 text-white h-16 border-b border-slate-800 flex items-center justify-between px-4 shadow-md z-30 flex-shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-lg flex items-center justify-center shadow">
+                        <span class="text-white font-black text-xs">NTL</span>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-slate-100 text-sm truncate max-w-[160px]" id="mobile-header-title">Digital Mail Service</h1>
+                        <p class="text-[9px] text-indigo-300 font-medium">NTL Digital Mail Service</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5 text-xs bg-indigo-950/80 border border-indigo-700/50 px-2.5 py-1.5 rounded-lg text-indigo-200 font-bold flex-shrink-0">
+                        <i class="fa-solid fa-shield-halved text-indigo-400"></i> <span id="mobile-user-role">Admin</span>
+                    </div>
+                    <button onclick="toggleTheme()" class="theme-toggle-btn text-slate-400 p-2 hover:text-indigo-300" title="Toggle theme">
+                        <i class="fa-solid fa-moon" id="theme-icon-mobile"></i>
+                    </button>
+                    <button onclick="handleLogout()" class="text-slate-400 p-2 hover:text-rose-400">
+                        <i class="fa-solid fa-power-off"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Desktop Header Bar -->
+            <div class="hidden md:flex h-20 bg-white border-b border-slate-200 items-center justify-between px-8 z-10 flex-shrink-0">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800" id="desktop-header-title">Digital Mail Service</h2>
+                    <p class="text-xs text-slate-500 mt-0.5" id="desktop-header-subtitle">System overview and quick access to your core modules</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleTheme()" class="theme-toggle-btn w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition flex items-center justify-center" title="Toggle light / dark mode">
+                        <i class="fa-solid fa-moon" id="theme-icon-desktop"></i>
+                    </button>
+                    <button class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition flex items-center justify-center relative">
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-rose-500"></span>
+                    </button>
+                    <div class="h-8 w-px bg-slate-200"></div>
+                    <span class="text-xs font-semibold text-slate-600 flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
+                        <i class="fa-regular fa-calendar text-indigo-600"></i> <span id="current-date">--/--/----</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Scrollable Viewport Pages -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 no-scrollbar bg-slate-100/70">
+
+                <!-- MODULE 1: HOME GRID -->
+                <section id="page-home" class="page-section hidden max-w-7xl mx-auto space-y-6 md:space-y-8 animate-fade-in">
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+                        <button onclick="navigateTo('dashboard')" id="btn-home-dashboard" class="group bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-xl hover:border-indigo-400 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer">
+                            <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                <i class="fa-solid fa-chart-pie text-2xl"></i>
+                            </div>
+                            <span class="text-sm font-bold text-slate-700 group-hover:text-indigo-600">Dashboard</span>
+                        </button>
+                        <button onclick="navigateTo('keyin')" class="group bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-xl hover:border-blue-400 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer">
+                            <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                <i class="fa-solid fa-keyboard text-2xl"></i>
+                            </div>
+                            <span class="text-sm font-bold text-slate-700 group-hover:text-blue-600">Key In</span>
+                        </button>
+                        <button onclick="navigateTo('track')" class="group bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-xl hover:border-emerald-400 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer">
+                            <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                <i class="fa-solid fa-map-location-dot text-2xl"></i>
+                            </div>
+                            <span class="text-sm font-bold text-slate-700 group-hover:text-emerald-600">Track</span>
+                        </button>
+                        <button onclick="navigateTo('esign')" class="group bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-xl hover:border-purple-400 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer">
+                            <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                <i class="fa-solid fa-file-signature text-2xl"></i>
+                            </div>
+                            <span class="text-sm font-bold text-slate-700 group-hover:text-purple-600">E-Sign</span>
+                        </button>
+                        <button onclick="navigateTo('return')" class="group bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-xl hover:border-rose-400 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer">
+                            <div class="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-rose-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                <i class="fa-solid fa-rotate-left text-2xl"></i>
+                            </div>
+                            <span class="text-sm font-bold text-slate-700 group-hover:text-rose-600">Return</span>
+                        </button>
+                        <button onclick="navigateTo('report')" class="admin-only group bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-xl hover:border-sky-400 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer">
+                            <div class="w-14 h-14 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-sky-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                <i class="fa-solid fa-chart-column text-2xl"></i>
+                            </div>
+                            <span class="text-sm font-bold text-slate-700 group-hover:text-sky-600">Report</span>
+                        </button>
+                        <button onclick="navigateTo('automail')" class="admin-only group bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-xl hover:border-amber-400 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer">
+                            <div class="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-amber-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                <i class="fa-regular fa-envelope text-2xl"></i>
+                            </div>
+                            <span class="text-sm font-bold text-slate-700 group-hover:text-amber-600">Auto Mail</span>
+                        </button>
+                        <button onclick="navigateTo('chatbot')" class="admin-only group bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-xl hover:border-cyan-400 transition-all duration-300 flex flex-col items-center justify-center text-center col-span-2 sm:col-span-1 cursor-pointer">
+                            <div class="w-14 h-14 bg-cyan-50 text-cyan-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-cyan-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                <i class="fa-solid fa-robot text-2xl"></i>
+                            </div>
+                            <span class="text-sm font-bold text-slate-700 group-hover:text-cyan-600">Chat Bot</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- MODULE 2: DASHBOARD -->
+                <section id="page-dashboard" class="page-section hidden max-w-7xl mx-auto space-y-6 animate-fade-in">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center">
+                            <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xl mr-4 flex-shrink-0"><i class="fa-solid fa-layer-group"></i></div>
+                            <div>
+                                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Total Docs</p>
+                                <p class="text-2xl font-black text-slate-800 mt-0.5" id="stat-total">1,250</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center">
+                            <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl mr-4 flex-shrink-0"><i class="fa-solid fa-calendar-day"></i></div>
+                            <div>
+                                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Today</p>
+                                <p class="text-2xl font-black text-slate-800 mt-0.5" id="stat-today">86</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mr-4 flex-shrink-0"><i class="fa-solid fa-check-double"></i></div>
+                            <div>
+                                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Success</p>
+                                <p class="text-2xl font-black text-slate-800 mt-0.5" id="stat-success">120</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center">
+                            <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mr-4 flex-shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div>
+                                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Return</p>
+                                <p class="text-2xl font-black text-slate-800 mt-0.5" id="stat-return">18</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-base font-bold text-slate-800">Transaction Volume (Weekly)</h3>
+                                <button onclick="navigateTo('report')" class="text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition cursor-pointer">Export XLS</button>
+                            </div>
+                            <div class="h-64 w-full bg-slate-50/50 rounded-xl border border-slate-100 flex items-end justify-around px-4 pb-4 pt-10 relative">
+                                <div class="w-1/12 bg-indigo-200 rounded-t-md relative" style="height: 40%"><span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">Mon</span></div>
+                                <div class="w-1/12 bg-indigo-400 rounded-t-md relative" style="height: 60%"><span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">Tue</span></div>
+                                <div class="w-1/12 bg-gradient-to-t from-indigo-600 to-blue-600 rounded-t-md relative shadow-md" style="height: 90%"><span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-indigo-600">Wed</span></div>
+                                <div class="w-1/12 bg-indigo-300 rounded-t-md relative" style="height: 50%"><span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">Thu</span></div>
+                                <div class="w-1/12 bg-indigo-200 rounded-t-md relative" style="height: 30%"><span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">Fri</span></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
+                            <h3 class="text-base font-bold text-slate-800 mb-6">Recent Log</h3>
+                            <div id="dashboard-recent-log" class="space-y-4">
+                                <div class="flex justify-between items-center pb-3 border-b border-slate-50">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs"><i class="fa-solid fa-check"></i></div>
+                                        <div><p class="font-bold text-slate-800 text-sm">NTL-89012</p><p class="text-[11px] text-slate-400">Ari Hill · 10 min ago</p></div>
+                                    </div>
+                                    <span class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md text-[10px] font-bold border border-emerald-100">Signed</span>
+                                </div>
+                                <div class="flex justify-between items-center pb-3 border-b border-slate-50">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xs"><i class="fa-solid fa-truck-fast"></i></div>
+                                        <div><p class="font-bold text-slate-800 text-sm">NTL-89013</p><p class="text-[11px] text-slate-400">BTS · 45 min ago</p></div>
+                                    </div>
+                                    <span class="text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md text-[10px] font-bold border border-amber-100">In Transit</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs"><i class="fa-solid fa-xmark"></i></div>
+                                        <div><p class="font-bold text-slate-800 text-sm">NTL-89014</p><p class="text-[11px] text-slate-400">HQ · 2 hrs ago</p></div>
+                                    </div>
+                                    <span class="text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md text-[10px] font-bold border border-rose-100">Return</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODULE 3: KEY IN FORM -->
+                <section id="page-keyin" class="page-section hidden max-w-5xl mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 animate-fade-in">
+                    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                        <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg"><i class="fa-solid fa-file-circle-plus"></i></div>
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">Document Entry (Key In)</h3>
+                            <p class="text-xs text-slate-500">ลงทะเบียนสแกนพัสดุและแนบภาพถ่ายหลักฐาน</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="space-y-5">
+                            <h4 class="text-xs font-bold text-indigo-900 uppercase tracking-wider border-b border-indigo-100 pb-2">1. ข้อมูลสถานที่จัดส่ง</h4>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Select Route / เส้นทาง <span class="text-rose-500">*</span></label>
+                                <select id="keyin-route" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                                    <option value="">-- กรุณาเลือกเส้นทาง --</option>
+                                    <option value="Ari Hill">Ari Hill</option>
+                                    <option value="BTS Tower">BTS Tower</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Select Department / แผนกผู้รับ <span class="text-rose-500">*</span></label>
+                                <select id="keyin-dept" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                                    <option value="">-- กรุณาเลือกแผนก --</option>
+                                    <option value="ซองสัญญา">ซองสัญญา</option>
+                                    <option value="นายหน้าประกันภัย">นายหน้าประกันภัย</option>
+                                    <option value="ปฏิบัติการประกันภัย">ปฏิบัติการประกันภัย</option>
+                                    <option value="ทะเบียน">ทะเบียน</option>
+                                    <option value="บุคคล">บุคคล</option>
+                                    <option value="บัญชี">บัญชี</option>
+                                    <option value="BSCS">BSCS</option>
+                                    <option value="BDSM">BDSM</option>
+                                    <option value="CLD">CLD</option>
+                                    <option value="Audit">Audit</option>
+                                    <option value="Fraud">Fraud</option>
+                                    <option value="CRD">CRD</option>
+                                    <option value="กำกับธุรกรรม">กำกับธุรกรรม</option>
+                                    <option value="Legal">Legal</option>
+                                    <option value="CAS">CAS</option>
+                                    <option value="MKT">MKT</option>
+                                    <option value="Falcon">Falcon</option>
+                                    <option value="IT">IT</option>
+                                    <option value="จัดซื้อ">จัดซื้อ</option>
+                                    <option value="MD">MD</option>
+                                    <option value="CS">CS</option>
+                                    <option value="DB">DB</option>
+                                    <option value="A&D">A&D</option>
+                                    <option value="HeyGoody">HeyGoody</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Recipient Name / ชื่อ-นามสกุลบนหน้าพัสดุ</label>
+                                <div class="relative">
+                                    <i class="fa-regular fa-id-card absolute left-4 top-3.5 text-slate-400"></i>
+                                    <input type="text" id="keyin-recipient-name" placeholder="สแกนจากหน้าพัสดุ หรือกรอกชื่อ-นามสกุล" class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Recipient Email / อีเมลผู้รับ (สำหรับ Auto Mail)</label>
+                                <div class="relative">
+                                    <i class="fa-regular fa-envelope absolute left-4 top-3.5 text-slate-400"></i>
+                                    <input type="email" id="keyin-recipient-email" placeholder="name@ntl.co.th" class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Quantity / จำนวน (ชิ้น)</label>
+                                <div class="relative w-1/2">
+                                    <i class="fa-solid fa-layer-group absolute left-4 top-3.5 text-slate-400"></i>
+                                    <input type="number" id="keyin-qty" value="1" min="1" max="50" class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-bold">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-5">
+                            <h4 class="text-xs font-bold text-indigo-900 uppercase tracking-wider border-b border-indigo-100 pb-2">2. หลักฐานและหมายเลขพัสดุ</h4>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Tracking Number / หมายเลขพัสดุ</label>
+                                <div class="flex gap-2">
+                                    <div class="relative flex-1">
+                                        <i class="fa-solid fa-barcode absolute left-4 top-3.5 text-slate-400"></i>
+                                        <input type="text" id="keyin-tracking" placeholder="สแกน หรือ พิมพ์เลขพัสดุ" class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                                    </div>
+                                    <button onclick="generateTracking()" class="bg-slate-900 text-white px-4 rounded-xl shadow hover:bg-slate-800 transition flex items-center gap-2 text-xs font-bold cursor-pointer">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> สุ่มเลข
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="flex justify-between items-center text-xs font-bold text-slate-700 mb-1.5">
+                                    <span>Capture Evidence / ถ่ายภาพหลักฐาน</span>
+                                    <span id="photo-count" class="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md font-bold">0 แนบแล้ว</span>
+                                </label>
+
+                                <input type="file" id="camera-file-input" accept="image/*" capture="environment" class="hidden" onchange="handleImageCapture(event)">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <button type="button" onclick="startParcelScanner()" class="w-full border-2 border-indigo-200 rounded-xl p-4 text-center text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition cursor-pointer">
+                                        <i class="fa-solid fa-qrcode text-xl mb-1"></i>
+                                        <p class="text-xs font-bold">เปิดกล้องสแกนพัสดุ</p>
+                                        <p class="text-[10px] text-slate-500 mt-0.5">Barcode + Tracking + OCR ชื่อ</p>
+                                    </button>
+                                    <button type="button" onclick="document.getElementById('camera-file-input').click()" class="w-full border-2 border-dashed border-slate-300 rounded-xl p-4 text-center text-slate-700 bg-slate-50 hover:bg-slate-100 transition cursor-pointer">
+                                        <i class="fa-solid fa-camera text-xl mb-1"></i>
+                                        <p class="text-xs font-bold">ถ่าย / เลือกรูปเอกสาร</p>
+                                        <p class="text-[10px] text-slate-500 mt-0.5">ใช้ได้บน PC, iPad และมือถือ</p>
+                                    </button>
+                                </div>
+
+                                <div id="scanner-panel" class="hidden mt-3 rounded-2xl overflow-hidden border border-slate-200 bg-slate-950">
+                                    <div class="relative aspect-video bg-black">
+                                        <video id="parcel-scanner-video" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                                        <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                                            <div class="w-[82%] h-[42%] border-2 border-cyan-400 rounded-xl shadow-[0_0_0_9999px_rgba(0,0,0,.28)]"></div>
+                                        </div>
+                                    </div>
+                                    <div class="p-3 flex flex-wrap gap-2 bg-slate-900">
+                                        <button type="button" onclick="captureScannerFrame()" class="flex-1 min-w-[130px] bg-indigo-600 text-white py-2.5 px-3 rounded-lg text-xs font-bold"><i class="fa-solid fa-camera mr-1"></i> ถ่ายและอ่านข้อมูล</button>
+                                        <button type="button" onclick="stopParcelScanner()" class="bg-slate-700 text-white py-2.5 px-3 rounded-lg text-xs font-bold"><i class="fa-solid fa-xmark mr-1"></i> ปิดกล้อง</button>
+                                    </div>
+                                </div>
+
+                                <div id="scanner-status" class="hidden mt-2 text-xs rounded-lg p-2.5 bg-cyan-50 text-cyan-800 border border-cyan-100"></div>
+                                <div id="ocr-result-box" class="hidden mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <p class="text-xs font-bold text-slate-700"><i class="fa-solid fa-wand-magic-sparkles text-indigo-500 mr-1"></i>ข้อมูลที่ระบบอ่านจากหน้าพัสดุ</p>
+                                        <button type="button" onclick="toggleOcrRawText()" class="text-[10px] font-bold text-indigo-600">ดูข้อความ OCR</button>
+                                    </div>
+                                    <p id="ocr-summary" class="text-[11px] text-slate-600 mt-1"></p>
+                                    <pre id="ocr-raw-text" class="hidden whitespace-pre-wrap text-[10px] text-slate-500 mt-2 max-h-32 overflow-auto"></pre>
+                                </div>
+
+                                <div id="image-preview-container" class="flex gap-2 mt-3 overflow-x-auto no-scrollbar"></div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Remarks / หมายเหตุ</label>
+                                <input type="text" id="keyin-remarks" placeholder="ระบุข้อความเพิ่มเติม..." class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 pt-6 mt-6 border-t border-slate-100">
+                        <button onclick="navigateTo('home')" class="w-1/3 bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-bold text-sm hover:bg-slate-50 transition cursor-pointer">ยกเลิก</button>
+                        <button onclick="submitKeyInForm()" class="w-2/3 bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-200 hover:bg-indigo-800 transition cursor-pointer">บันทึกข้อมูลเข้าระบบ</button>
+                    </div>
+                </section>
+
+                <!-- MODULE 4: E-SIGNATURE -->
+                <section id="page-esign" class="page-section hidden max-w-5xl mx-auto bg-white p-5 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 animate-fade-in">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-lg"><i class="fa-solid fa-file-signature"></i></div>
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800">E-Signature รับพัสดุแบบกลุ่ม</h3>
+                                <p class="text-xs text-slate-500">เลือกแผนก → ตรวจรายการพัสดุวันนี้ → เซ็นรับครั้งเดียวสำหรับหลาย Tracking</p>
+                            </div>
+                        </div>
+                        <span id="esign-pending-badge" class="text-xs font-bold text-purple-700 bg-purple-50 border border-purple-100 px-3 py-1.5 rounded-full">รอรับ 0 รายการ</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-1 space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">แผนกผู้รับ <span class="text-rose-500">*</span></label>
+                                <select id="esign-department" onchange="loadEsignParcels()" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option value="">-- เลือกแผนกผู้รับ --</option>
+                                    <option value="ซองสัญญา">ซองสัญญา</option>
+                                    <option value="นายหน้าประกันภัย">นายหน้าประกันภัย</option>
+                                    <option value="ปฏิบัติการประกันภัย">ปฏิบัติการประกันภัย</option>
+                                    <option value="ทะเบียน">ทะเบียน</option>
+                                    <option value="บุคคล">บุคคล</option>
+                                    <option value="บัญชี">บัญชี</option>
+                                    <option value="BSCS">BSCS</option>
+                                    <option value="BDSM">BDSM</option>
+                                    <option value="CLD">CLD</option>
+                                    <option value="Audit">Audit</option>
+                                    <option value="Fraud">Fraud</option>
+                                    <option value="CRD">CRD</option>
+                                    <option value="กำกับธุรกรรม">กำกับธุรกรรม</option>
+                                    <option value="Legal">Legal</option>
+                                    <option value="CAS">CAS</option>
+                                    <option value="MKT">MKT</option>
+                                    <option value="Falcon">Falcon</option>
+                                    <option value="IT">IT</option>
+                                    <option value="จัดซื้อ">จัดซื้อ</option>
+                                    <option value="MD">MD</option>
+                                    <option value="CS">CS</option>
+                                    <option value="DB">DB</option>
+                                    <option value="A&D">A&D</option>
+                                    <option value="HeyGoody">HeyGoody</option>
+                                </select>
+                                <p class="text-[11px] text-slate-400 mt-1.5">จำนวนรายการรอเซ็นจะดึงจาก Key In ของวันนี้โดยอัตโนมัติ</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">ชื่อผู้เซ็นรับเอกสาร <span class="text-rose-500">*</span></label>
+                                <input type="text" id="esign-recipient-name" placeholder="ชื่อ-นามสกุล ผู้รับ/ผู้เซ็น" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1.5">
+                                    <label class="text-xs font-bold text-slate-700">กระดานเซ็นชื่อ (Sign Area)</label>
+                                    <button onclick="clearSignatureCanvas()" class="text-xs font-bold text-rose-500 hover:underline cursor-pointer"><i class="fa-solid fa-eraser"></i> ล้างกระดาน</button>
+                                </div>
+                                <div class="border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 overflow-hidden touch-none relative">
+                                    <canvas id="signature-pad" class="w-full h-52 block cursor-crosshair"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-2">
+                            <div class="flex items-center justify-between gap-3 mb-3">
+                                <div>
+                                    <p class="text-xs font-bold text-slate-700">รายการพัสดุรอเซ็นรับวันนี้</p>
+                                    <p class="text-[11px] text-slate-400">Tracking และข้อมูลหน้าพัสดุดึงจาก Key In โดยตรง</p>
+                                </div>
+                                <label class="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer">
+                                    <input id="esign-select-all" type="checkbox" checked onchange="toggleEsignSelectAll(this.checked)" class="w-4 h-4 accent-purple-600"> เลือกทั้งหมด
+                                </label>
+                            </div>
+
+                            <div id="esign-parcel-list" class="space-y-2 max-h-[430px] overflow-y-auto pr-1">
+                                <div class="text-center p-8 rounded-xl border border-dashed border-slate-200 bg-slate-50">
+                                    <i class="fa-solid fa-building text-slate-300 text-2xl"></i>
+                                    <p class="text-xs text-slate-500 mt-2">เลือกแผนกเพื่อโหลดรายการพัสดุ</p>
+                                </div>
+                            </div>
+
+                            <button onclick="saveEsignature()" id="esign-save-btn" class="w-full bg-purple-700 text-white py-3.5 rounded-xl font-bold text-sm shadow-lg shadow-purple-200 hover:bg-purple-800 transition cursor-pointer mt-4 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <i class="fa-solid fa-file-signature mr-1"></i> เซ็นรับรายการที่เลือก
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODULE 5: TRACK & TRACE -->
+                <section id="page-track" class="page-section hidden max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 animate-fade-in">
+                    <h3 class="text-lg font-bold text-slate-800 mb-1">Track &amp; Trace</h3>
+                    <p class="text-xs text-slate-500 mb-6">ค้นหาและติดตามสถานะพัสดุ</p>
+
+                    <div class="flex gap-2 mb-6">
+                        <input type="text" id="track-search-input" placeholder="ใส่รหัส Tracking..." class="flex-1 border border-slate-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <button onclick="searchTracking()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold text-sm hover:bg-emerald-700 transition cursor-pointer">ค้นหา</button>
+                    </div>
+
+                    <div id="track-result" class="hidden border border-slate-100 rounded-2xl p-6 bg-slate-50">
+                        <div class="flex justify-between items-center pb-4 border-b border-slate-200 mb-4">
+                            <div>
+                                <p class="text-xs font-bold text-slate-400">TRACKING NO.</p>
+                                <p class="text-lg font-black text-slate-800" id="result-tracking-id">NTL-89012</p>
+                            </div>
+                            <span class="bg-emerald-100 text-emerald-800 text-xs px-3 py-1 rounded-full font-bold">จัดส่งสำเร็จ</span>
+                        </div>
+                        <div class="space-y-4 text-xs">
+                            <div class="flex gap-3"><i class="fa-solid fa-circle text-emerald-500 mt-0.5"></i><div><p class="font-bold">14:30 น. - รับเอกสารเรียบร้อย</p><p class="text-slate-400">ผู้รับ: สมชาย ใจดี (E-Signed)</p></div></div>
+                            <div class="flex gap-3"><i class="fa-solid fa-circle text-slate-300 mt-0.5"></i><div><p class="font-bold">11:15 น. - อยู่ระหว่างนำส่งโดย Messenger</p><p class="text-slate-400">เส้นทาง: Ari Hill</p></div></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODULE 6: RETURN -->
+                <section id="page-return" class="page-section hidden max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 animate-fade-in">
+                    <h3 class="text-lg font-bold text-slate-800 mb-1">Document Return Management</h3>
+                    <p class="text-xs text-slate-500 mb-6">บันทึกเอกสารตีกลับเพื่อดำเนินการส่งซ้ำ</p>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Tracking Number ตีกลับ</label>
+                            <input type="text" id="return-tracking" placeholder="ระบุเลข NTL-XXXXXX" class="w-full border border-slate-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">ประเภทการตีกลับ</label>
+                            <select id="return-type" class="w-full border border-slate-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500">
+                                <option>Redelivery</option>
+                                <option>Rejected / Vendor</option>
+                                <option>Lost Document</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">สาเหตุการตีกลับ</label>
+                            <select id="return-reason" class="w-full border border-slate-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500">
+                                <option>ไม่พบผู้รับปลายทาง</option>
+                                <option>ย้ายแผนก/ลาออก</option>
+                                <option>ปฏิเสธการรับเอกสาร</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">หมายเหตุเพิ่มเติม</label>
+                            <input type="text" id="return-remarks" placeholder="ระบุรายละเอียดเพิ่มเติม..." class="w-full border border-slate-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500">
+                        </div>
+                        <button onclick="submitReturnForm()" class="w-full bg-rose-600 text-white py-3 rounded-xl font-bold text-sm shadow hover:bg-rose-700 transition cursor-pointer">บันทึกข้อมูลตีกลับ</button>
+                    </div>
+                </section>
+
+                <!-- MODULE 7: REPORT -->
+                <section id="page-report" class="page-section hidden max-w-7xl mx-auto space-y-6 animate-fade-in">
+                    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-sky-50 text-sky-600 rounded-xl flex items-center justify-center text-lg"><i class="fa-solid fa-chart-column"></i></div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-800">รายงานสรุปผลการดำเนินงาน</h3>
+                                    <p class="text-xs text-slate-500">ภาพรวมครบถ้วน แยกตามรายวัน / รายเดือน / รายแผนก</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-2 flex-wrap">
+                                <button onclick="setReportRange('daily')" id="report-btn-daily" class="report-range-btn text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-sky-50 hover:text-sky-600 transition cursor-pointer flex items-center gap-1.5"><i class="fa-regular fa-calendar"></i> รายงานรายวัน</button>
+                                <button onclick="setReportRange('monthly')" id="report-btn-monthly" class="report-range-btn text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-sky-50 hover:text-sky-600 transition cursor-pointer flex items-center gap-1.5"><i class="fa-regular fa-calendar-days"></i> รายงานรายเดือน</button>
+                                <button onclick="setReportRange('dept')" id="report-btn-dept" class="report-range-btn text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-sky-50 hover:text-sky-600 transition cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-sitemap"></i> รายงานรายแผนก</button>
+                                <button onclick="exportReport()" class="text-xs font-bold px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-file-excel"></i> Export ข้อมูล</button>
+                            </div>
+                        </div>
+
+                        <div class="h-64 w-full bg-slate-50/50 rounded-xl border border-slate-100 flex items-end justify-around px-4 pb-4 pt-10 relative">
+                            <div class="w-1/12 bg-sky-200 rounded-t-md relative" style="height: 35%"><span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">Jan</span></div>
+                            <div class="w-1/12 bg-sky-300 rounded-t-md relative" style="height: 55%"><span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">Feb</span></div>
+                            <div class="w-1/12 bg-sky-400 rounded-t-md relative" style="height: 45%"><span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">Mar</span></div>
+                            <div class="w-1/12 bg-gradient-to-t from-sky-600 to-indigo-500 rounded-t-md relative shadow-md" style="height: 85%"><span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-sky-600">Apr</span></div>
+                            <div class="w-1/12 bg-sky-300 rounded-t-md relative" style="height: 60%"><span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">May</span></div>
+                            <div class="w-1/12 bg-sky-200 rounded-t-md relative" style="height: 40%"><span class="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">Jun</span></div>
+                        </div>
+                        <p id="report-range-label" class="text-xs text-slate-400 mt-3 font-medium">กำลังแสดง: รายงานรายเดือน (Default)</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center gap-3">
+                            <i class="fa-regular fa-file-lines text-2xl text-slate-400"></i>
+                            <div><p class="text-xs font-bold text-slate-400">รายงานครบถ้วน</p><p class="text-sm font-bold text-slate-700">ดูข้อมูลย้อนหลัง</p></div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center gap-3">
+                            <i class="fa-solid fa-file-csv text-2xl text-slate-400"></i>
+                            <div><p class="text-xs font-bold text-slate-400">Export ข้อมูล</p><p class="text-sm font-bold text-slate-700">รองรับไฟล์ Excel / CSV</p></div>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center gap-3">
+                            <i class="fa-solid fa-magnifying-glass-chart text-2xl text-slate-400"></i>
+                            <div><p class="text-xs font-bold text-slate-400">ช่วยในการตัดสินใจ</p><p class="text-sm font-bold text-slate-700">วิเคราะห์แนวโน้มเอกสาร</p></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODULE 8: AUTO MAIL -->
+                <section id="page-automail" class="page-section hidden max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 animate-fade-in">
+                    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                        <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-lg"><i class="fa-regular fa-envelope"></i></div>
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">Auto Mail Notification</h3>
+                            <p class="text-xs text-slate-500">แจ้งสถานะเอกสารอัตโนมัติทางอีเมล</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between bg-amber-50/70 border border-amber-100 rounded-xl p-4 mb-6">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-bolt text-amber-500"></i>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">เปิดใช้งานการส่งอีเมลอัตโนมัติ</p>
+                                <p class="text-[11px] text-slate-500">ส่งทันทีเมื่อมีการรับ / ส่งสำเร็จ / ตีกลับเอกสาร</p>
+                            </div>
+                        </div>
+                        <button onclick="toggleAutoMail()" id="automail-toggle" class="w-14 h-8 rounded-full bg-emerald-500 relative transition-colors cursor-pointer flex-shrink-0">
+                            <span id="automail-toggle-dot" class="absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow transition-transform translate-x-6"></span>
+                        </button>
+                    </div>
+
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden mb-6">
+                        <div class="bg-slate-50 px-5 py-3 border-b border-slate-100 flex items-center gap-2">
+                            <i class="fa-regular fa-envelope-open text-slate-400"></i>
+                            <span class="text-xs font-bold text-slate-500">ตัวอย่างอีเมลแจ้งสถานะ (Preview)</span>
+                        </div>
+                        <div class="p-5">
+                            <p class="text-xs text-slate-400 mb-1">ถึง: <span id="mail-preview-to" class="text-slate-700 font-semibold">user@ntl.co.th</span></p>
+                            <p class="text-sm font-bold text-slate-800 mb-3">เรียน คุณผู้ใช้บริการ</p>
+                            <p class="text-xs text-slate-600 leading-relaxed">เอกสารหมายเลข <span id="mail-preview-tracking" class="font-bold text-slate-800">NTL-895671</span> ได้ดำเนินการเรียบร้อยแล้ว สถานะ: <span id="mail-preview-status" class="font-bold text-emerald-600">Delivered</span></p>
+                            <button onclick="sendTestAutoMail()" class="mt-4 bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-lg hover:bg-slate-800 transition cursor-pointer"><i class="fa-regular fa-paper-plane mr-1.5"></i> ดูรายละเอียด / ทดสอบส่งอีเมล</button>
+                        </div>
+                    </div>
+
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide mb-3">ประวัติการแจ้งเตือนล่าสุด</h4>
+                    <div id="automail-log" class="space-y-3">
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-slate-50 border border-slate-100">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                                <div><p class="text-sm font-bold text-slate-800">NTL-89012</p><p class="text-[11px] text-slate-400">ส่งถึง finance@ntl.co.th · 5 นาทีที่แล้ว</p></div>
+                            </div>
+                            <span class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md text-[10px] font-bold border border-emerald-100">Sent</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-slate-50 border border-slate-100">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                                <div><p class="text-sm font-bold text-slate-800">NTL-89013</p><p class="text-[11px] text-slate-400">ส่งถึง hr@ntl.co.th · 40 นาทีที่แล้ว</p></div>
+                            </div>
+                            <span class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md text-[10px] font-bold border border-emerald-100">Sent</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODULE 9: CHAT BOT -->
+                <section id="page-chatbot" class="page-section hidden max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200/80 animate-fade-in overflow-hidden flex flex-col" style="height: calc(100vh - 220px); min-height:420px;">
+                    <div class="flex items-center gap-3 px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-cyan-50 to-indigo-50 flex-shrink-0">
+                        <div class="w-11 h-11 bg-white text-cyan-600 rounded-full flex items-center justify-center text-xl shadow-sm border border-cyan-100"><i class="fa-solid fa-robot"></i></div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800">NTL Bot ผู้ช่วยอัจฉริยะ</h3>
+                            <p class="text-[11px] text-emerald-600 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ยินดีให้บริการ 24 ชม.</p>
+                        </div>
+                    </div>
+
+                    <div id="chatbot-messages" class="flex-1 overflow-y-auto p-5 space-y-3 no-scrollbar bg-slate-50/50">
+                        <div class="flex items-start gap-2.5">
+                            <div class="w-8 h-8 bg-cyan-600 text-white rounded-full flex items-center justify-center text-xs flex-shrink-0"><i class="fa-solid fa-robot"></i></div>
+                            <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-sm px-4 py-2.5 text-xs text-slate-700 max-w-[75%] shadow-sm">สวัสดีค่ะ ผมคือ NTL Bot ยินดีให้บริการค่ะ 😊 สอบถามสถานะเอกสารหรือพัสดุได้เลยค่ะ</div>
+                        </div>
+                    </div>
+
+                    <div class="px-5 py-3 flex gap-2 flex-wrap border-t border-slate-100 flex-shrink-0">
+                        <button onclick="chatQuickAction('status')" class="text-[11px] font-bold px-3 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 transition cursor-pointer">ตรวจสอบสถานะเอกสาร</button>
+                        <button onclick="chatQuickAction('track')" class="text-[11px] font-bold px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition cursor-pointer">ค้นหาด้วย Tracking Number</button>
+                        <button onclick="chatQuickAction('proof')" class="text-[11px] font-bold px-3 py-2 rounded-lg bg-slate-800 text-white hover:bg-slate-900 transition cursor-pointer">ดาวน์โหลดหลักฐานการรับ</button>
+                    </div>
+
+                    <div class="px-5 pb-5 pt-2 flex gap-2 flex-shrink-0">
+                        <input type="text" id="chatbot-input" placeholder="พิมพ์ข้อความ หรือ หมายเลข Tracking..." class="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" onkeydown="if(event.key==='Enter'){sendChatMessage();}">
+                        <button onclick="sendChatMessage()" class="bg-cyan-600 text-white w-11 h-11 rounded-xl flex items-center justify-center hover:bg-cyan-700 transition cursor-pointer flex-shrink-0"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 flex justify-around items-center h-16 z-40 text-slate-400 text-xs">
+        <button onclick="navigateTo('home')" class="flex flex-col items-center gap-1 hover:text-white cursor-pointer">
+            <i class="fa-solid fa-house text-base"></i>
+            <span class="text-[10px]">หน้าแรก</span>
+        </button>
+        <button onclick="navigateTo('keyin')" class="flex flex-col items-center gap-1 hover:text-white cursor-pointer">
+            <i class="fa-solid fa-keyboard text-base"></i>
+            <span class="text-[10px]">Key In</span>
+        </button>
+        <button onclick="navigateTo('track')" class="flex flex-col items-center gap-1 hover:text-white cursor-pointer">
+            <i class="fa-solid fa-map-location-dot text-base"></i>
+            <span class="text-[10px]">Track</span>
+        </button>
+        <button onclick="navigateTo('esign')" class="flex flex-col items-center gap-1 hover:text-white cursor-pointer">
+            <i class="fa-solid fa-file-signature text-base"></i>
+            <span class="text-[10px]">E-Sign</span>
+        </button>
+        <button onclick="navigateTo('chatbot')" class="admin-only flex flex-col items-center gap-1 hover:text-white cursor-pointer">
+            <i class="fa-solid fa-robot text-base"></i>
+            <span class="text-[10px]">Bot</span>
+        </button>
+    </nav>
+
+    <!-- ================= JAVASCRIPT CONTROLLER ================= -->
+    <script>
+        // NTL Digital Mail Service — Production GAS Client
+        // No mock/offline fallback. Authentication and authorization are validated by Code.gs.
+
+        let capturedImages = [];
+        let signaturePad = null;
+        let scannerStream = null;
+        let scannerLoopTimer = null;
+        let latestOcrText = '';
+        let esignPendingItems = [];
+        let currentReportRange = 'monthly';
+        let currentUser = null;
+
+        const SESSION_KEY = 'ntl_dms_prod_session';
+        const THEME_KEY = 'ntl_dms_theme';
+
+        /**************************************************************
+         * STANDALONE FRONTEND CONFIG
+         * นำ URL ที่ได้จาก Apps Script > Deploy > Web app มาใส่ด้านล่าง
+         * ตัวอย่าง: https://script.google.com/macros/s/AKfycb.../exec
+         **************************************************************/
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxp85vxq20RHi4pT95BxdvLZyemWeybSqZv-qIBkvGhT9rqTZ7_uLKgCL3Gm559DLAQ/exec';
+
+        const API_SOURCE = 'NTL_DMS_GAS_API';
+        const apiPending = new Map();
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const dateEl = document.getElementById('current-date');
+            if (dateEl) {
+                dateEl.innerText = new Date().toLocaleDateString('th-TH', {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                });
+            }
+
+            const canvas = document.getElementById('signature-pad');
+            if (canvas) {
+                signaturePad = new SignaturePad(canvas, {
+                    backgroundColor: 'rgba(255, 255, 255, 0)',
+                    penColor: 'rgb(30, 27, 65)'
+                });
+            }
+
+            setReportRange('monthly');
+            applyTheme(getStoredTheme());
+
+            window.addEventListener('message', handleApiMessage);
+            document.addEventListener('keydown', function(event) {
+                const loginView = document.getElementById('view-login');
+                if (event.key === 'Enter' && loginView && !loginView.classList.contains('hidden')) {
+                    event.preventDefault();
+                    handleLogin();
+                }
+            });
+
+            bootstrapApplication(false);
+        });
+
+
+        function setStartupMessage(message, showRetry) {
+            const text = document.getElementById('startup-message');
+            const retry = document.getElementById('startup-retry-btn');
+            if (text) text.textContent = message || 'กำลังตรวจสอบการเข้าใช้งาน...';
+            if (retry) retry.classList.toggle('hidden', !showRetry);
+        }
+
+        function showStartupView(message) {
+            const startup = document.getElementById('view-startup');
+            const login = document.getElementById('view-login');
+            const app = document.getElementById('view-app');
+
+            if (startup) startup.classList.remove('hidden');
+            if (login) {
+                login.classList.add('hidden');
+                login.classList.remove('flex');
+            }
+            if (app) app.classList.add('hidden');
+
+            setStartupMessage(message || 'กำลังตรวจสอบการเข้าใช้งาน...', false);
+        }
+
+        function hideStartupView() {
+            const startup = document.getElementById('view-startup');
+            if (startup) startup.classList.add('hidden');
+        }
+
+        function showLoginView() {
+            const startup = document.getElementById('view-startup');
+            const login = document.getElementById('view-login');
+            const app = document.getElementById('view-app');
+
+            if (startup) startup.classList.add('hidden');
+            if (app) app.classList.add('hidden');
+
+            if (login) {
+                login.classList.remove('hidden');
+                login.classList.add('flex');
+            }
+        }
+
+        async function bootstrapApplication(isRetry) {
+            showStartupView(isRetry ? 'กำลังเชื่อมต่อระบบอีกครั้ง...' : 'กำลังตรวจสอบการเข้าใช้งาน...');
+
+            if (!isApiConfigured()) {
+                setStartupMessage('ยังไม่ได้ตั้งค่า Backend URL', false);
+                setTimeout(function() {
+                    hideStartupView();
+                    showApiConfigError();
+                    showLoginView();
+                }, 250);
+                return;
+            }
+
+            const savedSession = getSession();
+
+            // ไม่มี Session ที่เคย Login: แสดง Login เท่านั้นในกรณีนี้
+            if (!savedSession || !savedSession.token) {
+                showLoginView();
+                return;
+            }
+
+            currentUser = savedSession;
+            setStartupMessage('กำลังกู้คืน Session ของคุณ...', false);
+
+            try {
+                const res = await apiCall('validateSession', {
+                    token: savedSession.token
+                });
+
+                if (res && res.success) {
+                    saveSession({
+                        ...savedSession,
+                        ...res,
+                        token: savedSession.token
+                    });
+
+                    // showMainApp จะซ่อน Login และเปิด App
+                    showMainApp(res.role || savedSession.role);
+                    hideStartupView();
+                    return;
+                }
+
+                // Backend ยืนยันชัดเจนว่า Session ใช้ไม่ได้จริง
+                if (res && (
+                    res.code === 'AUTH_REQUIRED' ||
+                    res.code === 'SESSION_EXPIRED' ||
+                    res.code === 'ACCOUNT_DISABLED'
+                )) {
+                    clearSession();
+                    showLoginView();
+                    return;
+                }
+
+                // Response ไม่ชัดเจน: อย่าเด้ง Login
+                setStartupMessage(
+                    (res && res.message) || 'ไม่สามารถตรวจสอบ Session ได้ กรุณาลองใหม่',
+                    true
+                );
+
+            } catch (err) {
+                // Network ชั่วคราว: อย่าแสดง Login เพราะผู้ใช้ยังมี Session อยู่
+                console.error('bootstrapApplication:', err);
+                setStartupMessage(
+                    'เชื่อมต่อระบบไม่ได้ชั่วคราว กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง',
+                    true
+                );
+            }
+        }
+
+        function isApiConfigured() {
+            return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/.test(GAS_WEB_APP_URL);
+        }
+
+        function showApiConfigError() {
+            alert(
+                'ยังไม่ได้ตั้งค่า Google Apps Script Web App URL\n\n' +
+                'เปิดไฟล์ index.html แล้วค้นหา GAS_WEB_APP_URL จากนั้นนำ URL /exec ที่ Deploy แล้วมาใส่'
+            );
+        }
+
+        function requireGas() {
+            if (!isApiConfigured()) {
+                showApiConfigError();
+                return false;
+            }
+            return true;
+        }
+
+        function handleApiMessage(event) {
+            const data = event.data;
+            if (!data || data.source !== API_SOURCE || !data.requestId) return;
+
+            const pending = apiPending.get(data.requestId);
+            if (!pending) return;
+
+            apiPending.delete(data.requestId);
+            clearTimeout(pending.timer);
+
+            if (data.ok === false) {
+                pending.reject(new Error(data.error || 'API request failed'));
+                return;
+            }
+
+            pending.resolve(data.result);
+        }
+
+        function apiCall(action, payload) {
+            if (!isApiConfigured()) {
+                return Promise.reject(new Error('ยังไม่ได้ตั้งค่า GAS_WEB_APP_URL'));
+            }
+
+            return new Promise(function(resolve, reject) {
+                const requestId =
+                    'req_' + Date.now() + '_' +
+                    Math.random().toString(36).slice(2);
+
+                const iframe = document.createElement('iframe');
+                iframe.name = 'ntl_api_' + requestId;
+                iframe.style.display = 'none';
+
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = GAS_WEB_APP_URL;
+                form.target = iframe.name;
+                form.style.display = 'none';
+                form.acceptCharset = 'UTF-8';
+
+                const fields = {
+                    action: action,
+                    requestId: requestId,
+                    payload: JSON.stringify(payload || {})
+                };
+
+                Object.keys(fields).forEach(function(name) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = name;
+                    input.value = fields[name];
+                    form.appendChild(input);
+                });
+
+                document.body.appendChild(iframe);
+                document.body.appendChild(form);
+
+                const timer = setTimeout(function() {
+                    apiPending.delete(requestId);
+                    try { form.remove(); iframe.remove(); } catch (e) {}
+                    reject(new Error('เชื่อมต่อ Backend ไม่สำเร็จหรือใช้เวลานานเกินไป'));
+                }, 60000);
+
+                apiPending.set(requestId, {
+                    resolve: function(value) {
+                        try { form.remove(); iframe.remove(); } catch (e) {}
+                        resolve(value);
+                    },
+                    reject: function(error) {
+                        try { form.remove(); iframe.remove(); } catch (e) {}
+                        reject(error);
+                    },
+                    timer: timer
+                });
+
+                form.submit();
+            });
+        }
+
+        function normalizeError(err) {
+            if (!err) return 'Unknown error';
+            return err.message || String(err);
+        }
+
+        function normalizeResponse(res, defaultMessage) {
+            if (!res) return { success: false, message: defaultMessage || 'ไม่พบผลลัพธ์จากระบบ' };
+            if (typeof res === 'string') return { success: true, message: res };
+            return {
+                ...res,
+                success: res.success !== false,
+                message: res.message || defaultMessage || 'สำเร็จ'
+            };
+        }
+
+        function getSession() {
+            try { return JSON.parse(localStorage.getItem(SESSION_KEY)) || null; }
+            catch (e) { return null; }
+        }
+
+        function saveSession(session) {
+            currentUser = {
+                username: session.username || '',
+                role: session.role || 'Operation Staff',
+                displayName: session.displayName || session.fullName || session.username || '',
+                token: session.token || ''
+            };
+            localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+        }
+
+        function clearSession() {
+            currentUser = null;
+            try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+        }
+
+        function getAuthToken() {
+            const s = currentUser || getSession();
+            return s && s.token ? s.token : '';
+        }
+
+        function getAuditUser() {
+            const s = currentUser || getSession() || {};
+            return { username: s.username || '', role: s.role || '' };
+        }
+
+        function restoreSession() {
+            return bootstrapApplication(false);
+        }
+
+        function handleAuthFailure(res) {
+            if (res && (res.code === 'AUTH_REQUIRED' || res.code === 'SESSION_EXPIRED')) {
+                clearSession();
+                showLoginView();
+                alert(res.message || 'Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+                return true;
+            }
+            return false;
+        }
+
+        function clearForm(ids) {
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (el.tagName === 'SELECT') el.selectedIndex = 0;
+                else el.value = '';
+            });
+        }
+
+        function getStoredTheme() {
+            try { return localStorage.getItem(THEME_KEY) || 'light'; }
+            catch (e) { return 'light'; }
+        }
+
+        function applyTheme(theme) {
+            const appView = document.getElementById('view-app');
+            const iconDesktop = document.getElementById('theme-icon-desktop');
+            const iconMobile = document.getElementById('theme-icon-mobile');
+            if (!appView) return;
+            if (theme === 'dark') {
+                appView.classList.add('dark-mode');
+                if (iconDesktop) iconDesktop.className = 'fa-solid fa-sun';
+                if (iconMobile) iconMobile.className = 'fa-solid fa-sun';
+            } else {
+                appView.classList.remove('dark-mode');
+                if (iconDesktop) iconDesktop.className = 'fa-solid fa-moon';
+                if (iconMobile) iconMobile.className = 'fa-solid fa-moon';
+            }
+            try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+        }
+
+        function toggleTheme() {
+            const app = document.getElementById('view-app');
+            if (!app) return;
+            applyTheme(app.classList.contains('dark-mode') ? 'light' : 'dark');
+        }
+
+        function handleLogin() {
+            if (!requireGas()) return;
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+            if (!username || !password) {
+                alert('กรุณากรอก Username และ Password');
+                return;
+            }
+
+            apiCall('checkLogin', { username: username, password: password })
+                .then(function(raw) {
+                    const res = normalizeResponse(raw, 'เข้าสู่ระบบไม่สำเร็จ');
+                    if (!res.success || !res.token) {
+                        alert(res.message || 'Username หรือ Password ไม่ถูกต้อง');
+                        return;
+                    }
+                    saveSession(res);
+                    document.getElementById('login-password').value = '';
+                    showMainApp(res.role);
+                })
+                .catch(function(err) {
+                    alert('เข้าสู่ระบบไม่สำเร็จ: ' + normalizeError(err));
+                });
+        }
+
+        function showMainApp(role) {
+            const sideRole = document.getElementById('sidebar-user-role');
+            const mobileRole = document.getElementById('mobile-user-role');
+            if (sideRole) sideRole.innerText = role;
+            if (mobileRole) mobileRole.innerText = role;
+            const loginView = document.getElementById('view-login');
+            if (loginView) {
+                loginView.classList.add('hidden');
+                loginView.classList.remove('flex');
+            }
+            hideStartupView();
+            document.getElementById('view-app').classList.remove('hidden');
+            applyRoleVisibility(role);
+            navigateTo('home');
+            loadDashboardStats();
+        }
+
+        function applyRoleVisibility(role) {
+            document.body.classList.toggle('role-staff', role === 'Operation Staff');
+        }
+
+        function handleLogout() {
+            const token = getAuthToken();
+            clearSession();
+            document.body.classList.remove('role-staff');
+            showLoginView();
+            if (token && isApiConfigured()) apiCall('logoutSession', { token: token }).catch(function(){});
+        }
+
+        const titles = {
+            home: 'Digital Mail Service', dashboard: 'Executive Dashboard', keyin: 'Document Entry (Key In)',
+            track: 'Track & Trace', esign: 'E-Signature', return: 'Document Return', report: 'Report',
+            automail: 'Auto Mail', chatbot: 'Chat Bot'
+        };
+
+        function navigateTo(pageId) {
+            const session = currentUser || getSession();
+            if (!session || !session.token) return;
+            if (session.role === 'Operation Staff' && ['report','automail','chatbot'].includes(pageId)) {
+                alert('บัญชี Operation Staff ไม่มีสิทธิ์เข้าเมนูนี้');
+                return;
+            }
+            document.querySelectorAll('.page-section').forEach(section => section.classList.add('hidden'));
+            const target = document.getElementById('page-' + pageId);
+            if (target) target.classList.remove('hidden');
+            document.querySelectorAll('.sidebar-btn').forEach(btn => btn.classList.remove('bg-indigo-600','text-white'));
+            const sideBtn = document.getElementById('side-' + pageId);
+            if (sideBtn) sideBtn.classList.add('bg-indigo-600','text-white');
+            if (titles[pageId]) {
+                const desktop = document.getElementById('desktop-header-title');
+                const mobile = document.getElementById('mobile-header-title');
+                if (desktop) desktop.innerText = titles[pageId];
+                if (mobile) mobile.innerText = titles[pageId];
+            }
+            if (pageId === 'esign') { if (signaturePad) setTimeout(resizeCanvas, 100); loadEsignDepartments(); }
+            if (pageId === 'dashboard') loadDashboardStats();
+        }
+
+        function generateTracking() {
+            document.getElementById('keyin-tracking').value = 'NTL-' + Math.floor(100000 + Math.random() * 900000);
+        }
+
+        function setScannerStatus(message, type) {
+            const el = document.getElementById('scanner-status');
+            if (!el) return;
+            el.classList.remove('hidden','bg-cyan-50','text-cyan-800','border-cyan-100','bg-rose-50','text-rose-700','border-rose-100','bg-emerald-50','text-emerald-700','border-emerald-100');
+            if (type === 'error') el.classList.add('bg-rose-50','text-rose-700','border-rose-100');
+            else if (type === 'success') el.classList.add('bg-emerald-50','text-emerald-700','border-emerald-100');
+            else el.classList.add('bg-cyan-50','text-cyan-800','border-cyan-100');
+            el.textContent = message;
+        }
+
+        async function startParcelScanner() {
+            const panel = document.getElementById('scanner-panel');
+            const video = document.getElementById('parcel-scanner-video');
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.isSecureContext) {
+                setScannerStatus('เบราว์เซอร์ไม่อนุญาต Live Camera บนหน้านี้ กรุณาเปิดระบบผ่าน HTTPS หรือใช้ปุ่ม “ถ่าย / เลือกรูปเอกสาร” แทน', 'error');
+                document.getElementById('camera-file-input').click();
+                return;
+            }
+            try {
+                stopParcelScanner();
+                scannerStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+                    audio: false
+                });
+                video.srcObject = scannerStream;
+                panel.classList.remove('hidden');
+                setScannerStatus('กล้องพร้อมใช้งาน จัดหน้าพัสดุให้อยู่ในกรอบ แล้วกด “ถ่ายและอ่านข้อมูล”', 'info');
+                startLiveBarcodeDetection();
+            } catch (err) {
+                setScannerStatus('เปิดกล้องไม่สำเร็จ: ' + normalizeError(err) + ' — ตรวจสิทธิ์ Camera ของ Browser หรือใช้ปุ่มถ่าย/เลือกรูป', 'error');
+            }
+        }
+
+        function stopParcelScanner() {
+            if (scannerLoopTimer) { clearTimeout(scannerLoopTimer); scannerLoopTimer = null; }
+            if (scannerStream) {
+                scannerStream.getTracks().forEach(track => track.stop());
+                scannerStream = null;
+            }
+            const video = document.getElementById('parcel-scanner-video');
+            if (video) video.srcObject = null;
+            const panel = document.getElementById('scanner-panel');
+            if (panel) panel.classList.add('hidden');
+        }
+
+        async function startLiveBarcodeDetection() {
+            if (!('BarcodeDetector' in window)) return;
+            let detector;
+            try {
+                detector = new BarcodeDetector({ formats: ['code_128','code_39','ean_13','ean_8','qr_code','data_matrix','itf','codabar'] });
+            } catch (e) { return; }
+            const video = document.getElementById('parcel-scanner-video');
+            const loop = async () => {
+                if (!scannerStream || !video || video.readyState < 2) {
+                    scannerLoopTimer = setTimeout(loop, 500); return;
+                }
+                try {
+                    const codes = await detector.detect(video);
+                    if (codes && codes.length) applyDetectedTracking(codes[0].rawValue, 'Barcode');
+                } catch (e) {}
+                scannerLoopTimer = setTimeout(loop, 700);
+            };
+            loop();
+        }
+
+        async function captureScannerFrame() {
+            const video = document.getElementById('parcel-scanner-video');
+            if (!video || !video.videoWidth) { setScannerStatus('กล้องยังไม่พร้อม กรุณารอสักครู่', 'error'); return; }
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+            capturedImages.push(dataUrl);
+            renderImagePreviews();
+            await analyzeParcelImage(dataUrl);
+        }
+
+        async function handleImageCapture(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async e => {
+                capturedImages.push(e.target.result);
+                renderImagePreviews();
+                await analyzeParcelImage(e.target.result);
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        async function analyzeParcelImage(dataUrl) {
+            setScannerStatus('กำลังอ่าน Barcode และข้อความบนหน้าพัสดุ…', 'info');
+            let barcodeValue = '';
+            try {
+                barcodeValue = await scanBarcodeFromImage(dataUrl);
+                if (barcodeValue) applyDetectedTracking(barcodeValue, 'Barcode');
+            } catch (e) {}
+
+            let ocrText = '';
+            try {
+                if (window.Tesseract) {
+                    const result = await Tesseract.recognize(dataUrl, 'tha+eng', {
+                        logger: m => {
+                            if (m.status === 'recognizing text') setScannerStatus('กำลัง OCR ข้อความ ' + Math.round((m.progress || 0) * 100) + '%', 'info');
+                        }
+                    });
+                    ocrText = (result && result.data && result.data.text) ? result.data.text.trim() : '';
+                    latestOcrText = ocrText;
+                    applyOcrData(ocrText);
+                }
+            } catch (err) {
+                console.warn('OCR error', err);
+            }
+
+            if (barcodeValue || ocrText) setScannerStatus('อ่านข้อมูลจากหน้าพัสดุเรียบร้อย ตรวจสอบ Tracking และชื่อก่อนบันทึก', 'success');
+            else setScannerStatus('ยังอ่าน Barcode/ข้อความไม่ชัด กรุณาถ่ายใหม่ให้ตรง ไม่เบลอ และมีแสงเพียงพอ', 'error');
+        }
+
+        async function scanBarcodeFromImage(dataUrl) {
+            if ('BarcodeDetector' in window) {
+                try {
+                    const detector = new BarcodeDetector({ formats: ['code_128','code_39','ean_13','ean_8','qr_code','data_matrix','itf','codabar'] });
+                    const blob = await (await fetch(dataUrl)).blob();
+                    const bitmap = await createImageBitmap(blob);
+                    const codes = await detector.detect(bitmap);
+                    if (codes && codes.length) return codes[0].rawValue || '';
+                } catch (e) {}
+            }
+            if (window.ZXing) {
+                try {
+                    const reader = new ZXing.BrowserMultiFormatReader();
+                    const img = new Image();
+                    img.src = dataUrl;
+                    await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
+                    const result = await reader.decodeFromImageElement(img);
+                    return result ? result.getText() : '';
+                } catch (e) {}
+            }
+            return '';
+        }
+
+        function applyDetectedTracking(value, source) {
+            const raw = String(value || '').trim();
+            if (!raw) return;
+            const match = raw.match(/NTL[-\s]?\d{4,10}/i);
+            const tracking = match ? match[0].replace(/\s/g,'').replace(/^NTL(?=\d)/i,'NTL-').toUpperCase() : raw;
+            const input = document.getElementById('keyin-tracking');
+            if (input && (!input.value || source === 'Barcode')) input.value = tracking;
+            updateOcrSummary();
+        }
+
+        function applyOcrData(text) {
+            if (!text) return;
+            const trackingMatches = text.match(/NTL[-\s]?\d{4,10}/ig);
+            if (trackingMatches && trackingMatches.length) applyDetectedTracking(trackingMatches[0], 'OCR');
+
+            const lines = text.split(/\r?\n/).map(x => x.replace(/\s+/g,' ').trim()).filter(Boolean);
+            const bad = /(tracking|เลข|โทร|tel|address|ที่อยู่|ถนน|แขวง|เขต|ตำบล|อำเภอ|จังหวัด|postcode|รหัสไปรษณีย์|ผู้ส่ง|sender|ผู้รับ|recipient)/i;
+            const candidate = lines.find(line =>
+                !bad.test(line) &&
+                !/^\d[\d\s\-\/]+$/.test(line) &&
+                !/NTL[-\s]?\d/i.test(line) &&
+                ((line.match(/[ก-๙]/g)||[]).length >= 4 || (line.match(/[A-Za-z]/g)||[]).length >= 5) &&
+                line.split(' ').length >= 2 &&
+                line.length <= 80
+            );
+            const nameInput = document.getElementById('keyin-recipient-name');
+            if (candidate && nameInput && !nameInput.value.trim()) nameInput.value = candidate;
+            const raw = document.getElementById('ocr-raw-text');
+            if (raw) raw.textContent = text;
+            const box = document.getElementById('ocr-result-box');
+            if (box) box.classList.remove('hidden');
+            updateOcrSummary();
+        }
+
+        function updateOcrSummary() {
+            const summary = document.getElementById('ocr-summary');
+            if (!summary) return;
+            const tracking = document.getElementById('keyin-tracking')?.value || '-';
+            const name = document.getElementById('keyin-recipient-name')?.value || '-';
+            summary.textContent = `Tracking: ${tracking} • ชื่อ: ${name}`;
+        }
+
+        function toggleOcrRawText() {
+            document.getElementById('ocr-raw-text')?.classList.toggle('hidden');
+        }
+
+        function renderImagePreviews() {
+            const container = document.getElementById('image-preview-container');
+            if (!container) return;
+            container.innerHTML = '';
+            capturedImages.forEach((imgSrc, index) => {
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-slate-200 bg-white';
+                imgWrap.innerHTML = `<img src="${imgSrc}" class="w-full h-full object-cover"><button type="button" onclick="removeImage(${index})" class="absolute top-1 right-1 bg-rose-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[9px]"><i class="fa-solid fa-xmark"></i></button>`;
+                container.appendChild(imgWrap);
+            });
+            const count = document.getElementById('photo-count');
+            if (count) count.innerText = `${capturedImages.length} แนบแล้ว`;
+        }
+
+        function removeImage(index) { capturedImages.splice(index, 1); renderImagePreviews(); }
+
+        function submitKeyInForm() {
+            if (!requireGas()) return;
+            const audit = getAuditUser();
+            const payload = {
+                route: document.getElementById('keyin-route').value,
+                department: document.getElementById('keyin-dept').value,
+                recipientName: document.getElementById('keyin-recipient-name').value.trim(),
+                recipientEmail: document.getElementById('keyin-recipient-email').value.trim(),
+                qty: Number(document.getElementById('keyin-qty').value || 1),
+                trackingId: document.getElementById('keyin-tracking').value.trim(),
+                remarks: document.getElementById('keyin-remarks').value.trim(),
+                images: capturedImages,
+                status: 'Registered', createdBy: audit.username, createdByRole: audit.role,
+                authToken: getAuthToken()
+            };
+            if (!payload.route || !payload.department || !payload.trackingId) { alert('กรุณากรอก เส้นทาง, แผนก และ Tracking ให้ครบ'); return; }
+            if (payload.qty < 1) { alert('จำนวนพัสดุต้องไม่น้อยกว่า 1'); return; }
+            apiCall('saveKeyIn', payload)
+                .then(function(raw) {
+                    const res = normalizeResponse(raw, 'บันทึก KeyIn ไม่สำเร็จ');
+                    if (handleAuthFailure(res)) return;
+                    if (!res.success) { alert(res.message); return; }
+                    alert(res.message + (res.trackingId ? `
+Tracking: ${res.trackingId}` : ''));
+                    capturedImages = []; renderImagePreviews();
+                    clearForm(['keyin-route','keyin-dept','keyin-recipient-name','keyin-recipient-email','keyin-tracking','keyin-remarks']);
+                    document.getElementById('keyin-qty').value = 1;
+                    loadDashboardStats(); navigateTo('home');
+                })
+                .catch(function(err) {
+                    alert('บันทึก KeyIn ไม่สำเร็จ: ' + normalizeError(err));
+                });
+        }
+
+        function resizeCanvas() {
+            const canvas = document.getElementById('signature-pad');
+            if (!canvas || !signaturePad) return;
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio; canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext('2d').scale(ratio, ratio); signaturePad.clear();
+        }
+        function clearSignatureCanvas() { if (signaturePad) signaturePad.clear(); }
+
+        const NTL_DEPARTMENTS = ["ซองสัญญา", "นายหน้าประกันภัย", "ปฏิบัติการประกันภัย", "ทะเบียน", "บุคคล", "บัญชี", "BSCS", "BDSM", "CLD", "Audit", "Fraud", "CRD", "กำกับธุรกรรม", "Legal", "CAS", "MKT", "Falcon", "IT", "จัดซื้อ", "MD", "CS", "DB", "A&D", "HeyGoody"];
+
+        function renderEsignDepartmentOptions(counts) {
+            const select = document.getElementById('esign-department');
+            if (!select) return;
+
+            const selected = select.value || '';
+            const countMap = counts || {};
+
+            select.innerHTML =
+                '<option value="">-- เลือกแผนกผู้รับ --</option>' +
+                NTL_DEPARTMENTS.map(function(department) {
+                    const count = Number(countMap[department] || 0);
+                    const suffix = count > 0 ? ' — รอเซ็น ' + count + ' รายการ' : '';
+                    return '<option value="' + escapeHtml(department) + '">' +
+                        escapeHtml(department + suffix) +
+                        '</option>';
+                }).join('');
+
+            if (selected && NTL_DEPARTMENTS.includes(selected)) {
+                select.value = selected;
+            }
+        }
+
+        async function loadEsignDepartments() {
+            if (!requireGas() || !getAuthToken()) return;
+
+            // แสดง Master Department ทันที เพื่อไม่ให้ Dropdown ว่างแม้ API ช้าหรือไม่มีรายการวันนี้
+            renderEsignDepartmentOptions({});
+
+            const badge = document.getElementById('esign-pending-badge');
+            if (badge) badge.textContent = 'กำลังตรวจรายการจาก Key In…';
+
+            try {
+                const res = await apiCall('getPendingEsignDepartments', {
+                    authToken: getAuthToken()
+                });
+
+                if (handleAuthFailure(res)) return;
+
+                const items = (res && res.departments) || [];
+                const counts = {};
+                let total = 0;
+
+                items.forEach(function(item) {
+                    const department = String(item.department || '').trim();
+                    const count = Number(item.count || 0);
+                    if (department) counts[department] = count;
+                    total += count;
+                });
+
+                renderEsignDepartmentOptions(counts);
+
+                if (badge) {
+                    badge.textContent = 'รอรับ ' + total + ' รายการ';
+                }
+
+                esignPendingItems = [];
+                renderEsignParcels();
+
+            } catch (err) {
+                // Dropdown ยังใช้งานได้จาก Master list แม้โหลด count ไม่สำเร็จ
+                renderEsignDepartmentOptions({});
+                if (badge) badge.textContent = 'ตรวจรายการไม่สำเร็จ';
+                console.error('loadEsignDepartments:', err);
+            }
+        }
+
+        async function loadEsignParcels() {
+            const department = document.getElementById('esign-department')?.value || '';
+            if (!department) { esignPendingItems = []; renderEsignParcels(); return; }
+            const list = document.getElementById('esign-parcel-list');
+            if (list) list.innerHTML = '<div class="p-8 text-center text-xs text-slate-500"><i class="fa-solid fa-spinner fa-spin mr-1"></i>กำลังโหลดรายการ…</div>';
+            try {
+                const res = await apiCall('getPendingEsignByDepartment', { department, authToken: getAuthToken() });
+                if (handleAuthFailure(res)) return;
+                esignPendingItems = ((res && res.items) || []).map(x => ({...x, selected:true}));
+                renderEsignParcels();
+            } catch (err) {
+                if (list) list.innerHTML = `<div class="p-6 text-center text-xs text-rose-600">${escapeHtml(normalizeError(err))}</div>`;
+            }
+        }
+
+        function renderEsignParcels() {
+            const list = document.getElementById('esign-parcel-list');
+            const btn = document.getElementById('esign-save-btn');
+            const all = document.getElementById('esign-select-all');
+            if (!list) return;
+            if (!esignPendingItems.length) {
+                list.innerHTML = '<div class="text-center p-8 rounded-xl border border-dashed border-slate-200 bg-slate-50"><i class="fa-solid fa-box-open text-slate-300 text-2xl"></i><p class="text-xs text-slate-500 mt-2">ไม่มีรายการรอเซ็นรับในแผนกนี้สำหรับวันนี้</p></div>';
+                if (btn) btn.disabled = true;
+                return;
+            }
+            list.innerHTML = esignPendingItems.map((item,idx) => {
+                const image = item.imageUrls && item.imageUrls.length ? `<a href="${escapeHtml(item.imageUrls[0])}" target="_blank" class="w-14 h-14 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0"><i class="fa-regular fa-image"></i></a>` : '<div class="w-14 h-14 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-box"></i></div>';
+                return `<label class="flex gap-3 p-3 rounded-xl border ${item.selected?'border-purple-200 bg-purple-50/40':'border-slate-200 bg-white'} cursor-pointer">
+                    <input type="checkbox" ${item.selected?'checked':''} onchange="setEsignItemSelected(${idx},this.checked)" class="mt-1 w-4 h-4 accent-purple-600">
+                    ${image}
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center justify-between gap-1">
+                            <p class="text-sm font-black text-slate-800">${escapeHtml(item.trackingId)}</p>
+                            <span class="text-[10px] font-bold text-slate-500">${escapeHtml(item.route||'')}</span>
+                        </div>
+                        <p class="text-xs text-slate-700 mt-1"><i class="fa-regular fa-user w-4 text-slate-400"></i>${escapeHtml(item.recipientName||'-')}</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5"><i class="fa-regular fa-envelope w-4"></i>${escapeHtml(item.recipientEmail||'-')}</p>
+                        ${item.remarks?`<p class="text-[11px] text-slate-400 mt-1 truncate">หมายเหตุ: ${escapeHtml(item.remarks)}</p>`:''}
+                    </div>
+                </label>`;
+            }).join('');
+            const selectedCount = esignPendingItems.filter(x=>x.selected).length;
+            if (btn) { btn.disabled = selectedCount === 0; btn.innerHTML = `<i class="fa-solid fa-file-signature mr-1"></i> เซ็นรับ ${selectedCount} รายการที่เลือก`; }
+            if (all) all.checked = selectedCount === esignPendingItems.length;
+        }
+
+        function setEsignItemSelected(index, checked) {
+            if (esignPendingItems[index]) esignPendingItems[index].selected = checked;
+            renderEsignParcels();
+        }
+
+        function toggleEsignSelectAll(checked) {
+            esignPendingItems.forEach(x => x.selected = checked);
+            renderEsignParcels();
+        }
+
+        function escapeHtml(value) {
+            return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+        }
+
+        function saveEsignature() {
+            if (!requireGas()) return;
+            if (!signaturePad || signaturePad.isEmpty()) { alert('กรุณาเซ็นชื่อก่อนกดบันทึก'); return; }
+            const department = document.getElementById('esign-department')?.value || '';
+            const recipientName = document.getElementById('esign-recipient-name')?.value.trim() || '';
+            const trackingIds = esignPendingItems.filter(x=>x.selected).map(x=>x.trackingId);
+            if (!department) { alert('กรุณาเลือกแผนกผู้รับ'); return; }
+            if (!recipientName) { alert('กรุณากรอกชื่อผู้เซ็นรับ'); return; }
+            if (!trackingIds.length) { alert('กรุณาเลือกรายการพัสดุอย่างน้อย 1 รายการ'); return; }
+            const audit = getAuditUser();
+            const payload = {
+                department, trackingIds, recipientName,
+                signatureImage: signaturePad.toDataURL('image/png'),
+                status: 'Delivered',
+                signedBy: audit.username, signedByRole: audit.role,
+                authToken: getAuthToken()
+            };
+            apiCall('saveBatchEsignature', payload)
+                .then(function(raw) {
+                    const res = normalizeResponse(raw, 'บันทึก E-Sign ไม่สำเร็จ');
+                    if (handleAuthFailure(res)) return;
+                    if (!res.success) { alert(res.message); return; }
+                    alert(res.message || `เซ็นรับ ${trackingIds.length} รายการเรียบร้อยแล้ว`);
+                    document.getElementById('esign-recipient-name').value = '';
+                    clearSignatureCanvas();
+                    loadDashboardStats();
+                    loadEsignDepartments();
+                })
+                .catch(function(err) { alert('บันทึก E-Sign ไม่สำเร็จ: ' + normalizeError(err)); });
+        }
+
+        function searchTracking() {
+            if (!requireGas()) return;
+            const trackingId = document.getElementById('track-search-input').value.trim();
+            if (!trackingId) { alert('กรุณากรอกรหัส Tracking'); return; }
+            apiCall('searchTracking', {
+                trackingId: trackingId,
+                authToken: getAuthToken()
+            })
+                .then(function(res) {
+                    if (handleAuthFailure(res)) return;
+                    if (!res || res.success === false || res.found === false) {
+                        alert((res && res.message) || 'ไม่พบ Tracking นี้ในระบบ');
+                        return;
+                    }
+                    renderTrackResult(res);
+                })
+                .catch(function(err) {
+                    alert('ค้นหาไม่สำเร็จ: ' + normalizeError(err));
+                });
+        }
+
+        function renderTrackResult(res) {
+            const result = document.getElementById('track-result');
+            const tracking = document.getElementById('result-tracking-id');
+            if (tracking) tracking.innerText = res.trackingId || 'N/A';
+            if (result) result.classList.remove('hidden');
+        }
+
+        function submitReturnForm() {
+            if (!requireGas()) return;
+            const audit = getAuditUser();
+            const payload = {
+                trackingId: document.getElementById('return-tracking').value.trim(),
+                type: document.getElementById('return-type').value,
+                reason: document.getElementById('return-reason').value,
+                remarks: document.getElementById('return-remarks').value.trim(),
+                status: 'Returned', createdBy: audit.username, createdByRole: audit.role, authToken: getAuthToken()
+            };
+            if (!payload.trackingId) { alert('กรุณาระบุหมายเลข Tracking ที่ต้องการตีกลับ'); return; }
+            apiCall('saveReturn', payload)
+                .then(function(raw) {
+                    const res = normalizeResponse(raw, 'บันทึก Return ไม่สำเร็จ');
+                    if (handleAuthFailure(res)) return;
+                    if (!res.success) { alert(res.message); return; }
+                    alert(res.message);
+                    clearForm(['return-tracking','return-remarks']);
+                    loadDashboardStats(); navigateTo('home');
+                })
+                .catch(function(err) {
+                    alert('บันทึก Return ไม่สำเร็จ: ' + normalizeError(err));
+                });
+        }
+
+        function loadDashboardStats() {
+            if (!requireGas() || !getAuthToken()) return;
+            apiCall('getDashboardStats', { authToken: getAuthToken() })
+                .then(function(stats) {
+                    if (handleAuthFailure(stats)) return;
+                    if (!stats || stats.success === false) return;
+                    const set=(id,value)=>{const el=document.getElementById(id);if(el)el.innerText=value??'-';};
+                    set('stat-total',stats.total);
+                    set('stat-today',stats.today);
+                    set('stat-success',stats.successCount ?? stats.success);
+                    set('stat-return',stats.returned ?? stats.return);
+                })
+                .catch(function(err) {
+                    console.error('Dashboard error:', normalizeError(err));
+                });
+        }
+
+        function setReportRange(range) {
+            currentReportRange = range;
+            document.querySelectorAll('.report-range-btn').forEach(btn => { btn.classList.remove('bg-sky-600','text-white'); btn.classList.add('bg-slate-50','text-slate-600'); });
+            const activeBtn=document.getElementById('report-btn-'+range); if(activeBtn){activeBtn.classList.remove('bg-slate-50','text-slate-600');activeBtn.classList.add('bg-sky-600','text-white');}
+            const label=document.getElementById('report-range-label'); const labels={daily:'รายงานรายวัน',monthly:'รายงานรายเดือน',dept:'รายงานรายแผนก'};
+            if(label) label.innerText='กำลังแสดง: '+(labels[range]||range);
+        }
+
+        function exportReport() {
+            if (!requireGas()) return;
+            apiCall('exportReportData', {
+                range: currentReportRange,
+                authToken: getAuthToken()
+            })
+                .then(function(res) {
+                    if (handleAuthFailure(res)) return;
+                    const fileUrl=typeof res==='string'?res:res&&(res.url||res.fileUrl);
+                    if(fileUrl) window.open(fileUrl,'_blank');
+                    else alert((res&&res.message)||'Export ไม่สำเร็จ');
+                })
+                .catch(function(err) {
+                    alert('Export ไม่สำเร็จ: '+normalizeError(err));
+                });
+        }
+
+        let autoMailEnabled = true;
+        function toggleAutoMail() {
+            autoMailEnabled=!autoMailEnabled; const toggle=document.getElementById('automail-toggle'); const dot=document.getElementById('automail-toggle-dot'); if(!toggle||!dot)return;
+            if(autoMailEnabled){toggle.classList.remove('bg-slate-300');toggle.classList.add('bg-emerald-500');dot.classList.add('translate-x-6');}
+            else{toggle.classList.add('bg-slate-300');toggle.classList.remove('bg-emerald-500');dot.classList.remove('translate-x-6');}
+        }
+
+        function sendTestAutoMail() {
+            if (!requireGas()) return;
+            const tracking=document.getElementById('mail-preview-tracking').innerText.trim(); const recipient=document.getElementById('mail-preview-to').innerText.trim();
+            if(!tracking||!recipient){alert('ไม่มี Tracking หรืออีเมลผู้รับสำหรับทดสอบ');return;}
+            apiCall('sendAutoMail', {
+                trackingId: tracking,
+                status: 'Delivered',
+                recipientEmail: recipient,
+                authToken: getAuthToken()
+            })
+                .then(function(raw) {
+                    const res=normalizeResponse(raw,'ส่งอีเมลไม่สำเร็จ');
+                    if(handleAuthFailure(res))return;
+                    alert(res.message);
+                })
+                .catch(function(err) {
+                    alert('ส่งอีเมลไม่สำเร็จ: '+normalizeError(err));
+                });
+        }
+
+        function appendChatMessage(sender,text) {
+            const container=document.getElementById('chatbot-messages'); if(!container)return;
+            const wrap=document.createElement('div'); const safeText=String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+            if(sender==='bot'){wrap.className='flex items-start gap-2.5';wrap.innerHTML=`<div class="w-8 h-8 bg-cyan-600 text-white rounded-full flex items-center justify-center text-xs flex-shrink-0"><i class="fa-solid fa-robot"></i></div><div class="bg-white border border-slate-200 rounded-2xl rounded-tl-sm px-4 py-2.5 text-xs text-slate-700 max-w-[75%] shadow-sm">${safeText}</div>`;}
+            else{wrap.className='flex items-start gap-2.5 justify-end';wrap.innerHTML=`<div class="bg-cyan-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-xs max-w-[75%] shadow-sm">${safeText}</div>`;}
+            container.appendChild(wrap); container.scrollTop=container.scrollHeight;
+        }
+
+        function chatQuickAction(action) {
+            if(action==='status'){appendChatMessage('user','ตรวจสอบสถานะเอกสาร');appendChatMessage('bot','กรุณาระบุหมายเลข Tracking Number ที่ต้องการตรวจสอบค่ะ เช่น NTL-895671');}
+            else if(action==='track'){appendChatMessage('user','ค้นหาด้วย Tracking Number');appendChatMessage('bot','พิมพ์หมายเลข Tracking ในช่องด้านล่างได้เลยค่ะ ระบบจะค้นหาสถานะให้ทันที');}
+            else if(action==='proof'){appendChatMessage('user','ดาวน์โหลดหลักฐานการรับ');appendChatMessage('bot','กรุณาระบุหมายเลข Tracking ที่ต้องการตรวจสอบหลักฐานการเซ็นรับค่ะ');}
+        }
+
+        function sendChatMessage() {
+            if (!requireGas()) return;
+            const input=document.getElementById('chatbot-input'); if(!input)return; const msg=input.value.trim(); if(!msg)return;
+            appendChatMessage('user',msg); input.value='';
+            apiCall('chatBotReply', {
+                message: msg,
+                authToken: getAuthToken()
+            })
+                .then(function(reply) {
+                    if(reply&&reply.code&&handleAuthFailure(reply))return;
+                    appendChatMessage('bot',typeof reply==='string'?reply:(reply&&reply.message)||'ไม่พบข้อมูล');
+                })
+                .catch(function() {
+                    appendChatMessage('bot','ขออภัยค่ะ ระบบขัดข้อง กรุณาลองใหม่อีกครั้ง');
+                });
+        }
+    </script>
+</body>
+</html>
