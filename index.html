@@ -274,11 +274,11 @@
                 <button onclick="navigateTo('keyin')" id="side-keyin" class="sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
                     <i class="fa-solid fa-keyboard w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> นำเข้าเอกสาร (Key In)
                 </button>
-                <button onclick="navigateTo('track')" id="side-track" class="sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
-                    <i class="fa-solid fa-map-location-dot w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> ติดตามสถานะ (Track)
-                </button>
                 <button onclick="navigateTo('esign')" id="side-esign" class="sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
                     <i class="fa-solid fa-file-signature w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> ลายเซ็นดิจิทัล (E-Sign)
+                </button>
+                <button onclick="navigateTo('track')" id="side-track" class="sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
+                    <i class="fa-solid fa-map-location-dot w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> ติดตามสถานะ (Track)
                 </button>
                 <button onclick="navigateTo('return')" id="side-return" class="sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
                     <i class="fa-solid fa-rotate-left w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> เอกสารตีกลับ (Return)
@@ -797,7 +797,7 @@
                                     <option value="A&D">A&D</option>
                                     <option value="HeyGoody">HeyGoody</option>
                                 </select>
-                                <p class="text-[11px] text-slate-400 mt-1.5">จำนวนรายการรอเซ็นจะดึงจาก Key In ของวันนี้โดยอัตโนมัติ</p>
+                                <p class="text-[11px] text-slate-400 mt-1.5">จำนวนรายการรอเซ็นจะ Sync จาก Key In ที่ยังไม่ปิดงานโดยอัตโนมัติ</p>
                             </div>
 
                             <div>
@@ -819,7 +819,7 @@
                         <div class="lg:col-span-2">
                             <div class="flex items-center justify-between gap-3 mb-3">
                                 <div>
-                                    <p class="text-xs font-bold text-slate-700">รายการพัสดุรอเซ็นรับวันนี้</p>
+                                    <p class="text-xs font-bold text-slate-700">รายการพัสดุรอเซ็นรับ</p>
                                     <p class="text-[11px] text-slate-400">Tracking และข้อมูลหน้าพัสดุดึงจาก Key In โดยตรง</p>
                                 </div>
                                 <label class="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer">
@@ -1026,13 +1026,13 @@
             <i class="fa-solid fa-keyboard text-base"></i>
             <span class="text-[10px]">Key In</span>
         </button>
-        <button onclick="navigateTo('track')" class="flex flex-col items-center gap-1 hover:text-white cursor-pointer">
-            <i class="fa-solid fa-map-location-dot text-base"></i>
-            <span class="text-[10px]">Track</span>
-        </button>
         <button onclick="navigateTo('esign')" class="flex flex-col items-center gap-1 hover:text-white cursor-pointer">
             <i class="fa-solid fa-file-signature text-base"></i>
             <span class="text-[10px]">E-Sign</span>
+        </button>
+        <button onclick="navigateTo('track')" class="flex flex-col items-center gap-1 hover:text-white cursor-pointer">
+            <i class="fa-solid fa-map-location-dot text-base"></i>
+            <span class="text-[10px]">Track</span>
         </button>
         <button onclick="navigateTo('operations')" class="flex flex-col items-center gap-1 hover:text-white cursor-pointer"><i class="fa-solid fa-route text-base"></i><span class="text-[10px]">Ops</span></button>
     </nav>
@@ -1062,6 +1062,8 @@
         let scanProgressCount = 0;
         let scanProgressLastAt = 0;
         let esignPendingItems = [];
+        let esignQueueAllItems = [];
+        let esignQueueLoadedAt = 0;
         let currentReportRange = 'monthly';
         let currentUser = null;
 
@@ -3352,48 +3354,53 @@
                 report: false
             };
 
-            // Track
             try {
                 const trackRes = await apiCall('searchTracking', {
                     trackingId: trackingId,
                     authToken: getAuthToken()
                 });
-                results.track = !!(trackRes && trackRes.success && trackRes.found !== false);
-            } catch (e) {}
-
-            // E-Sign: verify the exact tracking appears in the pending department query.
-            try {
-                const esignRes = await apiCall('getPendingEsignByDepartment', {
-                    department: department,
-                    authToken: getAuthToken()
-                });
-                results.esign = !!(
-                    esignRes &&
-                    esignRes.success &&
-                    Array.isArray(esignRes.items) &&
-                    esignRes.items.some(item => String(item.trackingId || '') === String(trackingId || ''))
+                results.track = !!(
+                    trackRes &&
+                    trackRes.success &&
+                    trackRes.found !== false &&
+                    String(trackRes.trackingId || '') === String(trackingId || '')
                 );
             } catch (e) {}
 
-            // Operations
+            // Exact E-Sign queue verification from the same API used by the page.
+            try {
+                const queueRes = await apiCall('getEsignQueue', {
+                    authToken: getAuthToken()
+                });
+
+                if (queueRes && queueRes.success && Array.isArray(queueRes.items)) {
+                    esignQueueAllItems = queueRes.items;
+                    esignQueueLoadedAt = Date.now();
+
+                    results.esign = queueRes.items.some(function(item) {
+                        return (
+                            String(item.trackingId || '') === String(trackingId || '') &&
+                            String(item.department || '').trim() === String(department || '').trim()
+                        );
+                    });
+                }
+            } catch (e) {}
+
             try {
                 const opsRes = await apiCall('getOperationsSummary', {
                     authToken: getAuthToken()
                 });
+
                 results.operations = !!(
                     opsRes &&
                     opsRes.success &&
                     (
-                        (opsRes.pendingItems || []).some(item => String(item.trackingId || '') === String(trackingId || '')) ||
+                        (opsRes.pendingItems || []).some(function(item) {
+                            return String(item.trackingId || '') === String(trackingId || '');
+                        }) ||
                         Number(opsRes.received || 0) > 0
                     )
                 );
-                renderOperationsPending(opsRes?.pendingItems || []);
-            } catch (e) {}
-
-            // Refresh visible/cache state.
-            try {
-                await loadEsignDepartments();
             } catch (e) {}
 
             try {
@@ -3401,13 +3408,17 @@
                 results.dashboard = true;
             } catch (e) {}
 
-            // Report reads KeyIn directly. Backend snapshot verifies the row is report-ready.
             try {
                 const snapshot = await apiCall('getKeyInWorkflowSnapshot', {
                     trackingId: trackingId,
                     authToken: getAuthToken()
                 });
-                results.report = !!(snapshot && snapshot.sync && snapshot.sync.reportReady);
+
+                results.report = !!(
+                    snapshot &&
+                    snapshot.sync &&
+                    snapshot.sync.reportReady
+                );
             } catch (e) {}
 
             return results;
@@ -3588,12 +3599,18 @@
             const select = document.getElementById('esign-department');
             if (!select) return;
 
-            const selected = select.value || '';
+            const previous = select.value || '';
             const countMap = counts || {};
+
+            const departments = Array.from(new Set(
+                NTL_DEPARTMENTS.concat(
+                    Object.keys(countMap).filter(Boolean)
+                )
+            ));
 
             select.innerHTML =
                 '<option value="">-- เลือกแผนกผู้รับ --</option>' +
-                NTL_DEPARTMENTS.map(function(department) {
+                departments.map(function(department) {
                     const count = Number(countMap[department] || 0);
                     const suffix = count > 0 ? ' — รอเซ็น ' + count + ' รายการ' : '';
                     return '<option value="' + escapeHtml(department) + '">' +
@@ -3601,75 +3618,119 @@
                         '</option>';
                 }).join('');
 
-            if (selected && NTL_DEPARTMENTS.includes(selected)) {
-                select.value = selected;
-            } else if (latestSavedDepartment && NTL_DEPARTMENTS.includes(latestSavedDepartment)) {
-                select.value = latestSavedDepartment;
+            let preferred = '';
+
+            if (latestSavedDepartment && Number(countMap[latestSavedDepartment] || 0) > 0) {
+                preferred = latestSavedDepartment;
+            } else if (previous && Number(countMap[previous] || 0) > 0) {
+                preferred = previous;
+            } else {
+                preferred = departments.find(function(department) {
+                    return Number(countMap[department] || 0) > 0;
+                }) || '';
+            }
+
+            if (preferred) {
+                select.value = preferred;
             }
         }
 
-        async function loadEsignDepartments() {
+        function buildEsignDepartmentCounts(items) {
+            const counts = {};
+
+            NTL_DEPARTMENTS.forEach(function(department) {
+                counts[department] = 0;
+            });
+
+            (items || []).forEach(function(item) {
+                const department = String(item.department || '').trim();
+                if (!department) return;
+                if (counts[department] == null) counts[department] = 0;
+                counts[department]++;
+            });
+
+            return counts;
+        }
+
+        async function loadEsignDepartments(forceRefresh) {
             if (!requireGas() || !getAuthToken()) return;
 
-            // แสดง Master Department ทันที เพื่อไม่ให้ Dropdown ว่างแม้ API ช้าหรือไม่มีรายการวันนี้
-            renderEsignDepartmentOptions({});
-
             const badge = document.getElementById('esign-pending-badge');
-            if (badge) badge.textContent = 'กำลังตรวจรายการจาก Key In…';
+            const list = document.getElementById('esign-parcel-list');
+
+            if (badge) badge.textContent = 'กำลังดึงรายการทั้งหมดจาก Key In…';
+            if (list) {
+                list.innerHTML =
+                    '<div class="p-8 text-center text-xs text-slate-500">' +
+                    '<i class="fa-solid fa-spinner fa-spin mr-1"></i>กำลัง Sync รายการ Key In → E-Sign…' +
+                    '</div>';
+            }
 
             try {
-                const res = await apiCall('getPendingEsignDepartments', {
+                // One request only: KeyIn is the Single Source of Truth.
+                const res = await apiCall('getEsignQueue', {
                     authToken: getAuthToken()
                 });
 
                 if (handleAuthFailure(res)) return;
 
-                const items = (res && res.departments) || [];
-                const counts = {};
-                let total = 0;
+                if (!res || res.success === false) {
+                    throw new Error((res && res.message) || 'โหลด E-Sign Queue ไม่สำเร็จ');
+                }
 
-                items.forEach(function(item) {
-                    const department = String(item.department || '').trim();
-                    const count = Number(item.count || 0);
-                    if (department) counts[department] = count;
-                    total += count;
-                });
+                esignQueueAllItems = Array.isArray(res.items) ? res.items : [];
+                esignQueueLoadedAt = Date.now();
 
+                const counts = buildEsignDepartmentCounts(esignQueueAllItems);
                 renderEsignDepartmentOptions(counts);
 
+                const total = esignQueueAllItems.length;
                 if (badge) {
-                    badge.textContent = 'รอรับ ' + total + ' รายการ';
+                    badge.textContent = total > 0
+                        ? 'รอรับ ' + total + ' รายการ'
+                        : 'ไม่มีรายการรอเซ็น';
                 }
 
-                esignPendingItems = [];
-                renderEsignParcels();
-
-                const selectedDepartment = document.getElementById('esign-department')?.value || '';
-                if (selectedDepartment) {
-                    await loadEsignParcels();
-                }
+                loadEsignParcels();
 
             } catch (err) {
-                // Dropdown ยังใช้งานได้จาก Master list แม้โหลด count ไม่สำเร็จ
-                renderEsignDepartmentOptions({});
-                if (badge) badge.textContent = 'ตรวจรายการไม่สำเร็จ';
                 console.error('loadEsignDepartments:', err);
+
+                // Never silently show an empty queue when the API actually failed.
+                if (badge) badge.textContent = 'Sync E-Sign ไม่สำเร็จ';
+
+                if (list) {
+                    list.innerHTML =
+                        '<div class="p-6 text-center rounded-xl border border-rose-100 bg-rose-50">' +
+                        '<i class="fa-solid fa-triangle-exclamation text-rose-500 text-xl"></i>' +
+                        '<p class="text-xs font-bold text-rose-700 mt-2">ไม่สามารถดึงรายการจาก Key In ได้</p>' +
+                        '<p class="text-[10px] text-rose-500 mt-1">' + escapeHtml(normalizeError(err)) + '</p>' +
+                        '<button type="button" onclick="loadEsignDepartments(true)" ' +
+                        'class="mt-3 px-4 py-2 rounded-lg bg-rose-600 text-white text-xs font-bold">ลอง Sync ใหม่</button>' +
+                        '</div>';
+                }
             }
         }
 
         async function loadEsignParcels() {
             const department = document.getElementById('esign-department')?.value || '';
-            if (!department) { esignPendingItems = []; renderEsignParcels(); return; }
-            const list = document.getElementById('esign-parcel-list');
-            if (list) list.innerHTML = '<div class="p-8 text-center text-xs text-slate-500"><i class="fa-solid fa-spinner fa-spin mr-1"></i>กำลังโหลดรายการ…</div>';
-            try {
-                const res = await apiCall('getPendingEsignByDepartment', { department, authToken: getAuthToken() });
-                if (handleAuthFailure(res)) return;
-                esignPendingItems = ((res && res.items) || []).map(x => ({...x, selected:true}));
+
+            if (!department) {
+                esignPendingItems = [];
                 renderEsignParcels();
-            } catch (err) {
-                if (list) list.innerHTML = `<div class="p-6 text-center text-xs text-rose-600">${escapeHtml(normalizeError(err))}</div>`;
+                return;
             }
+
+            // No second API call. Filter the already-synced KeyIn queue locally.
+            esignPendingItems = esignQueueAllItems
+                .filter(function(item) {
+                    return String(item.department || '').trim() === department;
+                })
+                .map(function(item) {
+                    return { ...item, selected: true };
+                });
+
+            renderEsignParcels();
         }
 
         function renderEsignParcels() {
@@ -3677,30 +3738,79 @@
             const btn = document.getElementById('esign-save-btn');
             const all = document.getElementById('esign-select-all');
             if (!list) return;
-            if (!esignPendingItems.length) {
-                list.innerHTML = '<div class="text-center p-8 rounded-xl border border-dashed border-slate-200 bg-slate-50"><i class="fa-solid fa-box-open text-slate-300 text-2xl"></i><p class="text-xs text-slate-500 mt-2">ไม่มีรายการรอเซ็นรับในแผนกนี้สำหรับวันนี้</p></div>';
+
+            const department = document.getElementById('esign-department')?.value || '';
+
+            if (!department) {
+                list.innerHTML =
+                    '<div class="text-center p-8 rounded-xl border border-dashed border-slate-200 bg-slate-50">' +
+                    '<i class="fa-solid fa-layer-group text-slate-300 text-2xl"></i>' +
+                    '<p class="text-xs font-bold text-slate-600 mt-2">เลือกรายการตามแผนกผู้รับ</p>' +
+                    '<p class="text-[10px] text-slate-400 mt-1">ระบบ Sync งานที่บันทึกจาก Key In มาไว้ในหน้านี้แล้ว</p>' +
+                    '</div>';
                 if (btn) btn.disabled = true;
                 return;
             }
-            list.innerHTML = esignPendingItems.map((item,idx) => {
-                const image = item.imageUrls && item.imageUrls.length ? `<a href="${escapeHtml(item.imageUrls[0])}" target="_blank" class="w-14 h-14 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0"><i class="fa-regular fa-image"></i></a>` : '<div class="w-14 h-14 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-box"></i></div>';
-                return `<label class="flex gap-3 p-3 rounded-xl border ${item.selected?'border-purple-200 bg-purple-50/40':'border-slate-200 bg-white'} cursor-pointer">
-                    <input type="checkbox" ${item.selected?'checked':''} onchange="setEsignItemSelected(${idx},this.checked)" class="mt-1 w-4 h-4 accent-purple-600">
-                    ${image}
-                    <div class="min-w-0 flex-1">
-                        <div class="flex flex-wrap items-center justify-between gap-1">
-                            <p class="text-sm font-black text-slate-800">${escapeHtml(item.trackingId)}</p>
-                            <span class="text-[10px] font-bold text-slate-500">${escapeHtml(item.route||'')}</span>
-                        </div>
-                        <p class="text-xs text-slate-700 mt-1"><i class="fa-regular fa-user w-4 text-slate-400"></i>${escapeHtml(item.recipientName||'-')}</p>
-                        <p class="text-[11px] text-slate-500 mt-0.5"><i class="fa-regular fa-envelope w-4"></i>${escapeHtml(item.recipientEmail||'-')}</p>
-                        ${item.remarks?`<p class="text-[11px] text-slate-400 mt-1 truncate">หมายเหตุ: ${escapeHtml(item.remarks)}</p>`:''}
-                    </div>
-                </label>`;
+
+            if (!esignPendingItems.length) {
+                list.innerHTML =
+                    '<div class="text-center p-8 rounded-xl border border-dashed border-slate-200 bg-slate-50">' +
+                    '<i class="fa-solid fa-box-open text-slate-300 text-2xl"></i>' +
+                    '<p class="text-xs text-slate-500 mt-2">ไม่มีรายการที่อยู่ในสถานะรอเซ็นรับในแผนกนี้</p>' +
+                    '</div>';
+                if (btn) btn.disabled = true;
+                if (all) all.checked = false;
+                return;
+            }
+
+            list.innerHTML = esignPendingItems.map(function(item, idx) {
+                const image = item.imageUrls && item.imageUrls.length
+                    ? '<a href="' + escapeHtml(item.imageUrls[0]) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" ' +
+                      'class="w-14 h-14 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">' +
+                      '<i class="fa-regular fa-image"></i></a>'
+                    : '<div class="w-14 h-14 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center flex-shrink-0">' +
+                      '<i class="fa-solid fa-box"></i></div>';
+
+                return '<label class="flex gap-3 p-3 rounded-xl border ' +
+                    (item.selected ? 'border-purple-200 bg-purple-50/40' : 'border-slate-200 bg-white') +
+                    ' cursor-pointer">' +
+                    '<input type="checkbox" ' + (item.selected ? 'checked' : '') +
+                    ' onchange="setEsignItemSelected(' + idx + ',this.checked)" class="mt-1 w-4 h-4 accent-purple-600">' +
+                    image +
+                    '<div class="min-w-0 flex-1">' +
+                        '<div class="flex flex-wrap items-center justify-between gap-1">' +
+                            '<p class="text-sm font-black text-slate-800 break-all">' + escapeHtml(item.trackingId) + '</p>' +
+                            '<span class="text-[10px] font-bold text-slate-500">' + escapeHtml(item.route || '') + '</span>' +
+                        '</div>' +
+                        '<p class="text-xs text-slate-700 mt-1"><i class="fa-regular fa-user w-4 text-slate-400"></i>' +
+                            escapeHtml(item.recipientName || '-') + '</p>' +
+                        '<p class="text-[11px] text-slate-500 mt-0.5"><i class="fa-solid fa-building-user w-4"></i>' +
+                            escapeHtml(item.department || '-') + '</p>' +
+                        '<p class="text-[11px] text-slate-500 mt-0.5"><i class="fa-regular fa-envelope w-4"></i>' +
+                            escapeHtml(item.recipientEmail || '-') + '</p>' +
+                        (item.remarks
+                            ? '<p class="text-[11px] text-slate-400 mt-1 truncate">หมายเหตุ: ' + escapeHtml(item.remarks) + '</p>'
+                            : '') +
+                    '</div>' +
+                '</label>';
             }).join('');
-            const selectedCount = esignPendingItems.filter(x=>x.selected).length;
-            if (btn) { btn.disabled = selectedCount === 0; btn.innerHTML = `<i class="fa-solid fa-file-signature mr-1"></i> เซ็นรับ ${selectedCount} รายการที่เลือก`; }
-            if (all) all.checked = selectedCount === esignPendingItems.length;
+
+            const selectedCount = esignPendingItems.filter(function(item) {
+                return item.selected;
+            }).length;
+
+            if (btn) {
+                btn.disabled = selectedCount === 0;
+                btn.innerHTML =
+                    '<i class="fa-solid fa-file-signature mr-1"></i> เซ็นรับ ' +
+                    selectedCount + ' รายการที่เลือก';
+            }
+
+            if (all) {
+                all.checked =
+                    esignPendingItems.length > 0 &&
+                    selectedCount === esignPendingItems.length;
+            }
         }
 
         function setEsignItemSelected(index, checked) {
