@@ -10,7 +10,7 @@
     <!-- Signature Pad Library สำหรับ E-Sign -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <!-- Barcode + OCR libraries -->
-    <script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+    <script src="https://unpkg.com/@zxing/library@0.23.0/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -677,7 +677,12 @@
                                     <div class="relative aspect-video bg-black">
                                         <video id="parcel-scanner-video" autoplay playsinline muted class="w-full h-full object-cover"></video>
                                         <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
-                                            <div class="w-[82%] h-[42%] border-2 border-cyan-400 rounded-xl shadow-[0_0_0_9999px_rgba(0,0,0,.28)]"></div>
+                                            <div id="tracking-roi-guide" class="relative w-[86%] h-[34%] border-2 border-cyan-400 rounded-xl shadow-[0_0_0_9999px_rgba(0,0,0,.32)]">
+                                                <span class="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-black tracking-wide text-white bg-slate-950/75 px-3 py-1.5 rounded-full">
+                                                    วาง Barcode / Tracking ในกรอบ
+                                                </span>
+                                                <div class="absolute inset-x-4 top-1/2 h-[2px] bg-cyan-300/90 shadow-[0_0_12px_rgba(34,211,238,.9)]"></div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="p-3 flex flex-wrap gap-2 bg-slate-900">
@@ -846,7 +851,7 @@
                         <button onclick="searchTracking()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold text-sm hover:bg-emerald-700 transition cursor-pointer">ค้นหา</button>
                     </div>
 
-                    <div id="track-result" class="hidden border border-slate-100 rounded-2xl p-5 md:p-6 bg-slate-50">
+                    <div id="track-result" class="hidden border border-slate-100 rounded-2xl p-5 md:p-6 bg-slate-50 cursor-pointer hover:border-emerald-200 transition" onclick="handleTrackCardClick(event)">
                         <button type="button" onclick="toggleTrackDetails()" class="w-full text-left cursor-pointer" aria-expanded="true" id="track-result-toggle">
                             <div class="flex justify-between items-center gap-3 pb-4 border-b border-slate-200">
                                 <div class="min-w-0">
@@ -1045,6 +1050,12 @@
         let latestSmartCapture = null;
         let activeOcrTargetField = '';
         let ocrPickerSuppressUntil = 0;
+        let liveBarcodeLocked = false;
+        let liveBarcodeLastValue = '';
+        let liveBarcodeLastAt = 0;
+        let zxingLiveReader = null;
+        let latestSavedDepartment = '';
+        let latestSavedTracking = '';
         let trackingOcrWorker = null;
         let trackingOcrWorkerPromise = null;
         const SMART_DEPARTMENTS = ["ซองสัญญา","นายหน้าประกันภัย","ปฏิบัติการประกันภัย","ทะเบียน","บุคคล","บัญชี","BSCS","BDSM","CLD","Audit","Fraud","CRD","กำกับธุรกรรม","Legal","CAS","MKT","Falcon","IT","จัดซื้อ","MD","CS","DB","A&D","HeyGoody"];
@@ -1539,9 +1550,19 @@
                 if (desktop) desktop.innerText = titles[pageId];
                 if (mobile) mobile.innerText = titles[pageId];
             }
-            if (pageId === 'esign') { if (signaturePad) setTimeout(resizeCanvas, 100); loadEsignDepartments(); }
+            if (pageId === 'esign') {
+                if (signaturePad) setTimeout(resizeCanvas, 100);
+                loadEsignDepartments();
+            }
             if (pageId === 'dashboard') loadDashboardStats();
             if (pageId === 'operations') loadOperationsControl();
+
+            if (pageId === 'track' && latestSavedTracking) {
+                const trackInput = document.getElementById('track-search-input');
+                if (trackInput && !trackInput.value.trim()) {
+                    trackInput.value = latestSavedTracking;
+                }
+            }
         }
 
         function showSystemToast(message, type) {
@@ -1590,36 +1611,108 @@
         async function startParcelScanner() {
             const panel = document.getElementById('scanner-panel');
             const video = document.getElementById('parcel-scanner-video');
+
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.isSecureContext) {
-                setScannerStatus('เบราว์เซอร์ไม่อนุญาต Live Camera บนหน้านี้ กรุณาเปิดระบบผ่าน HTTPS หรือใช้ปุ่ม “ถ่าย / เลือกรูปเอกสาร” แทน', 'error');
+                setScannerStatus('เบราว์เซอร์ไม่อนุญาต Live Camera บนหน้านี้ กรุณาเปิดผ่าน HTTPS หรือใช้ปุ่มถ่าย/เลือกรูป', 'error');
                 document.getElementById('camera-file-input').click();
                 return;
             }
+
             try {
                 stopParcelScanner();
+                liveBarcodeLocked = false;
+                liveBarcodeLastValue = '';
+
                 scannerStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+                    video: {
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: 2560 },
+                        height: { ideal: 1440 },
+                        frameRate: { ideal: 30 }
+                    },
                     audio: false
                 });
+
                 video.srcObject = scannerStream;
+                await video.play().catch(function(){});
                 panel.classList.remove('hidden');
-                setScannerStatus('กล้องพร้อมใช้งาน จัดหน้าพัสดุให้อยู่ในกรอบ แล้วกด “ถ่ายและอ่านข้อมูล”', 'info');
+
+                // Apply advanced camera capabilities only when the browser/device supports them.
+                try {
+                    const track = scannerStream.getVideoTracks()[0];
+                    if (track && typeof track.getCapabilities === 'function') {
+                        const caps = track.getCapabilities() || {};
+                        const advanced = {};
+
+                        if (Array.isArray(caps.focusMode) && caps.focusMode.includes('continuous')) {
+                            advanced.focusMode = 'continuous';
+                        }
+
+                        if (caps.zoom && typeof caps.zoom.min === 'number') {
+                            const targetZoom = Math.min(
+                                Number(caps.zoom.max || caps.zoom.min),
+                                Math.max(Number(caps.zoom.min), 1.15)
+                            );
+                            advanced.zoom = targetZoom;
+                        }
+
+                        if (Object.keys(advanced).length) {
+                            await track.applyConstraints({ advanced: [advanced] });
+                        }
+                    }
+                } catch (cameraConstraintError) {
+                    console.warn('Advanced camera constraints unavailable', cameraConstraintError);
+                }
+
+                setScannerStatus(
+                    'กำลังค้นหา Barcode / Tracking อัตโนมัติ… วาง Barcode ให้อยู่กลางกรอบ',
+                    'info'
+                );
+
                 startLiveBarcodeDetection();
+
             } catch (err) {
-                setScannerStatus('เปิดกล้องไม่สำเร็จ: ' + normalizeError(err) + ' — ตรวจสิทธิ์ Camera ของ Browser หรือใช้ปุ่มถ่าย/เลือกรูป', 'error');
+                setScannerStatus(
+                    'เปิดกล้องไม่สำเร็จ: ' + normalizeError(err) + ' — ตรวจสิทธิ์ Camera หรือใช้ปุ่มถ่าย/เลือกรูป',
+                    'error'
+                );
+            }
+        }
+
+        function stopLiveBarcodeDetection() {
+            if (scannerLoopTimer) {
+                clearTimeout(scannerLoopTimer);
+                scannerLoopTimer = null;
+            }
+
+            if (zxingLiveReader) {
+                try {
+                    if (typeof zxingLiveReader.stopContinuousDecode === 'function') {
+                        zxingLiveReader.stopContinuousDecode();
+                    }
+                    if (typeof zxingLiveReader.reset === 'function') {
+                        zxingLiveReader.reset();
+                    }
+                } catch (e) {}
+                zxingLiveReader = null;
             }
         }
 
         function stopParcelScanner() {
-            if (scannerLoopTimer) { clearTimeout(scannerLoopTimer); scannerLoopTimer = null; }
+            stopLiveBarcodeDetection();
+
             if (scannerStream) {
                 scannerStream.getTracks().forEach(track => track.stop());
                 scannerStream = null;
             }
+
             const video = document.getElementById('parcel-scanner-video');
             if (video) video.srcObject = null;
+
             const panel = document.getElementById('scanner-panel');
             if (panel) panel.classList.add('hidden');
+
+            liveBarcodeLocked = false;
         }
 
         async function createBarcodeDetector() {
@@ -1645,22 +1738,164 @@
             }
         }
 
-        async function startLiveBarcodeDetection() {
-            if (!('BarcodeDetector' in window)) return;
-            const detector = await createBarcodeDetector();
-            if (!detector) return;
-            const video = document.getElementById('parcel-scanner-video');
-            const loop = async () => {
-                if (!scannerStream || !video || video.readyState < 2) {
-                    scannerLoopTimer = setTimeout(loop, 500); return;
-                }
-                try {
-                    const codes = await detector.detect(video);
-                    if (codes && codes.length) applyDetectedTracking(codes[0].rawValue, 'Barcode');
-                } catch (e) {}
-                scannerLoopTimer = setTimeout(loop, 700);
+        function captureTrackingRoiCanvas(video) {
+            if (!video || !video.videoWidth || !video.videoHeight) return null;
+
+            // Match the visual ROI: center 86% width x 34% height.
+            const roiW = Math.round(video.videoWidth * 0.86);
+            const roiH = Math.round(video.videoHeight * 0.34);
+            const sx = Math.round((video.videoWidth - roiW) / 2);
+            const sy = Math.round((video.videoHeight - roiH) / 2);
+
+            const canvas = document.createElement('canvas');
+
+            // Preserve ROI detail instead of shrinking the whole camera frame.
+            const upscale = roiW < 1500 ? Math.min(1.8, 1500 / Math.max(1, roiW)) : 1;
+            canvas.width = Math.round(roiW * upscale);
+            canvas.height = Math.round(roiH * upscale);
+
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(
+                video,
+                sx, sy, roiW, roiH,
+                0, 0, canvas.width, canvas.height
+            );
+
+            return canvas;
+        }
+
+        function acceptLiveTracking(rawValue, source) {
+            const value = normalizeTrackingOcrValue(rawValue);
+            const candidate = {
+                value: value,
+                source: source || 'Barcode',
+                score: source === 'Barcode' ? 99 : 86
             };
+
+            if (!isValidTrackingCandidate(candidate)) return false;
+
+            const now = Date.now();
+            if (value === liveBarcodeLastValue && now - liveBarcodeLastAt < 800) {
+                return false;
+            }
+
+            liveBarcodeLastValue = value;
+            liveBarcodeLastAt = now;
+            liveBarcodeLocked = true;
+
+            applyDetectedTracking(value, source || 'Barcode');
+
+            const input = document.getElementById('keyin-tracking');
+            if (input) {
+                input.dataset.source = source || 'Barcode';
+                setFieldSmartState('keyin-tracking', 99);
+            }
+
+            stopLiveBarcodeDetection();
+
+            if (navigator.vibrate) navigator.vibrate([70, 40, 100]);
+
+            setScannerStatus(
+                'Tracking detected: ' + value + ' • จับเลขสำเร็จแล้ว กด “ถ่ายและอ่านข้อมูล” เพื่ออ่านชื่อ/ที่อยู่',
+                'success'
+            );
+
+            showSystemToast('Tracking detected • ' + value, 'success');
+            return true;
+        }
+
+        async function startNativeBarcodeLoop(video, detector) {
+            const loop = async function() {
+                if (!scannerStream || liveBarcodeLocked) return;
+
+                if (!video || video.readyState < 2 || !video.videoWidth) {
+                    scannerLoopTimer = setTimeout(loop, 300);
+                    return;
+                }
+
+                try {
+                    const roi = captureTrackingRoiCanvas(video);
+                    if (roi) {
+                        const codes = await detector.detect(roi);
+
+                        if (codes && codes.length) {
+                            const valid = codes
+                                .map(code => ({
+                                    value: String(code.rawValue || '').trim(),
+                                    format: code.format || ''
+                                }))
+                                .filter(item => isValidTrackingCandidate({ value: item.value }))
+                                .sort((a,b) => b.value.length - a.value.length);
+
+                            if (valid.length && acceptLiveTracking(valid[0].value, 'Barcode')) {
+                                return;
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Native barcode live scan', err);
+                }
+
+                scannerLoopTimer = setTimeout(loop, 320);
+            };
+
             loop();
+        }
+
+        async function startZxingLiveLoop(video) {
+            if (!window.ZXing || liveBarcodeLocked) return false;
+
+            try {
+                zxingLiveReader = new ZXing.BrowserMultiFormatReader();
+
+                await zxingLiveReader.decodeFromVideoElementContinuously(
+                    video,
+                    function(result, error) {
+                        if (!scannerStream || liveBarcodeLocked) return;
+
+                        if (result) {
+                            const value = typeof result.getText === 'function'
+                                ? result.getText()
+                                : String(result.text || '');
+
+                            acceptLiveTracking(value, 'Barcode');
+                        }
+                    }
+                );
+
+                return true;
+            } catch (err) {
+                console.warn('ZXing live scan unavailable', err);
+                zxingLiveReader = null;
+                return false;
+            }
+        }
+
+        async function startLiveBarcodeDetection() {
+            const video = document.getElementById('parcel-scanner-video');
+            if (!video) return;
+
+            liveBarcodeLocked = false;
+
+            // Native BarcodeDetector is preferred because we can decode only the high-resolution ROI.
+            const detector = await createBarcodeDetector();
+
+            if (detector) {
+                startNativeBarcodeLoop(video, detector);
+                return;
+            }
+
+            // Safari/iOS fallback: ZXing continuously decodes the live video stream.
+            const started = await startZxingLiveLoop(video);
+
+            if (!started) {
+                setScannerStatus(
+                    'Live Barcode ยังไม่รองรับใน Browser นี้ • จัด Barcode ในกรอบแล้วกด “ถ่ายและอ่านข้อมูล”',
+                    'info'
+                );
+            }
         }
 
         async function captureScannerFrame() {
@@ -1673,7 +1908,12 @@
             const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
             capturedImages.push(dataUrl);
             renderImagePreviews();
-            const ok = await analyzeParcelImage(dataUrl);
+            const existingTracking = document.getElementById('keyin-tracking')?.value.trim() || '';
+            const existingSource = document.getElementById('keyin-tracking')?.dataset.source || '';
+            const ok = await analyzeParcelImage(dataUrl, {
+                skipTracking: !!existingTracking && existingSource === 'Barcode',
+                existingTracking: existingTracking
+            });
             if (ok) registerSuccessfulScan(document.getElementById('keyin-tracking')?.value || 'Captured');
         }
 
@@ -1684,49 +1924,80 @@
             reader.onload = async e => {
                 capturedImages.push(e.target.result);
                 renderImagePreviews();
-                const ok = await analyzeParcelImage(e.target.result);
+                const existingTracking = document.getElementById('keyin-tracking')?.value.trim() || '';
+                const existingSource = document.getElementById('keyin-tracking')?.dataset.source || '';
+                const ok = await analyzeParcelImage(e.target.result, {
+                    skipTracking: !!existingTracking && existingSource === 'Barcode',
+                    existingTracking: existingTracking
+                });
                 if (ok) registerSuccessfulScan(document.getElementById('keyin-tracking')?.value || 'Image');
             };
             reader.readAsDataURL(file);
             event.target.value = '';
         }
 
-        async function analyzeParcelImage(dataUrl) {
-            setScannerStatus('กำลังตรวจ Barcode / QR Code…', 'info');
+        async function analyzeParcelImage(dataUrl, options) {
+            options = options || {};
+            const existingTracking = String(options.existingTracking || '').trim();
+            let trackingCandidates = [];
 
             const original = await loadSmartImage(dataUrl);
             const variants = await buildSmartImageVariants(original);
 
-            // ENGINE A: Barcode / QR — primary and most reliable Tracking source.
-            const barcodeCandidates = await scanBarcodeCandidatesFromVariants(variants);
-            let trackingCandidates = rankBarcodeCandidates(barcodeCandidates);
+            if (options.skipTracking && existingTracking) {
+                trackingCandidates = [{
+                    value: existingTracking,
+                    score: 99,
+                    source: 'Barcode'
+                }];
+                setScannerStatus('Tracking ยืนยันแล้ว • กำลังอ่านชื่อและข้อมูลผู้รับ…', 'info');
+            } else {
+                setScannerStatus('กำลังตรวจ Barcode / QR ในภาพ…', 'info');
 
-            // ENGINE B: dedicated Tracking OCR — only if barcode is not strong enough.
-            if (!trackingCandidates.length) {
-                setScannerStatus('กำลังค้นหาเลข Tracking บนฉลาก…', 'info');
+                // Primary: decode high-quality image/crops.
+                const barcodeCandidates = await scanBarcodeCandidatesFromVariants(variants);
+                trackingCandidates = rankBarcodeCandidates(barcodeCandidates)
+                    .filter(isValidTrackingCandidate);
 
-                try {
-                    const trackingOcrCandidates = await runTrackingOcrPasses(variants);
+                // Fallback only when decoder found nothing: OCR the tracking area.
+                if (!trackingCandidates.length) {
+                    setScannerStatus('ยังไม่พบ Barcode • กำลังอ่านเลข Tracking เฉพาะบริเวณฉลาก…', 'info');
 
-                    trackingOcrCandidates.forEach(function(item) {
-                        if (!trackingCandidates.some(x => x.value === item.value)) {
-                            trackingCandidates.push(item);
-                        }
-                    });
-                } catch (err) {
-                    console.warn('Dedicated Tracking OCR failed', err);
+                    try {
+                        const trackingOcrCandidates = await runTrackingOcrPasses(variants);
+                        trackingOcrCandidates.forEach(function(item) {
+                            if (isValidTrackingCandidate(item) &&
+                                !trackingCandidates.some(x => x.value === item.value)) {
+                                trackingCandidates.push(item);
+                            }
+                        });
+                    } catch (err) {
+                        console.warn('Tracking OCR fallback failed', err);
+                    }
+                }
+
+                trackingCandidates = trackingCandidates
+                    .filter(isValidTrackingCandidate)
+                    .sort((a,b) => Number(b.score || 0) - Number(a.score || 0))
+                    .slice(0, 6);
+
+                const top = trackingCandidates[0];
+
+                if (top && (
+                    top.source === 'Barcode' ||
+                    top.score >= 82
+                )) {
+                    applyDetectedTracking(top.value, top.source);
+                    const input = document.getElementById('keyin-tracking');
+                    if (input) input.dataset.source = top.source;
                 }
             }
 
-            trackingCandidates = trackingCandidates
-                .filter(isValidTrackingCandidate)
-                .sort((a,b) => Number(b.score || 0) - Number(a.score || 0))
-                .slice(0, 8);
-
-            // ENGINE C: Thai + English OCR for recipient/address/department only.
+            // Recipient/address OCR is independent from Tracking.
             let ocrBest = null;
+
             if (window.Tesseract) {
-                setScannerStatus('กำลังอ่านชื่อและข้อมูลผู้รับ…', 'info');
+                setScannerStatus('กำลังอ่านชื่อ ที่อยู่ และข้อมูลผู้รับ…', 'info');
                 ocrBest = await runSmartOcrPasses(variants);
             }
 
@@ -1735,40 +2006,11 @@
 
             const extracted = extractParcelFields(text, ocrBest?.lines || []);
 
-            // General OCR can provide Tracking only as a LAST fallback.
-            // It is strictly filtered: candidates MUST contain digits.
-            if (!trackingCandidates.length) {
-                const generalOcrTracking = extractGenericTrackingCandidates(text);
-                generalOcrTracking.forEach(function(item) {
-                    const candidate = {
-                        value: item.value,
-                        score: Math.min(72, 48 + Number(item.score || 0) * 3),
-                        source: 'OCR Fallback'
-                    };
-
-                    if (isValidTrackingCandidate(candidate) &&
-                        !trackingCandidates.some(x => x.value === candidate.value)) {
-                        trackingCandidates.push(candidate);
-                    }
-                });
-            }
-
-            trackingCandidates = trackingCandidates
-                .filter(isValidTrackingCandidate)
-                .sort((a,b) => Number(b.score || 0) - Number(a.score || 0))
-                .slice(0, 8);
-
-            const topTracking = trackingCandidates[0] || null;
-            const secondTracking = trackingCandidates[1] || null;
-
-            // Never auto-fill low-confidence OCR garbage.
-            if (topTracking && (
-                topTracking.source === 'Barcode' ||
-                topTracking.score >= 84 ||
-                (!secondTracking && topTracking.score >= 78)
-            )) {
-                applyDetectedTracking(topTracking.value, topTracking.source);
-            }
+            const topTracking = trackingCandidates[0] || (
+                existingTracking
+                    ? { value: existingTracking, score: 99, source: 'Barcode' }
+                    : null
+            );
 
             renderOcrTrackingCandidates(trackingCandidates);
             applySmartParcelFields(extracted);
@@ -1791,12 +2033,17 @@
             );
 
             if (hasUsefulData) {
-                const trackingMsg = topTracking
-                    ? 'Tracking: ' + topTracking.value
-                    : 'ยังไม่ยืนยัน Tracking';
-                setScannerStatus('วิเคราะห์สำเร็จ • ' + trackingMsg + ' • ตรวจข้อมูลที่ไฮไลต์ก่อนบันทึก', 'success');
+                setScannerStatus(
+                    topTracking
+                        ? 'วิเคราะห์สำเร็จ • Tracking: ' + topTracking.value + ' • ตรวจข้อมูลที่ไฮไลต์ก่อนบันทึก'
+                        : 'อ่านข้อมูลผู้รับแล้ว แต่ยังไม่ยืนยัน Tracking • กรุณาสแกน Barcode ในกรอบอีกครั้ง',
+                    topTracking ? 'success' : 'info'
+                );
             } else {
-                setScannerStatus('ยังอ่านข้อมูลไม่ชัด กรุณาให้ฉลาก/ข้อความอยู่เต็มกรอบและไม่สะท้อนแสง แล้วถ่ายใหม่', 'error');
+                setScannerStatus(
+                    'ยังอ่านข้อมูลไม่ชัด กรุณาจัดฉลากให้อยู่ตรงกรอบ ไม่เบลอ/สะท้อนแสง แล้วลองใหม่',
+                    'error'
+                );
             }
 
             return hasUsefulData;
@@ -2142,50 +2389,33 @@
 
             const worker = await getTrackingOcrWorker();
             const found = new Map();
-
-            // FAST MODE: 0° first, 90° only when necessary.
-            // iPad/mobile must not run 20+ OCR recognitions for one photo.
-            const rotations = [0, 90];
             const byRotation = new Map(colorVariants.map(v => [v.rotation, v]));
 
-            for (const rotation of rotations) {
+            // Only 0° and 90°, one ROI each. Tracking OCR is a fallback, not the primary scanner.
+            for (const rotation of [0, 90]) {
                 const full = byRotation.get(rotation);
                 if (!full) continue;
 
-                const regions = rotation === 0
-                    ? [
-                        full,
-                        cropSmartRegion(full, 0.00, 0.00, 1.00, 0.55, 'tracking-top'),
-                        cropSmartRegion(full, 0.00, 0.45, 1.00, 0.55, 'tracking-bottom')
-                    ]
-                    : [full];
+                const roi = cropSmartRegion(full, 0.05, 0.28, 0.90, 0.44, 'tracking-roi');
+                const processed = createTrackingOcrVariants(roi)[0];
 
-                for (const region of regions) {
-                    // One high-contrast pass per region. Avoid duplicate binary OCR work.
-                    const processed = createTrackingOcrVariants(region)[0];
+                try {
+                    const result = await worker.recognize(processed.dataUrl);
+                    const text = result?.data?.text || '';
+                    const confidence = Number(result?.data?.confidence || 0);
 
-                    try {
-                        const result = await worker.recognize(processed.dataUrl);
-                        const text = result?.data?.text || '';
-                        const confidence = Number(result?.data?.confidence || 0);
-                        const items = extractTrackingFromDedicatedOcr(text, confidence);
-
-                        items.forEach(function(item) {
+                    extractTrackingFromDedicatedOcr(text, confidence)
+                        .filter(isValidTrackingCandidate)
+                        .forEach(function(item) {
                             const old = found.get(item.value);
                             if (!old || item.score > old.score) found.set(item.value, item);
                         });
 
-                        if (Array.from(found.values()).some(x => x.score >= 84)) {
-                            return Array.from(found.values())
-                                .sort((a,b) => b.score - a.score)
-                                .slice(0, 6);
-                        }
-                    } catch (err) {
-                        console.warn('Tracking OCR region failed', err);
-                    }
-                }
+                    if (Array.from(found.values()).some(x => x.score >= 82)) break;
 
-                if (found.size) break;
+                } catch (err) {
+                    console.warn('Tracking OCR ROI failed', err);
+                }
             }
 
             return Array.from(found.values())
@@ -3111,30 +3341,76 @@
         }
 
         async function refreshWorkflowAfterKeyIn(trackingId, department) {
-            const jobs = [];
+            latestSavedTracking = trackingId || '';
+            latestSavedDepartment = department || '';
 
-            try { jobs.push(Promise.resolve(loadOperationsControl())); } catch (e) {}
-            try { jobs.push(Promise.resolve(loadEsignDepartments())); } catch (e) {}
+            const results = {
+                track: false,
+                esign: false,
+                operations: false,
+                dashboard: false,
+                report: false
+            };
 
-            // Dashboard loader uses promise chaining internally; execute immediately.
-            try { loadDashboardStats(); } catch (e) {}
-
-            // Confirm Track can immediately read the same record.
-            jobs.push(
-                apiCall('searchTracking', {
+            // Track
+            try {
+                const trackRes = await apiCall('searchTracking', {
                     trackingId: trackingId,
                     authToken: getAuthToken()
-                }).then(function(result) {
-                    if (result && result.success && result.found !== false) {
-                        return { module: 'Track', success: true };
-                    }
-                    return { module: 'Track', success: false };
-                }).catch(function() {
-                    return { module: 'Track', success: false };
-                })
-            );
+                });
+                results.track = !!(trackRes && trackRes.success && trackRes.found !== false);
+            } catch (e) {}
 
-            await Promise.allSettled(jobs);
+            // E-Sign: verify the exact tracking appears in the pending department query.
+            try {
+                const esignRes = await apiCall('getPendingEsignByDepartment', {
+                    department: department,
+                    authToken: getAuthToken()
+                });
+                results.esign = !!(
+                    esignRes &&
+                    esignRes.success &&
+                    Array.isArray(esignRes.items) &&
+                    esignRes.items.some(item => String(item.trackingId || '') === String(trackingId || ''))
+                );
+            } catch (e) {}
+
+            // Operations
+            try {
+                const opsRes = await apiCall('getOperationsSummary', {
+                    authToken: getAuthToken()
+                });
+                results.operations = !!(
+                    opsRes &&
+                    opsRes.success &&
+                    (
+                        (opsRes.pendingItems || []).some(item => String(item.trackingId || '') === String(trackingId || '')) ||
+                        Number(opsRes.received || 0) > 0
+                    )
+                );
+                renderOperationsPending(opsRes?.pendingItems || []);
+            } catch (e) {}
+
+            // Refresh visible/cache state.
+            try {
+                await loadEsignDepartments();
+            } catch (e) {}
+
+            try {
+                loadDashboardStats();
+                results.dashboard = true;
+            } catch (e) {}
+
+            // Report reads KeyIn directly. Backend snapshot verifies the row is report-ready.
+            try {
+                const snapshot = await apiCall('getKeyInWorkflowSnapshot', {
+                    trackingId: trackingId,
+                    authToken: getAuthToken()
+                });
+                results.report = !!(snapshot && snapshot.sync && snapshot.sync.reportReady);
+            } catch (e) {}
+
+            return results;
         }
 
         function showWorkflowSyncToast(sync, trackingId) {
@@ -3216,8 +3492,23 @@
                     return;
                 }
 
-                await refreshWorkflowAfterKeyIn(res.trackingId || payload.trackingId, payload.department);
-                showWorkflowSyncToast(res.sync, res.trackingId || payload.trackingId);
+                const workflowResults = await refreshWorkflowAfterKeyIn(
+                    res.trackingId || payload.trackingId,
+                    payload.department
+                );
+
+                const readyCount = Object.values(workflowResults).filter(Boolean).length;
+                if (readyCount === 5) {
+                    showSystemToast(
+                        'บันทึกและเชื่อมข้อมูลครบทุก Module • ' + (res.trackingId || payload.trackingId),
+                        'success'
+                    );
+                } else {
+                    showSystemToast(
+                        'บันทึกสำเร็จ • เชื่อมข้อมูลพร้อมใช้ ' + readyCount + '/5 Module',
+                        readyCount >= 4 ? 'info' : 'error'
+                    );
+                }
 
                 // Clear only after verified save + workflow refresh.
                 capturedImages = [];
@@ -3312,6 +3603,8 @@
 
             if (selected && NTL_DEPARTMENTS.includes(selected)) {
                 select.value = selected;
+            } else if (latestSavedDepartment && NTL_DEPARTMENTS.includes(latestSavedDepartment)) {
+                select.value = latestSavedDepartment;
             }
         }
 
@@ -3350,6 +3643,11 @@
 
                 esignPendingItems = [];
                 renderEsignParcels();
+
+                const selectedDepartment = document.getElementById('esign-department')?.value || '';
+                if (selectedDepartment) {
+                    await loadEsignParcels();
+                }
 
             } catch (err) {
                 // Dropdown ยังใช้งานได้จาก Master list แม้โหลด count ไม่สำเร็จ
@@ -3489,6 +3787,11 @@
                 day: '2-digit', month: 'short', year: 'numeric',
                 hour: '2-digit', minute: '2-digit'
             });
+        }
+
+        function handleTrackCardClick(event) {
+            if (event && event.target && event.target.closest('a,button,input')) return;
+            toggleTrackDetails();
         }
 
         function toggleTrackDetails() {
