@@ -664,7 +664,7 @@
                                     <button type="button" onclick="startParcelScanner()" class="w-full border-2 border-indigo-200 rounded-xl p-4 text-center text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition cursor-pointer">
                                         <i class="fa-solid fa-qrcode text-xl mb-1"></i>
                                         <p class="text-xs font-bold">เปิดกล้องสแกนพัสดุ</p>
-                                        <p class="text-[10px] text-slate-500 mt-0.5">Barcode / QR + OCR ข้อมูล</p>
+                                        <p class="text-[10px] text-slate-500 mt-0.5">Barcode / QR + Tracking OCR + Thai OCR</p>
                                     </button>
                                     <button type="button" onclick="document.getElementById('camera-file-input').click()" class="w-full border-2 border-dashed border-slate-300 rounded-xl p-4 text-center text-slate-700 bg-slate-50 hover:bg-slate-100 transition cursor-pointer">
                                         <i class="fa-solid fa-camera text-xl mb-1"></i>
@@ -1034,6 +1034,8 @@
         let latestSmartCapture = null;
         let activeOcrTargetField = '';
         let ocrPickerSuppressUntil = 0;
+        let trackingOcrWorker = null;
+        let trackingOcrWorkerPromise = null;
         const SMART_DEPARTMENTS = ["ซองสัญญา","นายหน้าประกันภัย","ปฏิบัติการประกันภัย","ทะเบียน","บุคคล","บัญชี","BSCS","BDSM","CLD","Audit","Fraud","CRD","กำกับธุรกรรม","Legal","CAS","MKT","Falcon","IT","จัดซื้อ","MD","CS","DB","A&D","HeyGoody"];
         let scanProgressCount = 0;
         let scanProgressLastAt = 0;
@@ -1679,49 +1681,80 @@
         }
 
         async function analyzeParcelImage(dataUrl) {
-            setScannerStatus('กำลังเตรียมภาพและตรวจ Barcode / QR Code…', 'info');
+            setScannerStatus('กำลังตรวจ Barcode / QR Code…', 'info');
 
             const original = await loadSmartImage(dataUrl);
             const variants = await buildSmartImageVariants(original);
 
+            // ENGINE A: Barcode / QR — primary and most reliable Tracking source.
             const barcodeCandidates = await scanBarcodeCandidatesFromVariants(variants);
-            const rankedBarcodes = rankBarcodeCandidates(barcodeCandidates);
+            let trackingCandidates = rankBarcodeCandidates(barcodeCandidates);
 
+            // ENGINE B: dedicated Tracking OCR — only if barcode is not strong enough.
+            if (!trackingCandidates.length || trackingCandidates[0].score < 86) {
+                setScannerStatus('กำลังค้นหาเลข Tracking บนฉลาก…', 'info');
+
+                try {
+                    const trackingOcrCandidates = await runTrackingOcrPasses(variants);
+
+                    trackingOcrCandidates.forEach(function(item) {
+                        if (!trackingCandidates.some(x => x.value === item.value)) {
+                            trackingCandidates.push(item);
+                        }
+                    });
+                } catch (err) {
+                    console.warn('Dedicated Tracking OCR failed', err);
+                }
+            }
+
+            trackingCandidates = trackingCandidates
+                .filter(isValidTrackingCandidate)
+                .sort((a,b) => Number(b.score || 0) - Number(a.score || 0))
+                .slice(0, 8);
+
+            // ENGINE C: Thai + English OCR for recipient/address/department only.
             let ocrBest = null;
             if (window.Tesseract) {
-                setScannerStatus('กำลังอ่านชื่อ ที่อยู่ และข้อมูลบนหน้าพัสดุ…', 'info');
+                setScannerStatus('กำลังอ่านชื่อและข้อมูลผู้รับ…', 'info');
                 ocrBest = await runSmartOcrPasses(variants);
             }
 
             const text = ocrBest ? ocrBest.text : '';
             latestOcrText = text;
 
-            const extracted = extractParcelFields(text);
-            const ocrTracking = extractGenericTrackingCandidates(text);
+            const extracted = extractParcelFields(text, ocrBest?.lines || []);
 
-            let trackingCandidates = rankedBarcodes.slice();
-            ocrTracking.forEach(function(item) {
-                if (!trackingCandidates.some(x => x.value === item.value)) {
-                    trackingCandidates.push({
+            // General OCR can provide Tracking only as a LAST fallback.
+            // It is strictly filtered: candidates MUST contain digits.
+            if (!trackingCandidates.length) {
+                const generalOcrTracking = extractGenericTrackingCandidates(text);
+                generalOcrTracking.forEach(function(item) {
+                    const candidate = {
                         value: item.value,
-                        score: Math.min(80, 45 + Number(item.score || 0) * 4),
-                        source: 'OCR'
-                    });
-                }
-            });
+                        score: Math.min(72, 48 + Number(item.score || 0) * 3),
+                        source: 'OCR Fallback'
+                    };
+
+                    if (isValidTrackingCandidate(candidate) &&
+                        !trackingCandidates.some(x => x.value === candidate.value)) {
+                        trackingCandidates.push(candidate);
+                    }
+                });
+            }
 
             trackingCandidates = trackingCandidates
-                .sort((a,b) => b.score - a.score)
+                .filter(isValidTrackingCandidate)
+                .sort((a,b) => Number(b.score || 0) - Number(a.score || 0))
                 .slice(0, 8);
 
             const topTracking = trackingCandidates[0] || null;
             const secondTracking = trackingCandidates[1] || null;
 
+            // Never auto-fill low-confidence OCR garbage.
             if (topTracking && (
                 topTracking.source === 'Barcode' ||
-                topTracking.score >= 78 ||
-                !secondTracking ||
-                topTracking.score >= secondTracking.score + 15
+                topTracking.score >= 84 ||
+                (!secondTracking && topTracking.score >= 78)
             )) {
                 applyDetectedTracking(topTracking.value, topTracking.source);
             }
@@ -1747,9 +1780,12 @@
             );
 
             if (hasUsefulData) {
-                setScannerStatus('วิเคราะห์หน้าพัสดุเรียบร้อย ระบบเติมข้อมูลที่ตรวจพบให้แล้ว', 'success');
+                const trackingMsg = topTracking
+                    ? 'Tracking: ' + topTracking.value
+                    : 'ยังไม่ยืนยัน Tracking';
+                setScannerStatus('วิเคราะห์สำเร็จ • ' + trackingMsg + ' • ตรวจข้อมูลที่ไฮไลต์ก่อนบันทึก', 'success');
             } else {
-                setScannerStatus('ยังอ่านข้อมูลไม่ชัด กรุณาจัดซองให้อยู่ในกรอบ แสงสม่ำเสมอ แล้วถ่ายใหม่', 'error');
+                setScannerStatus('ยังอ่านข้อมูลไม่ชัด กรุณาให้ฉลาก/ข้อความอยู่เต็มกรอบและไม่สะท้อนแสง แล้วถ่ายใหม่', 'error');
             }
 
             return hasUsefulData;
@@ -1830,22 +1866,32 @@
             const found = new Map();
 
             for (const variant of variants) {
-                const values = await scanAllBarcodesFromImage(variant.dataUrl);
+                const regions = buildBarcodeScanRegions(variant);
 
-                values.forEach(function(raw) {
-                    const value = String(raw || '').trim();
-                    if (!value) return;
+                for (const region of regions) {
+                    const values = await scanAllBarcodesFromImage(region.dataUrl);
 
-                    const current = found.get(value) || {
-                        value: value,
-                        hits: 0,
-                        rotations: [],
-                        source: 'Barcode'
-                    };
-                    current.hits += 1;
-                    current.rotations.push(variant.rotation);
-                    found.set(value, current);
-                });
+                    values.forEach(function(raw) {
+                        const value = String(raw || '').trim();
+                        if (!value) return;
+
+                        const current = found.get(value) || {
+                            value: value,
+                            hits: 0,
+                            rotations: [],
+                            regions: [],
+                            source: 'Barcode'
+                        };
+
+                        current.hits += 1;
+                        current.rotations.push(variant.rotation);
+                        current.regions.push(region.region || 'full');
+                        found.set(value, current);
+                    });
+
+                    // Strong repeat detection; stop unnecessary work.
+                    if (Array.from(found.values()).some(x => x.hits >= 2)) break;
+                }
 
                 if (Array.from(found.values()).some(x => x.hits >= 2)) break;
             }
@@ -1887,6 +1933,257 @@
             return Array.from(new Set(values.map(v => String(v).trim()).filter(Boolean)));
         }
 
+
+        function cropSmartRegion(variant, xRatio, yRatio, wRatio, hRatio, label) {
+            const src = variant.canvas;
+            const x = Math.max(0, Math.round(src.width * xRatio));
+            const y = Math.max(0, Math.round(src.height * yRatio));
+            const w = Math.max(1, Math.min(src.width - x, Math.round(src.width * wRatio)));
+            const h = Math.max(1, Math.min(src.height - y, Math.round(src.height * hRatio)));
+
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(src, x, y, w, h, 0, 0, w, h);
+
+            return {
+                rotation: variant.rotation,
+                region: label || 'crop',
+                canvas: canvas,
+                dataUrl: canvas.toDataURL('image/jpeg', 0.92)
+            };
+        }
+
+        function buildBarcodeScanRegions(variant) {
+            // Full frame first, then common label zones.
+            return [
+                variant,
+                cropSmartRegion(variant, 0.00, 0.00, 1.00, 0.55, 'top'),
+                cropSmartRegion(variant, 0.00, 0.45, 1.00, 0.55, 'bottom'),
+                cropSmartRegion(variant, 0.00, 0.10, 0.62, 0.80, 'left'),
+                cropSmartRegion(variant, 0.38, 0.10, 0.62, 0.80, 'right'),
+                cropSmartRegion(variant, 0.18, 0.18, 0.64, 0.64, 'center')
+            ];
+        }
+
+        function normalizeTrackingOcrValue(value) {
+            let text = String(value == null ? '' : value)
+                .toUpperCase()
+                .replace(/[|]/g, 'I')
+                .replace(/[“”"'`]/g, '')
+                .trim();
+
+            // OCR often inserts spaces between characters printed below a barcode.
+            // Collapse spaces only for strings that otherwise look like Tracking IDs.
+            const compact = text.replace(/\s+/g, '');
+            if (/^[A-Z0-9._/#:+\-]{6,50}$/.test(compact) && /\d/.test(compact)) {
+                text = compact;
+            }
+
+            return text;
+        }
+
+        function isValidTrackingCandidate(item) {
+            const raw = typeof item === 'string' ? item : item?.value;
+            const value = normalizeTrackingOcrValue(raw);
+
+            if (!value || value.length < 6 || value.length > 100) return false;
+
+            // CRITICAL: Tracking candidate MUST contain at least one digit.
+            // This prevents Thai/English words from becoming Tracking IDs.
+            if (!/\d/.test(value)) return false;
+
+            // Reject common non-tracking parcel values.
+            if (/^\d{5}$/.test(value)) return false;                       // postcode
+            if (/^\d{1,3}(?:\.\d{1,3})?$/.test(value)) return false;      // weight/quantity
+            if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(value)) return false; // date
+            if (/^\d{1,2}:\d{2}(?::\d{2})?$/.test(value)) return false;   // time
+            if (/@/.test(value)) return false;
+            if (/[ก-๙]/.test(value)) return false;                         // Tracking OCR should not contain Thai
+            if (!/^[A-Z0-9._/#:+\-]+$/i.test(value)) return false;
+
+            const digitCount = (value.match(/\d/g) || []).length;
+            if (digitCount < 4) return false;
+
+            return true;
+        }
+
+        async function getTrackingOcrWorker() {
+            if (trackingOcrWorker) return trackingOcrWorker;
+            if (trackingOcrWorkerPromise) return trackingOcrWorkerPromise;
+
+            trackingOcrWorkerPromise = (async function() {
+                const worker = await Tesseract.createWorker('eng', 1, {
+                    logger: function(m) {
+                        if (m.status === 'recognizing text') {
+                            const pct = Math.round((m.progress || 0) * 100);
+                            setScannerStatus('กำลังอ่านเลข Tracking ' + pct + '%', 'info');
+                        }
+                    }
+                });
+
+                await worker.setParameters({
+                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._/#:+',
+                    preserve_interword_spaces: '1',
+                    tessedit_pageseg_mode: '11'
+                });
+
+                trackingOcrWorker = worker;
+                return worker;
+            })();
+
+            try {
+                return await trackingOcrWorkerPromise;
+            } finally {
+                trackingOcrWorkerPromise = null;
+            }
+        }
+
+        function createTrackingOcrVariants(colorVariant) {
+            const img = colorVariant.canvas;
+            const variants = [];
+
+            function makeVariant(thresholdMode) {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                ctx.drawImage(img, 0, 0);
+
+                const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const d = data.data;
+
+                let sum = 0;
+                for (let i = 0; i < d.length; i += 4) {
+                    sum += 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+                }
+                const avg = sum / Math.max(1, d.length / 4);
+
+                for (let i = 0; i < d.length; i += 4) {
+                    let y = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+
+                    if (thresholdMode === 'binary') {
+                        const threshold = Math.max(105, Math.min(205, avg * 0.92));
+                        y = y > threshold ? 255 : 0;
+                    } else {
+                        y = Math.max(0, Math.min(255, (y - 128) * 1.55 + 128));
+                    }
+
+                    d[i] = d[i+1] = d[i+2] = y;
+                }
+
+                ctx.putImageData(data, 0, 0);
+
+                return {
+                    rotation: colorVariant.rotation,
+                    mode: thresholdMode,
+                    canvas: canvas,
+                    dataUrl: canvas.toDataURL('image/png')
+                };
+            }
+
+            variants.push(makeVariant('contrast'));
+            variants.push(makeVariant('binary'));
+            return variants;
+        }
+
+        function extractTrackingFromDedicatedOcr(text, baseConfidence) {
+            const raw = String(text || '').toUpperCase();
+            const candidates = new Map();
+
+            function add(value, score) {
+                value = normalizeTrackingOcrValue(value);
+                const item = { value: value, score: score, source: 'Tracking OCR' };
+                if (!isValidTrackingCandidate(item)) return;
+
+                // Strong boosts for common postal/vendor shapes.
+                if (/^[A-Z]{2}\d{9}[A-Z]{2}$/.test(value)) score += 18;
+                if (/^[A-Z]{1,6}\d{7,25}[A-Z]{0,4}$/.test(value)) score += 10;
+                if (/^\d{8,30}$/.test(value)) score += 7;
+
+                score = Math.max(0, Math.min(96, score));
+                const old = candidates.get(value);
+                if (!old || score > old.score) {
+                    candidates.set(value, { value: value, score: score, source: 'Tracking OCR' });
+                }
+            }
+
+            // UPU postal item, including OCR spaces: ET 3107 8580 5 TH
+            const upuLoose = raw.match(/[A-Z]{2}\s*(?:\d[\s]*){9}[A-Z]{2}/g) || [];
+            upuLoose.forEach(v => add(v, Math.max(78, baseConfidence)));
+
+            // Alphanumeric / numeric generic Tracking candidates.
+            const lines = raw.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+            lines.forEach(function(line) {
+                const compactLine = line.replace(/\s+/g, '');
+
+                if (isValidTrackingCandidate({ value: compactLine })) {
+                    add(compactLine, Math.max(62, baseConfidence - 4));
+                }
+
+                const tokens = line.match(/[A-Z0-9][A-Z0-9._/#:+\-]{5,60}/g) || [];
+                tokens.forEach(v => add(v, Math.max(58, baseConfidence - 8)));
+            });
+
+            return Array.from(candidates.values()).sort((a,b) => b.score - a.score);
+        }
+
+        async function runTrackingOcrPasses(colorVariants) {
+            if (!window.Tesseract) return [];
+
+            const worker = await getTrackingOcrWorker();
+            const found = new Map();
+
+            // Use only first 3 orientations to keep iPad/mobile latency reasonable.
+            const rotations = [0, 90, 270];
+            const byRotation = new Map(colorVariants.map(v => [v.rotation, v]));
+
+            for (const rotation of rotations) {
+                const full = byRotation.get(rotation);
+                if (!full) continue;
+
+                // Tracking often sits on white barcode stickers or in upper/lower label areas.
+                const regions = [
+                    full,
+                    cropSmartRegion(full, 0.00, 0.00, 1.00, 0.58, 'tracking-top'),
+                    cropSmartRegion(full, 0.00, 0.42, 1.00, 0.58, 'tracking-bottom'),
+                    cropSmartRegion(full, 0.36, 0.08, 0.64, 0.84, 'tracking-right')
+                ];
+
+                for (const region of regions) {
+                    const processedVariants = createTrackingOcrVariants(region);
+
+                    for (const processed of processedVariants) {
+                        try {
+                            const result = await worker.recognize(processed.dataUrl);
+                            const text = result?.data?.text || '';
+                            const confidence = Number(result?.data?.confidence || 0);
+                            const items = extractTrackingFromDedicatedOcr(text, confidence);
+
+                            items.forEach(function(item) {
+                                const old = found.get(item.value);
+                                if (!old || item.score > old.score) found.set(item.value, item);
+                            });
+
+                            // High-confidence candidate: stop expensive OCR early.
+                            if (Array.from(found.values()).some(x => x.score >= 91)) {
+                                return Array.from(found.values()).sort((a,b) => b.score - a.score).slice(0, 6);
+                            }
+                        } catch (err) {
+                            console.warn('Tracking OCR region failed', err);
+                        }
+                    }
+                }
+
+                if (Array.from(found.values()).some(x => x.score >= 86)) break;
+            }
+
+            return Array.from(found.values())
+                .sort((a,b) => b.score - a.score)
+                .slice(0, 6);
+        }
+
         function rankBarcodeCandidates(items) {
             return (items || []).map(function(item) {
                 const value = item.value;
@@ -1917,50 +2214,76 @@
                 if (!color) continue;
 
                 const img = await loadSmartImage(color.dataUrl);
-                const processed = drawSmartVariant(img, 0, 'ocr');
 
-                setScannerStatus(
-                    idx === 0
-                        ? 'กำลัง OCR ข้อความบนหน้าพัสดุ…'
-                        : 'กำลังปรับมุมภาพเพื่ออ่านข้อมูลให้แม่นขึ้น…',
-                    'info'
-                );
+                // Compare original-color OCR with enhanced grayscale.
+                const inputs = [
+                    { dataUrl: color.dataUrl, mode: 'color' },
+                    { ...drawSmartVariant(img, 0, 'ocr'), mode: 'enhanced' }
+                ];
 
-                try {
-                    const result = await Tesseract.recognize(processed.dataUrl, 'tha+eng', {
-                        logger: m => {
-                            if (m.status === 'recognizing text') {
-                                setScannerStatus('กำลังอ่านข้อมูล ' + Math.round((m.progress || 0) * 100) + '%', 'info');
+                for (const input of inputs) {
+                    setScannerStatus(
+                        idx === 0
+                            ? 'กำลังอ่านภาษาไทยและอังกฤษบนหน้าพัสดุ…'
+                            : 'กำลังปรับมุมภาพเพื่ออ่านชื่อให้ชัดขึ้น…',
+                        'info'
+                    );
+
+                    try {
+                        const result = await Tesseract.recognize(input.dataUrl, 'tha+eng', {
+                            logger: m => {
+                                if (m.status === 'recognizing text') {
+                                    const pct = Math.round((m.progress || 0) * 100);
+                                    setScannerStatus('กำลังอ่านข้อความ ' + pct + '%', 'info');
+                                }
                             }
+                        });
+
+                        const text = result?.data?.text?.trim() || '';
+                        const confidence = Number(result?.data?.confidence || 0);
+
+                        const lines = (result?.data?.lines || [])
+                            .map(function(line) {
+                                return {
+                                    text: String(line?.text || '').replace(/\s+/g, ' ').trim(),
+                                    confidence: Number(line?.confidence || 0),
+                                    bbox: line?.bbox || null
+                                };
+                            })
+                            .filter(line => line.text);
+
+                        const candidate = {
+                            text: text,
+                            confidence: confidence,
+                            lines: lines,
+                            score: scoreParcelOcrText(text, confidence, lines),
+                            rotation: order[idx],
+                            mode: input.mode
+                        };
+
+                        if (!best || candidate.score > best.score) best = candidate;
+
+                        // Very good Thai/English result: don't keep running on mobile.
+                        if (candidate.score >= 88 && confidence >= 65) {
+                            return candidate;
                         }
-                    });
-
-                    const text = result?.data?.text?.trim() || '';
-                    const confidence = Number(result?.data?.confidence || 0);
-                    const candidate = {
-                        text: text,
-                        confidence: confidence,
-                        score: scoreParcelOcrText(text, confidence),
-                        rotation: order[idx]
-                    };
-
-                    if (!best || candidate.score > best.score) best = candidate;
-
-                    if (candidate.score >= 82) break;
-                    if (idx >= 2 && best && best.score >= 58) break;
-
-                } catch (err) {
-                    console.warn('OCR pass failed', err);
+                    } catch (err) {
+                        console.warn('General OCR pass failed', err);
+                    }
                 }
+
+                if (idx >= 1 && best && best.score >= 74) break;
+                if (idx >= 2 && best && best.score >= 60) break;
             }
 
-            return best || { text: '', confidence: 0, score: 0, rotation: 0 };
+            return best || { text: '', confidence: 0, lines: [], score: 0, rotation: 0 };
         }
 
-        function scoreParcelOcrText(text, confidence) {
+        function scoreParcelOcrText(text, confidence, lines) {
             if (!text) return 0;
 
-            let score = Math.max(0, Math.min(45, Number(confidence || 0) * 0.45));
+            let score = Math.max(0, Math.min(35, Number(confidence || 0) * 0.35));
+
             [
                 /ชื่อและที่อยู่ผู้รับ|\/\s*TO/i,
                 /ชื่อและที่อยู่ผู้ฝาก|\/\s*FROM/i,
@@ -1968,12 +2291,27 @@
                 /POSTAGE/i,
                 /รหัสไปรษณีย์|POSTCODE/i,
                 /โทร|TEL|PHONE/i,
-                /กรุงเทพ|จังหวัด|อำเภอ|เขต|แขวง|ตำบล/i
-            ].forEach(p => { if (p.test(text)) score += 7; });
+                /กรุงเทพ|จังหวัด|อำเภอ|เขต|แขวง|ตำบล/i,
+                /บริษัท|จำกัด|มหาชน|แผนก/i
+            ].forEach(p => { if (p.test(text)) score += 6; });
 
-            if ((text.match(/[ก-๙]/g) || []).length >= 20) score += 8;
-            if ((text.match(/\d/g) || []).length >= 8) score += 5;
-            if (text.split(/\r?\n/).filter(Boolean).length >= 4) score += 5;
+            const thaiCount = (text.match(/[ก-๙]/g) || []).length;
+            const digitCount = (text.match(/\d/g) || []).length;
+            const weirdCount = (text.match(/[^\sA-Za-z0-9ก-๙.,()\/\-:]/g) || []).length;
+            const charCount = Math.max(1, text.replace(/\s/g,'').length);
+
+            if (thaiCount >= 20) score += 9;
+            if (digitCount >= 8) score += 4;
+            if (text.split(/\r?\n/).filter(Boolean).length >= 4) score += 4;
+
+            // Penalize garbled OCR.
+            const weirdRatio = weirdCount / charCount;
+            if (weirdRatio > 0.08) score -= 12;
+            if (weirdRatio > 0.16) score -= 15;
+
+            const reliableLines = (lines || []).filter(x => Number(x.confidence || 0) >= 55);
+            if (reliableLines.length >= 2) score += 7;
+            if (reliableLines.length >= 4) score += 5;
 
             return Math.max(0, Math.min(100, score));
         }
@@ -1985,9 +2323,23 @@
             return '';
         }
 
-        function extractParcelFields(text) {
+        function extractParcelFields(text, ocrLines) {
             const raw = String(text || '');
-            const lines = raw.split(/\r?\n/).map(x => x.replace(/\s+/g, ' ').trim()).filter(Boolean);
+
+            const lineObjects = (ocrLines && ocrLines.length)
+                ? ocrLines
+                    .map(function(x) {
+                        return {
+                            text: String(x.text || '').replace(/\s+/g, ' ').trim(),
+                            confidence: Number(x.confidence || 0)
+                        };
+                    })
+                    .filter(x => x.text)
+                : raw.split(/\r?\n/)
+                    .map(x => ({ text: x.replace(/\s+/g, ' ').trim(), confidence: 50 }))
+                    .filter(x => x.text);
+
+            const lines = lineObjects.map(x => x.text);
 
             const result = {
                 recipientName: '',
@@ -2001,91 +2353,164 @@
                 overallConfidence: 0
             };
 
+            // PHONE
             const phoneMatches = raw.match(/(?:\+66[\s\-]?\d{1,2}[\s\-]?\d{3,4}[\s\-]?\d{4}|0\d[\s\-]?\d{3,4}[\s\-]?\d{4})/g) || [];
             for (const match of phoneMatches) {
                 const phone = normalizeThaiPhone(match);
-                if (phone) { result.phone = phone; break; }
+                if (phone) {
+                    result.phone = phone;
+                    break;
+                }
             }
 
-            const postcodes = (raw.match(/(?<!\d)\d{5}(?!\d)/g) || []).filter(x => !/^0{5}$/.test(x));
+            // POSTCODE
+            const postcodes = (raw.match(/(?<!\d)\d{5}(?!\d)/g) || [])
+                .filter(x => !/^0{5}$/.test(x));
             if (postcodes.length) result.postcode = postcodes[postcodes.length - 1];
 
-            let toIndex = lines.findIndex(line => /ชื่อและที่อยู่ผู้รับ|(?:^|\s)TO(?:\s|$|\/)/i.test(line));
-            if (toIndex < 0) toIndex = lines.findIndex(line => /ผู้รับ|recipient/i.test(line));
+            // RECIPIENT SECTION
+            let toIndex = lines.findIndex(line =>
+                /ชื่อและที่อยู่ผู้รับ|(?:^|\s)TO(?:\s|$|\/)|ผู้รับ|recipient/i.test(line)
+            );
 
-            const senderIndex = lines.findIndex(line => /ชื่อและที่อยู่ผู้ฝาก|(?:^|\s)FROM(?:\s|$|\/)/i.test(line));
-            let targetLines = lines;
+            const senderIndex = lines.findIndex(line =>
+                /ชื่อและที่อยู่ผู้ฝาก|(?:^|\s)FROM(?:\s|$|\/)|ผู้ฝาก|sender/i.test(line)
+            );
+
+            let targetObjects = lineObjects;
+            let hasExplicitRecipientSection = false;
 
             if (toIndex >= 0) {
-                targetLines = lines.slice(toIndex + 1, Math.min(lines.length, toIndex + 8));
-            } else if (senderIndex >= 0 && senderIndex < Math.floor(lines.length / 2)) {
-                targetLines = lines.slice(Math.floor(lines.length / 2));
+                targetObjects = lineObjects.slice(toIndex + 1, Math.min(lineObjects.length, toIndex + 8));
+                hasExplicitRecipientSection = true;
+            } else if (senderIndex >= 0 && senderIndex < Math.floor(lineObjects.length / 2)) {
+                targetObjects = lineObjects.slice(Math.floor(lineObjects.length / 2));
             }
 
-            const noise = /(THAILAND|POSTAGE|kg|BARCODE|tracking|track|waybill|postcode|รหัสไปรษณีย์|โทร|tel|phone|ผู้ฝาก|FROM|ผู้รับ|\/TO)/i;
+            const noise = /(THAILAND|POSTAGE|\bKG\b|BARCODE|tracking|track|waybill|postcode|รหัสไปรษณีย์|โทร|tel|phone|ผู้ฝาก|FROM|ผู้รับ|\/TO|EMS|ลงทะเบียน|น้ำหนัก)/i;
 
-            const nameCandidates = targetLines.map(function(line, index) {
-                const clean = line.replace(/[|_=~]+/g, ' ').replace(/\s+/g, ' ').trim();
-                let score = 0;
+            const nameCandidates = targetObjects.map(function(obj, index) {
+                const clean = obj.text
+                    .replace(/[|_=~]+/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                const lineConfidence = Number(obj.confidence || 0);
+                let score = lineConfidence * 0.45;
+
                 const thai = (clean.match(/[ก-๙]/g) || []).length;
                 const latin = (clean.match(/[A-Za-z]/g) || []).length;
                 const digits = (clean.match(/\d/g) || []).length;
+                const letters = thai + latin;
+                const weird = (clean.match(/[^\sA-Za-z0-9ก-๙().,&\/\-]/g) || []).length;
+                const charCount = Math.max(1, clean.replace(/\s/g,'').length);
 
-                if (noise.test(clean)) score -= 8;
-                if (digits > 4) score -= 6;
-                if (thai >= 5) score += 8;
-                if (latin >= 5) score += 4;
-                if (clean.split(' ').length >= 2) score += 4;
-                if (clean.length >= 8 && clean.length <= 70) score += 3;
-                score += Math.max(0, 4 - index);
+                if (noise.test(clean)) score -= 35;
+                if (digits > 3) score -= 24;
+                if (thai >= 5) score += 18;
+                if (latin >= 5 && thai === 0) score += 8;
+                if (clean.split(' ').length >= 2) score += 8;
+                if (clean.length >= 6 && clean.length <= 75) score += 7;
+                if (hasExplicitRecipientSection) score += 12;
 
-                return { value: clean, score: score };
-            }).filter(x => x.value && x.score >= 6).sort((a,b) => b.score - a.score);
+                // Mixed Thai + random Latin fragments often indicate garbled OCR.
+                if (thai >= 4 && latin >= 3 && latin / Math.max(1, letters) > 0.22) score -= 20;
+                if (weird / charCount > 0.06) score -= 25;
+                if (lineConfidence < 40) score -= 25;
+
+                score += Math.max(0, 6 - index);
+
+                return {
+                    value: clean,
+                    score: score,
+                    confidence: lineConfidence
+                };
+            })
+            .filter(x => x.value && x.score >= 45)
+            .sort((a,b) => b.score - a.score);
 
             if (nameCandidates.length) {
-                result.recipientName = nameCandidates[0].value;
-                result.recipientNameConfidence = Math.min(96, 55 + nameCandidates[0].score * 4);
+                const bestName = nameCandidates[0];
+
+                // Auto-fill recipient only when quality is genuinely strong.
+                const finalConfidence = Math.max(
+                    0,
+                    Math.min(96, Math.round(bestName.score))
+                );
+
+                if (finalConfidence >= 72) {
+                    result.recipientName = bestName.value;
+                    result.recipientNameConfidence = finalConfidence;
+                }
             }
 
-            const addressLines = targetLines.filter(function(line) {
-                const clean = line.trim();
-                if (!clean || clean === result.recipientName) return false;
-                if (noise.test(clean)) return false;
-                return (
-                    /[ก-๙]/.test(clean) ||
-                    /(road|rd\.|soi|street|bangkok|กรุงเทพ|ถนน|ซอย|แขวง|เขต|ตำบล|อำเภอ|จังหวัด|หมู่|เลขที่)/i.test(clean)
-                );
-            }).slice(0, 4);
+            // ADDRESS
+            const addressLines = targetObjects
+                .filter(function(obj) {
+                    const clean = obj.text.trim();
+                    if (!clean || clean === result.recipientName) return false;
+                    if (Number(obj.confidence || 0) < 38) return false;
+                    if (noise.test(clean)) return false;
+
+                    const weird = (clean.match(/[^\sA-Za-z0-9ก-๙().,&\/\-]/g) || []).length;
+                    if (weird / Math.max(1, clean.length) > 0.08) return false;
+
+                    return (
+                        /[ก-๙]/.test(clean) ||
+                        /(road|rd\.|soi|street|bangkok|กรุงเทพ|ถนน|ซอย|แขวง|เขต|ตำบล|อำเภอ|จังหวัด|หมู่|เลขที่|ชั้น|อาคาร)/i.test(clean)
+                    );
+                })
+                .map(x => x.text)
+                .slice(0, 4);
 
             result.address = addressLines.join(' ').replace(/\s+/g, ' ').trim();
+
             if (result.postcode && result.address && !result.address.includes(result.postcode)) {
                 result.address += ' ' + result.postcode;
             }
 
+            // DEPARTMENT
             const normalizedRaw = raw.toLowerCase().replace(/\s+/g, '');
             const aliases = {
-                'ซองสัญญา':['ซองสัญญา','สัญญา'],
-                'นายหน้าประกันภัย':['นายหน้าประกันภัย','นายหน้า'],
+                'ซองสัญญา':['ซองสัญญา'],
+                'นายหน้าประกันภัย':['นายหน้าประกันภัย'],
                 'ปฏิบัติการประกันภัย':['ปฏิบัติการประกันภัย','operationinsurance'],
                 'ทะเบียน':['ทะเบียน'],
-                'บุคคล':['บุคคล','humanresource'],
-                'บัญชี':['บัญชี','accounting'],
+                'บุคคล':['ฝ่ายบุคคล','แผนกบุคคล','humanresource'],
+                'บัญชี':['ฝ่ายบัญชี','แผนกบัญชี','accounting'],
                 'BSCS':['bscs'],'BDSM':['bdsm'],'CLD':['cld'],
-                'Audit':['audit','ตรวจสอบ'],'Fraud':['fraud','ทุจริต'],'CRD':['crd'],
-                'กำกับธุรกรรม':['กำกับธุรกรรม'],'Legal':['legal','กฎหมาย'],'CAS':['cas'],
-                'MKT':['mkt','marketing','การตลาด'],'Falcon':['falcon'],
-                'IT':['informationtechnology','เทคโนโลยีสารสนเทศ'],
-                'จัดซื้อ':['จัดซื้อ','procurement'],'MD':['md'],'CS':['cs'],'DB':['db'],
-                'A&D':['a&d'],'HeyGoody':['heygoody']
+                'Audit':['audit','ฝ่ายตรวจสอบ'],
+                'Fraud':['fraud','ทุจริต'],
+                'CRD':['crd'],
+                'กำกับธุรกรรม':['กำกับธุรกรรม'],
+                'Legal':['legal','ฝ่ายกฎหมาย'],
+                'CAS':['cas'],
+                'MKT':['mkt','marketing','ฝ่ายการตลาด'],
+                'Falcon':['falcon'],
+                'IT':['informationtechnology','เทคโนโลยีสารสนเทศ','ฝ่ายit','แผนกit'],
+                'จัดซื้อ':['จัดซื้อ','procurement'],
+                'MD':['md'],'CS':['cs'],'DB':['db'],
+                'A&D':['a&d'],
+                'HeyGoody':['heygoody']
             };
 
             let deptBest = null;
+
             Object.keys(aliases).forEach(function(dept) {
                 aliases[dept].forEach(function(alias) {
                     const a = alias.toLowerCase().replace(/\s+/g,'');
-                    if (a.length >= 2 && normalizedRaw.includes(a)) {
-                        const score = Math.min(98, 72 + Math.min(20, a.length));
-                        if (!deptBest || score > deptBest.score) deptBest = { dept: dept, score: score };
+
+                    // Avoid ambiguous 2-letter matches inside ordinary words.
+                    if (a.length <= 2) {
+                        const tokenRegex = new RegExp('(^|[^a-z])' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^a-z]|$)', 'i');
+                        if (!tokenRegex.test(raw)) return;
+                    } else if (!normalizedRaw.includes(a)) {
+                        return;
+                    }
+
+                    const score = Math.min(96, 74 + Math.min(18, a.length));
+                    if (!deptBest || score > deptBest.score) {
+                        deptBest = { dept: dept, score: score };
                     }
                 });
             });
@@ -2095,15 +2520,22 @@
                 result.departmentConfidence = deptBest.score;
             }
 
-            if (/BTS\s*TOWER|บีทีเอส\s*ทาวเวอร์/i.test(raw)) result.route = 'BTS Tower';
-            else if (/ARI\s*HILL|ARI\s*HILLS|อารีย์\s*ฮิล/i.test(raw)) result.route = 'Ari Hill';
+            // ROUTE
+            if (/BTS\s*TOWER|บีทีเอส\s*ทาวเวอร์/i.test(raw)) {
+                result.route = 'BTS Tower';
+            } else if (/ARI\s*HILL|ARI\s*HILLS|อารีย์\s*ฮิล/i.test(raw)) {
+                result.route = 'Ari Hill';
+            }
 
             const conf = [];
             if (result.recipientName) conf.push(result.recipientNameConfidence);
             if (result.phone) conf.push(90);
             if (result.postcode) conf.push(88);
             if (result.department) conf.push(result.departmentConfidence);
-            result.overallConfidence = conf.length ? Math.round(conf.reduce((a,b)=>a+b,0)/conf.length) : 0;
+
+            result.overallConfidence = conf.length
+                ? Math.round(conf.reduce((a,b)=>a+b,0) / conf.length)
+                : 0;
 
             return result;
         }
@@ -2170,8 +2602,13 @@
                 if (el) el.textContent = value || '-';
             };
 
-            setText('smart-tracking-value', tracking?.value || 'ยังไม่พบ');
-            setText('smart-name-value', f.recipientName || 'ยังไม่พบ');
+            setText(
+                'smart-tracking-value',
+                tracking
+                    ? tracking.value + (tracking.source ? ' • ' + tracking.source : '')
+                    : 'ยังไม่พบ Tracking ที่น่าเชื่อถือ'
+            );
+            setText('smart-name-value', f.recipientName || 'ยังไม่พบชื่อที่มั่นใจเพียงพอ');
             setText('smart-phone-value', f.phone || '-');
             setText('smart-department-value', f.department || '-');
 
@@ -2263,48 +2700,44 @@
             if (!text) return [];
 
             const candidateMap = new Map();
-            const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-            const labelRegex = /(tracking|track\s*no|awb|waybill|barcode|parcel|consignment|shipment|เลขพัสดุ|เลขติดตาม|หมายเลขพัสดุ)/i;
-            const noiseRegex = /(address|ที่อยู่|โทร|phone|tel|postcode|รหัสไปรษณีย์|sender|ผู้ส่ง|recipient|ผู้รับ|email|e-mail)/i;
+            const rawText = String(text || '').toUpperCase();
 
             function addCandidate(raw, score) {
-                const value = cleanOcrCandidate(raw);
-                if (!value || value.length < 5 || value.length > 160) return;
-                if (/\s{2,}/.test(value)) return;
-                if (/^[^\wก-๙]+$/u.test(value)) return;
-                if (/@/.test(value)) return;
+                const value = normalizeTrackingOcrValue(raw);
+                const item = { value: value, score: score, source: 'OCR Fallback' };
 
-                const compact = value.replace(/\s+/g, '');
-                const hasDigit = /\d/.test(compact);
-                const hasLetter = /[A-Za-zก-๙]/.test(compact);
-                const allowedShape = /^[A-Za-z0-9ก-๙._:/#?&=+\-]+$/u.test(compact);
+                if (!isValidTrackingCandidate(item)) return;
 
-                if (!allowedShape || (!hasDigit && compact.length < 8)) return;
+                if (/^[A-Z]{2}\d{9}[A-Z]{2}$/.test(value)) score += 16;
+                if (/^[A-Z]{1,6}\d{7,25}[A-Z]{0,4}$/.test(value)) score += 9;
+                if (/^\d{8,30}$/.test(value)) score += 6;
 
-                if (hasDigit && hasLetter) score += 3;
-                if (/[-_/]/.test(compact)) score += 1;
-                if (/^\d{8,30}$/.test(compact)) score += 2;
-                if (compact.length >= 8 && compact.length <= 40) score += 1;
-
-                const existing = candidateMap.get(compact);
-                if (!existing || score > existing.score) {
-                    candidateMap.set(compact, { value: compact, score: score });
+                const old = candidateMap.get(value);
+                if (!old || score > old.score) {
+                    candidateMap.set(value, {
+                        value: value,
+                        score: Math.max(0, Math.min(80, score)),
+                        source: 'OCR Fallback'
+                    });
                 }
             }
 
-            lines.forEach(function(line) {
-                const labelScore = labelRegex.test(line) ? 5 : 0;
-                if (noiseRegex.test(line) && !labelScore) return;
+            // UPU-style postal Tracking with spaces created by OCR.
+            const upuMatches = rawText.match(/[A-Z]{2}\s*(?:\d[\s]*){9}[A-Z]{2}/g) || [];
+            upuMatches.forEach(v => addCandidate(v, 64));
 
-                const afterLabel = line.match(/(?:tracking|track\s*no|awb|waybill|barcode|parcel|consignment|shipment|เลขพัสดุ|เลขติดตาม|หมายเลขพัสดุ)\s*[:#\-]?\s*(.+)$/i);
-                if (afterLabel && afterLabel[1]) addCandidate(afterLabel[1], 7);
+            rawText.split(/\r?\n/).forEach(function(line) {
+                const compact = line.replace(/\s+/g, '');
+                if (isValidTrackingCandidate({ value: compact })) {
+                    addCandidate(compact, 52);
+                }
 
-                const tokens = line.match(/[A-Za-z0-9ก-๙][A-Za-z0-9ก-๙._:/#?&=+\-]{4,}/gu) || [];
-                tokens.forEach(token => addCandidate(token, 1 + labelScore));
+                const tokens = line.match(/[A-Z0-9][A-Z0-9._/#:+\-]{5,60}/g) || [];
+                tokens.forEach(v => addCandidate(v, 48));
             });
 
             return Array.from(candidateMap.values())
-                .sort((a, b) => b.score - a.score || a.value.length - b.value.length)
+                .sort((a,b) => b.score - a.score)
                 .slice(0, 8);
         }
 
@@ -2483,14 +2916,18 @@
             const candidates = [];
 
             if (cfg.type === 'tracking') {
-                (smart.trackingCandidates || []).forEach(function(item) {
-                    candidates.push(candidateObject(
-                        item.value,
-                        item.source || 'Barcode/OCR',
-                        item.score || 0,
-                        item.source === 'Barcode' ? 'อ่านจาก Barcode / QR โดยตรง' : 'ตรวจพบจากข้อความ OCR'
-                    ));
-                });
+                (smart.trackingCandidates || [])
+                    .filter(isValidTrackingCandidate)
+                    .forEach(function(item) {
+                        candidates.push(candidateObject(
+                            item.value,
+                            item.source || 'Barcode/OCR',
+                            item.score || 0,
+                            item.source === 'Barcode'
+                                ? 'อ่านจาก Barcode / QR โดยตรง'
+                                : 'ตรวจพบจาก OCR สำหรับ Tracking'
+                        ));
+                    });
             }
 
             if (cfg.type === 'name') {
