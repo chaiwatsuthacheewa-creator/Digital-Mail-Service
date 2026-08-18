@@ -136,102 +136,38 @@
                     </div>
                 </div>
 
-                <!-- SVG Hi-Tech Courier Illustration -->
+                <!-- Smart Parcel Intelligence Visual — no human figure -->
                 <div class="flex-1 flex items-center justify-center py-6">
-                    <div class="relative hero-float">
-                        <svg viewBox="0 0 380 460" class="w-64 xl:w-80 h-auto drop-shadow-[0_0_45px_rgba(79,70,229,0.45)]" xmlns="http://www.w3.org/2000/svg">
+                    <div class="relative hero-float w-full max-w-[430px]">
+                        <svg viewBox="0 0 520 430" class="w-full h-auto drop-shadow-[0_0_45px_rgba(79,70,229,0.38)]" xmlns="http://www.w3.org/2000/svg" aria-label="Smart parcel scanning">
                             <defs>
-                                <linearGradient id="jacket" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stop-color="#1e293b"/>
-                                    <stop offset="100%" stop-color="#0b1120"/>
-                                </linearGradient>
-                                <linearGradient id="badge" x1="0" y1="0" x2="1" y2="0">
-                                    <stop offset="0%" stop-color="#3b82f6"/>
-                                    <stop offset="100%" stop-color="#4f46e5"/>
-                                </linearGradient>
-                                <radialGradient id="haloGlow" cx="50%" cy="35%" r="60%">
-                                    <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.55"/>
-                                    <stop offset="100%" stop-color="#4f46e5" stop-opacity="0"/>
-                                </radialGradient>
+                                <linearGradient id="smartBox" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#94a3b8"/></linearGradient>
+                                <linearGradient id="smartBlue" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#38bdf8"/><stop offset="55%" stop-color="#6366f1"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient>
+                                <radialGradient id="smartHalo" cx="50%" cy="45%" r="58%"><stop offset="0%" stop-color="#4f46e5" stop-opacity=".5"/><stop offset="100%" stop-color="#4f46e5" stop-opacity="0"/></radialGradient>
+                                <filter id="smartGlow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
                             </defs>
-
-                            <!-- Halo -->
-                            <ellipse cx="190" cy="220" rx="170" ry="170" fill="url(#haloGlow)"/>
-
-                            <!-- Orbit rings (tech feel) -->
-                            <circle cx="190" cy="230" r="150" fill="none" stroke="#6366f1" stroke-opacity="0.35" stroke-width="1"/>
-                            <circle cx="190" cy="230" r="128" fill="none" stroke="#818cf8" stroke-opacity="0.5" stroke-width="1" class="hero-dash"/>
-
-                            <!-- Ground shadow -->
-                            <ellipse cx="190" cy="428" rx="86" ry="12" fill="#000000" opacity="0.35"/>
-
-                            <!-- Legs -->
-                            <rect x="150" y="330" width="26" height="90" rx="10" fill="#0b1120"/>
-                            <rect x="204" y="330" width="26" height="90" rx="10" fill="#0b1120"/>
-                            <rect x="146" y="410" width="34" height="16" rx="6" fill="#1e293b"/>
-                            <rect x="200" y="410" width="34" height="16" rx="6" fill="#1e293b"/>
-
-                            <!-- Bag strap -->
-                            <path d="M120 150 L245 340" stroke="#1e293b" stroke-width="18" stroke-linecap="round"/>
-                            <path d="M120 150 L245 340" stroke="#3b82f6" stroke-width="2" stroke-opacity="0.6"/>
-
-                            <!-- Torso / Jacket -->
-                            <path d="M118 165 C118 130 262 130 262 165 L275 335 C275 355 105 355 105 335 Z" fill="url(#jacket)" stroke="#334155" stroke-width="1.5"/>
-                            <!-- Jacket zip line -->
-                            <line x1="190" y1="150" x2="190" y2="330" stroke="#334155" stroke-width="2" stroke-dasharray="4 5"/>
-
-                            <!-- Chest Badge: NTL -->
-                            <rect x="152" y="200" width="76" height="34" rx="6" fill="url(#badge)"/>
-                            <text x="190" y="223" font-family="Arial, sans-serif" font-size="16" font-weight="900" fill="#ffffff" text-anchor="middle">NTL</text>
-
-                            <!-- Reflective stripe -->
-                            <rect x="105" y="290" width="170" height="10" fill="#4f46e5" opacity="0.85"/>
-                            <rect x="105" y="290" width="170" height="10" fill="#c7d2fe" opacity="0.25"/>
-
-                            <!-- Arms -->
-                            <path d="M118 175 C90 190 78 240 92 275" stroke="url(#jacket)" stroke-width="30" stroke-linecap="round" fill="none"/>
-                            <path d="M262 175 C292 195 300 235 282 262" stroke="url(#jacket)" stroke-width="30" stroke-linecap="round" fill="none"/>
-
-                            <!-- Parcel box held in hands -->
-                            <g transform="translate(246,235)">
-                                <rect x="0" y="0" width="64" height="52" rx="4" fill="#e2e8f0"/>
-                                <rect x="0" y="0" width="64" height="52" rx="4" fill="#4f46e5" opacity="0.12"/>
-                                <line x1="0" y1="26" x2="64" y2="26" stroke="#94a3b8" stroke-width="2"/>
-                                <line x1="32" y1="0" x2="32" y2="52" stroke="#94a3b8" stroke-width="2"/>
-                                <rect x="6" y="6" width="20" height="6" fill="#334155" opacity="0.6"/>
-                                <!-- scanning laser -->
-                                <rect x="0" y="0" width="64" height="2.5" fill="#22d3ee" opacity="0.9" class="hero-scan"/>
+                            <ellipse cx="260" cy="215" rx="220" ry="175" fill="url(#smartHalo)"/>
+                            <circle cx="260" cy="210" r="170" fill="none" stroke="#6366f1" stroke-opacity=".3"/>
+                            <circle cx="260" cy="210" r="145" fill="none" stroke="#818cf8" stroke-opacity=".45" class="hero-dash"/>
+                            <g stroke="#38bdf8" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 8">
+                                <path d="M85 105 L162 152"/><path d="M425 105 L355 153"/><path d="M78 314 L165 270"/><path d="M442 312 L357 271"/>
                             </g>
-
-                            <!-- Neck -->
-                            <rect x="176" y="128" width="28" height="24" rx="8" fill="#f1c9a1"/>
-
-                            <!-- Head -->
-                            <circle cx="190" cy="100" r="38" fill="#f1c9a1"/>
-
-                            <!-- Cap -->
-                            <path d="M150 92 C150 62 230 62 230 92 L238 96 L142 96 Z" fill="#0b1120"/>
-                            <rect x="156" y="72" width="68" height="16" rx="4" fill="url(#badge)"/>
-                            <text x="190" y="84" font-family="Arial, sans-serif" font-size="11" font-weight="900" fill="#ffffff" text-anchor="middle">NTL</text>
-                            <path d="M148 96 C168 108 212 108 232 96" stroke="#0b1120" stroke-width="6" fill="none" stroke-linecap="round"/>
-
-                            <!-- Floating tech dots / circuit nodes -->
-                            <g stroke="#818cf8" stroke-opacity="0.7">
-                                <line x1="60" y1="120" x2="100" y2="150" stroke-dasharray="3 6"/>
-                                <line x1="320" y1="150" x2="280" y2="185" stroke-dasharray="3 6"/>
-                                <line x1="70" y1="330" x2="105" y2="300" stroke-dasharray="3 6"/>
+                            <g fill="#38bdf8" filter="url(#smartGlow)"><circle cx="85" cy="105" r="5"/><circle cx="425" cy="105" r="5"/><circle cx="78" cy="314" r="5"/><circle cx="442" cy="312" r="5"/></g>
+                            <g transform="translate(145 116)">
+                                <path d="M20 70 L116 18 L226 70 L128 126 Z" fill="#cbd5e1"/>
+                                <path d="M20 70 L128 126 L128 263 L20 205 Z" fill="url(#smartBox)"/>
+                                <path d="M128 126 L226 70 L226 206 L128 263 Z" fill="#94a3b8"/>
+                                <path d="M116 18 L226 70 L128 126 L20 70 Z" fill="#e2e8f0"/>
+                                <path d="M116 18 L116 79 L128 86 L128 126" fill="none" stroke="#64748b" stroke-width="2"/>
+                                <rect x="49" y="104" width="104" height="66" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+                                <rect x="61" y="116" width="54" height="7" rx="3" fill="#64748b"/>
+                                <rect x="61" y="130" width="76" height="5" rx="2" fill="#cbd5e1"/>
+                                <g fill="#0f172a"><rect x="61" y="146" width="3" height="15"/><rect x="67" y="146" width="2" height="15"/><rect x="72" y="146" width="5" height="15"/><rect x="80" y="146" width="2" height="15"/><rect x="85" y="146" width="4" height="15"/><rect x="92" y="146" width="2" height="15"/><rect x="98" y="146" width="6" height="15"/><rect x="108" y="146" width="2" height="15"/><rect x="113" y="146" width="4" height="15"/><rect x="121" y="146" width="3" height="15"/><rect x="128" y="146" width="5" height="15"/></g>
                             </g>
-                            <circle cx="60" cy="120" r="5" fill="#38bdf8"/>
-                            <circle cx="320" cy="150" r="5" fill="#818cf8"/>
-                            <circle cx="70" cy="330" r="5" fill="#38bdf8"/>
-                            <circle cx="330" cy="330" r="4" fill="#22d3ee"/>
-                        </svg>
+                            <g fill="none" stroke="url(#smartBlue)" stroke-width="5" stroke-linecap="round" filter="url(#smartGlow)"><path d="M112 126 V88 H154"/><path d="M408 126 V88 H366"/><path d="M112 298 V338 H154"/><path d="M408 298 V338 H366"/></g>
+                            <g class="hero-pulse"><rect x="121" y="203" width="278" height="3" rx="2" fill="#22d3ee" filter="url(#smartGlow)"/><rect x="145" y="190" width="230" height="30" fill="#22d3ee" opacity=".06"/></g>
+                            </svg>
                     </div>
-                </div>
-
-                <div class="max-w-sm">
-                    <h3 class="text-white text-2xl font-black leading-tight">Fast. Transparent.<br>Fully Trackable.</h3>
-                    <p class="text-indigo-300 text-sm mt-2">An enterprise-grade digital document &amp; parcel management platform — from intake and scanning to e-signature and reporting, end to end.</p>
                 </div>
             </div>
         </div>
@@ -248,23 +184,27 @@
             <div class="max-w-md w-full bg-slate-900/85 backdrop-blur-xl p-8 md:p-10 rounded-3xl shadow-2xl border border-slate-700/50 relative z-10 animate-fade-up">
 
                 <div class="text-center mb-8">
-                    <!-- Compact NTL Courier Avatar (mobile header of the card) -->
+                    <!-- Smart Parcel Avatar -->
                     <div class="relative w-24 h-24 mx-auto mb-4">
-                        <div class="w-full h-full rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 p-1 shadow-lg shadow-indigo-500/30">
-                            <div class="w-full h-full bg-slate-950 rounded-full flex items-center justify-center overflow-hidden relative">
-                                <svg class="w-20 h-20 text-indigo-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="50" cy="32" r="16" fill="#64748B" />
-                                    <path d="M30 30 C30 20, 70 20, 70 30 L75 32 L25 32 Z" fill="#1E293B" />
-                                    <rect x="32" y="22" width="36" height="8" rx="2" fill="#2563EB" />
-                                    <text x="50" y="28" font-size="6" font-weight="900" fill="#FFFFFF" text-anchor="middle">NTL</text>
-                                    <path d="M20 85 C20 55, 80 55, 80 85 Z" fill="#0F172A" />
-                                    <path d="M32 58 L68 58 L64 85 L36 85 Z" fill="#1E293B" />
-                                    <rect x="38" y="64" width="24" height="12" rx="2" fill="#2563EB" />
-                                    <text x="50" y="72" font-size="7" font-weight="900" fill="#FFFFFF" text-anchor="middle">NTL</text>
+                        <div class="w-full h-full rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 p-1 shadow-lg shadow-indigo-500/30">
+                            <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center overflow-hidden relative">
+                                <svg class="w-20 h-20" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Parcel scanner">
+                                    <rect x="25" y="28" width="50" height="46" rx="6" fill="#CBD5E1"/>
+                                    <path d="M25 42 L50 29 L75 42 L50 55 Z" fill="#E2E8F0"/>
+                                    <path d="M50 55 L75 42 V67 L50 80 Z" fill="#94A3B8"/>
+                                    <path d="M25 42 L50 55 V80 L25 67 Z" fill="#B6C2D1"/>
+                                    <rect x="32" y="50" width="30" height="16" rx="3" fill="#F8FAFC"/>
+                                    <g fill="#0F172A">
+                                        <rect x="36" y="54" width="2" height="8"/><rect x="40" y="54" width="1.5" height="8"/>
+                                        <rect x="44" y="54" width="3" height="8"/><rect x="49" y="54" width="1.5" height="8"/>
+                                        <rect x="53" y="54" width="2.5" height="8"/><rect x="58" y="54" width="1.5" height="8"/>
+                                    </g>
+                                    <path d="M16 30 V18 H28 M84 30 V18 H72 M16 70 V82 H28 M84 70 V82 H72" stroke="#38BDF8" stroke-width="4" stroke-linecap="round"/>
+                                    <rect x="15" y="48" width="70" height="3" rx="1.5" fill="#22D3EE"/>
                                 </svg>
                             </div>
                         </div>
-                        <span class="absolute bottom-0 right-0 bg-emerald-500 w-5 h-5 rounded-full border-2 border-slate-900 shadow" title="System Online"></span>
+                        <span class="absolute -bottom-1 -right-1 bg-emerald-500 w-5 h-5 rounded-full border-2 border-slate-900 shadow" title="System Online"></span>
                     </div>
 
                     <h2 class="text-2xl font-black text-white tracking-wide">Digital Mail Service</h2>
@@ -286,16 +226,12 @@
                             <input type="password" id="login-password" placeholder="กรอกรหัสผ่าน" class="w-full bg-slate-800/80 border border-slate-700 text-white pl-11 p-3 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all">
                         </div>
                     </div>
-                    <div class="bg-indigo-950/60 p-3.5 rounded-xl border border-indigo-800/50 mt-2">
-                        <div class="flex items-start gap-2.5 text-xs text-indigo-200">
-                            <i class="fa-solid fa-shield-halved text-indigo-400 mt-0.5"></i>
-                            <p><span class="font-bold">สิทธิ์การใช้งานกำหนดจากระบบ</span><br><span class="text-indigo-300/80">Role จะถูกตรวจสอบจาก Users ใน Google Sheets หลัง Sign In</span></p>
-                        </div>
-                    </div>
 
-                    <button onclick="handleLogin()" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-indigo-600/30 hover:from-blue-700 hover:to-indigo-800 active:scale-[0.98] transition-all duration-200 mt-2 flex items-center justify-center gap-2 cursor-pointer">
-                        <span>Sign In to Service</span>
-                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    <div id="login-status" class="hidden rounded-xl border px-3.5 py-3 text-xs font-bold"></div>
+
+                    <button id="login-submit-btn" onclick="handleLogin()" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-indigo-600/30 hover:from-blue-700 hover:to-indigo-800 active:scale-[0.98] transition-all duration-200 mt-2 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-wait">
+                        <span id="login-submit-text">Sign In to Service</span>
+                        <i id="login-submit-icon" class="fa-solid fa-arrow-right text-xs"></i>
                     </button>
                 </div>
 
@@ -330,6 +266,9 @@
                 <button onclick="navigateTo('dashboard')" id="side-dashboard" class="sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
                     <i class="fa-solid fa-chart-pie w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> Executive Dashboard
                 </button>
+                <button onclick="navigateTo('operations')" id="side-operations" class="sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
+                    <i class="fa-solid fa-route w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> Operations Control
+                </button>
 
                 <p class="px-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-6">Operations System</p>
                 <button onclick="navigateTo('keyin')" id="side-keyin" class="sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
@@ -351,9 +290,6 @@
                 </button>
                 <button onclick="navigateTo('automail')" id="side-automail" class="admin-only sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
                     <i class="fa-regular fa-envelope w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> Auto Mail
-                </button>
-                <button onclick="navigateTo('chatbot')" id="side-chatbot" class="admin-only sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
-                    <i class="fa-solid fa-robot w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> Chat Bot
                 </button>
             </nav>
 
@@ -435,6 +371,12 @@
                             </div>
                             <span class="text-sm font-bold text-slate-700 group-hover:text-indigo-600">Dashboard</span>
                         </button>
+                        <button onclick="navigateTo('operations')" class="group bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-xl hover:border-violet-400 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer">
+                            <div class="w-14 h-14 bg-violet-50 text-violet-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-violet-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                <i class="fa-solid fa-route text-2xl"></i>
+                            </div>
+                            <span class="text-sm font-bold text-slate-700 group-hover:text-violet-600">Operations</span>
+                        </button>
                         <button onclick="navigateTo('keyin')" class="group bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-xl hover:border-blue-400 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer">
                             <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm">
                                 <i class="fa-solid fa-keyboard text-2xl"></i>
@@ -470,12 +412,6 @@
                                 <i class="fa-regular fa-envelope text-2xl"></i>
                             </div>
                             <span class="text-sm font-bold text-slate-700 group-hover:text-amber-600">Auto Mail</span>
-                        </button>
-                        <button onclick="navigateTo('chatbot')" class="admin-only group bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-xl hover:border-cyan-400 transition-all duration-300 flex flex-col items-center justify-center text-center col-span-2 sm:col-span-1 cursor-pointer">
-                            <div class="w-14 h-14 bg-cyan-50 text-cyan-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-cyan-600 group-hover:text-white transition-all duration-300 shadow-sm">
-                                <i class="fa-solid fa-robot text-2xl"></i>
-                            </div>
-                            <span class="text-sm font-bold text-slate-700 group-hover:text-cyan-600">Chat Bot</span>
                         </button>
                     </div>
                 </section>
@@ -534,25 +470,62 @@
                                 <div class="flex justify-between items-center pb-3 border-b border-slate-50">
                                     <div class="flex items-center gap-3">
                                         <div class="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs"><i class="fa-solid fa-check"></i></div>
-                                        <div><p class="font-bold text-slate-800 text-sm">NTL-89012</p><p class="text-[11px] text-slate-400">Ari Hill · 10 min ago</p></div>
+                                        <div><p class="font-bold text-slate-800 text-sm">DHL987654321</p><p class="text-[11px] text-slate-400">Ari Hill · 10 min ago</p></div>
                                     </div>
                                     <span class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md text-[10px] font-bold border border-emerald-100">Signed</span>
                                 </div>
                                 <div class="flex justify-between items-center pb-3 border-b border-slate-50">
                                     <div class="flex items-center gap-3">
                                         <div class="w-9 h-9 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xs"><i class="fa-solid fa-truck-fast"></i></div>
-                                        <div><p class="font-bold text-slate-800 text-sm">NTL-89013</p><p class="text-[11px] text-slate-400">BTS · 45 min ago</p></div>
+                                        <div><p class="font-bold text-slate-800 text-sm">00123456789</p><p class="text-[11px] text-slate-400">BTS · 45 min ago</p></div>
                                     </div>
                                     <span class="text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md text-[10px] font-bold border border-amber-100">In Transit</span>
                                 </div>
                                 <div class="flex justify-between items-center">
                                     <div class="flex items-center gap-3">
                                         <div class="w-9 h-9 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs"><i class="fa-solid fa-xmark"></i></div>
-                                        <div><p class="font-bold text-slate-800 text-sm">NTL-89014</p><p class="text-[11px] text-slate-400">HQ · 2 hrs ago</p></div>
+                                        <div><p class="font-bold text-slate-800 text-sm">ABC-001-2569</p><p class="text-[11px] text-slate-400">HQ · 2 hrs ago</p></div>
                                     </div>
                                     <span class="text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md text-[10px] font-bold border border-rose-100">Return</span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MODULE 2B: OPERATIONS CONTROL -->
+                <section id="page-operations" class="page-section hidden max-w-7xl mx-auto space-y-6 animate-fade-in">
+                    <div class="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl overflow-hidden relative">
+                        <div class="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-indigo-500/20 blur-3xl"></div>
+                        <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                                <p class="text-[11px] uppercase tracking-[0.22em] text-indigo-300 font-bold">Daily Operations Control</p>
+                                <h3 class="text-2xl font-black mt-1">Ari Hills → BTS Delivery Flow</h3>
+                                <p class="text-sm text-slate-300 mt-2">ควบคุมยอดรับเข้า ส่งออก และยืนยันส่งถึงจริงจาก E-Sign ในหน้าเดียว</p>
+                            </div>
+                            <button type="button" onclick="loadOperationsControl()" class="self-start md:self-auto bg-white/10 border border-white/15 hover:bg-white/15 px-4 py-2.5 rounded-xl text-xs font-bold transition"><i class="fa-solid fa-rotate mr-1.5"></i> Refresh Data</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5"><div class="flex items-center gap-2 text-indigo-600"><i class="fa-solid fa-inbox"></i><span class="text-[11px] font-bold uppercase">Received</span></div><p id="ops-received" class="text-3xl font-black text-slate-800 mt-2">-</p><p class="text-[11px] text-slate-400">รับเข้า Ari Hills วันนี้</p></div>
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5"><div class="flex items-center gap-2 text-blue-600"><i class="fa-solid fa-truck-fast"></i><span class="text-[11px] font-bold uppercase">Dispatched</span></div><p id="ops-dispatched" class="text-3xl font-black text-slate-800 mt-2">-</p><p class="text-[11px] text-slate-400">ส่งออกไป BTS</p></div>
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5"><div class="flex items-center gap-2 text-emerald-600"><i class="fa-solid fa-circle-check"></i><span class="text-[11px] font-bold uppercase">Delivered</span></div><p id="ops-delivered" class="text-3xl font-black text-slate-800 mt-2">-</p><p class="text-[11px] text-slate-400">ส่งถึงจริง / E-Signed</p></div>
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5"><div class="flex items-center gap-2 text-amber-600"><i class="fa-solid fa-clock"></i><span class="text-[11px] font-bold uppercase">In Transit</span></div><p id="ops-transit" class="text-3xl font-black text-slate-800 mt-2">-</p><p class="text-[11px] text-slate-400">ส่งแล้วแต่ยังไม่ถึง</p></div>
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 col-span-2 lg:col-span-1"><div class="flex items-center gap-2 text-rose-600"><i class="fa-solid fa-triangle-exclamation"></i><span class="text-[11px] font-bold uppercase">Pending</span></div><p id="ops-pending" class="text-3xl font-black text-slate-800 mt-2">-</p><p class="text-[11px] text-slate-400">รับแล้ว ยังไม่ Dispatch</p></div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div><h4 class="font-bold text-slate-800">รายการรอส่งจาก Ari Hills → BTS</h4><p class="text-xs text-slate-500 mt-0.5">เลือกรายการที่ส่งออกจริง แล้วบันทึก Dispatch</p></div>
+                                <div class="flex gap-2"><button type="button" onclick="toggleAllDispatchItems(true)" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold">เลือกทั้งหมด</button><button type="button" onclick="markSelectedDispatch()" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold shadow-sm"><i class="fa-solid fa-truck-fast mr-1"></i> Dispatch to BTS</button></div>
+                            </div>
+                            <div id="ops-pending-list" class="divide-y divide-slate-100 max-h-[430px] overflow-y-auto"><div class="p-6 text-center text-sm text-slate-400">กำลังโหลดข้อมูล...</div></div>
+                        </div>
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                            <h4 class="font-bold text-slate-800">Daily Delivery Completion</h4><p class="text-xs text-slate-500 mt-1">เทียบจำนวนรับเข้ากับจำนวนส่งถึงจริง</p>
+                            <div class="mt-6"><div class="flex justify-between text-xs font-bold mb-2"><span class="text-slate-600">Completion</span><span id="ops-completion-label" class="text-indigo-600">0%</span></div><div class="h-3 rounded-full bg-slate-100 overflow-hidden"><div id="ops-completion-bar" class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-500" style="width:0%"></div></div></div>
+                            <div class="mt-6 grid grid-cols-2 gap-3"><div class="rounded-xl bg-emerald-50 border border-emerald-100 p-3"><p class="text-[10px] uppercase font-bold text-emerald-600">Delivered</p><p id="ops-delivered-small" class="text-xl font-black text-emerald-800">0</p></div><div class="rounded-xl bg-rose-50 border border-rose-100 p-3"><p class="text-[10px] uppercase font-bold text-rose-600">Return</p><p id="ops-returned" class="text-xl font-black text-rose-800">0</p></div></div>
+                            <p class="text-[11px] text-slate-400 mt-5 leading-relaxed">“ส่งถึงจริง” จะนับเมื่อรายการได้รับ E-Sign สำเร็จ จึงแยกจากสถานะ “ส่งออกไป BTS” อย่างชัดเจน</p>
                         </div>
                     </div>
                 </section>
@@ -631,7 +604,12 @@
                                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Quantity / จำนวน (ชิ้น)</label>
                                 <div class="relative w-1/2">
                                     <i class="fa-solid fa-layer-group absolute left-4 top-3.5 text-slate-400"></i>
-                                    <input type="number" id="keyin-qty" value="1" min="1" max="50" class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-bold">
+                                    <input type="number" id="keyin-qty" value="1" min="1" max="50" oninput="updateScanProgress()" class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-bold">
+                                </div>
+                                <div id="scan-progress-card" class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/70 p-3">
+                                    <div class="flex items-center justify-between gap-2"><div><p class="text-[11px] font-bold text-indigo-900">Scan Control</p><p id="scan-progress-text" class="text-xs text-indigo-700 mt-0.5">สแกนแล้ว 0 / 1 ชิ้น</p></div><button type="button" onclick="resetScanProgress()" class="text-[10px] font-bold text-slate-500 hover:text-rose-600">Reset</button></div>
+                                    <div class="h-2 bg-white rounded-full overflow-hidden mt-2 border border-indigo-100"><div id="scan-progress-bar" class="h-full bg-indigo-600 rounded-full transition-all duration-300" style="width:0%"></div></div>
+                                    <p id="scan-progress-hint" class="text-[10px] text-slate-500 mt-2">เมื่อเลือกมากกว่า 1 ชิ้น ระบบจะตรวจจำนวนการสแกนก่อนบันทึก</p>
                                 </div>
                             </div>
                         </div>
@@ -641,15 +619,14 @@
 
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Tracking Number / หมายเลขพัสดุ</label>
-                                <div class="flex gap-2">
-                                    <div class="relative flex-1">
-                                        <i class="fa-solid fa-barcode absolute left-4 top-3.5 text-slate-400"></i>
-                                        <input type="text" id="keyin-tracking" placeholder="สแกน หรือ พิมพ์เลขพัสดุ" class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-                                    </div>
-                                    <button onclick="generateTracking()" class="bg-slate-900 text-white px-4 rounded-xl shadow hover:bg-slate-800 transition flex items-center gap-2 text-xs font-bold cursor-pointer">
-                                        <i class="fa-solid fa-wand-magic-sparkles"></i> สุ่มเลข
-                                    </button>
+                                <div class="relative">
+                                    <i class="fa-solid fa-barcode absolute left-4 top-3.5 text-slate-400"></i>
+                                    <input type="text" id="keyin-tracking"
+                                        placeholder="สแกน Barcode / QR Code หรือกรอก Tracking ID"
+                                        autocomplete="off" autocapitalize="off" spellcheck="false"
+                                        class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-mono">
                                 </div>
+                                <p class="text-[10px] text-slate-400 mt-1.5">รองรับ Tracking ทุก Format และเก็บค่าตามที่สแกนได้จริงโดยไม่เติม Prefix</p>
                             </div>
 
                             <div>
@@ -663,7 +640,7 @@
                                     <button type="button" onclick="startParcelScanner()" class="w-full border-2 border-indigo-200 rounded-xl p-4 text-center text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition cursor-pointer">
                                         <i class="fa-solid fa-qrcode text-xl mb-1"></i>
                                         <p class="text-xs font-bold">เปิดกล้องสแกนพัสดุ</p>
-                                        <p class="text-[10px] text-slate-500 mt-0.5">Barcode + Tracking + OCR ชื่อ</p>
+                                        <p class="text-[10px] text-slate-500 mt-0.5">Barcode / QR + OCR ข้อมูล</p>
                                     </button>
                                     <button type="button" onclick="document.getElementById('camera-file-input').click()" class="w-full border-2 border-dashed border-slate-300 rounded-xl p-4 text-center text-slate-700 bg-slate-50 hover:bg-slate-100 transition cursor-pointer">
                                         <i class="fa-solid fa-camera text-xl mb-1"></i>
@@ -692,6 +669,10 @@
                                         <button type="button" onclick="toggleOcrRawText()" class="text-[10px] font-bold text-indigo-600">ดูข้อความ OCR</button>
                                     </div>
                                     <p id="ocr-summary" class="text-[11px] text-slate-600 mt-1"></p>
+                                    <div id="ocr-tracking-candidates" class="hidden mt-2">
+                                        <p class="text-[10px] font-bold text-slate-500 mb-1.5">Tracking ที่ OCR อาจตรวจพบ — เลือกเพื่อตรวจสอบก่อนบันทึก</p>
+                                        <div id="ocr-tracking-candidate-list" class="flex flex-wrap gap-1.5"></div>
+                                    </div>
                                     <pre id="ocr-raw-text" class="hidden whitespace-pre-wrap text-[10px] text-slate-500 mt-2 max-h-32 overflow-auto"></pre>
                                 </div>
 
@@ -805,7 +786,7 @@
                     <p class="text-xs text-slate-500 mb-6">ค้นหาและติดตามสถานะพัสดุ</p>
 
                     <div class="flex gap-2 mb-6">
-                        <input type="text" id="track-search-input" placeholder="ใส่รหัส Tracking..." class="flex-1 border border-slate-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <input type="text" id="track-search-input" placeholder="สแกนหรือระบุ Tracking / Barcode..." class="flex-1 border border-slate-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                         <button onclick="searchTracking()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold text-sm hover:bg-emerald-700 transition cursor-pointer">ค้นหา</button>
                     </div>
 
@@ -813,7 +794,7 @@
                         <div class="flex justify-between items-center pb-4 border-b border-slate-200 mb-4">
                             <div>
                                 <p class="text-xs font-bold text-slate-400">TRACKING NO.</p>
-                                <p class="text-lg font-black text-slate-800" id="result-tracking-id">NTL-89012</p>
+                                <p class="text-lg font-black text-slate-800" id="result-tracking-id">DHL987654321</p>
                             </div>
                             <span class="bg-emerald-100 text-emerald-800 text-xs px-3 py-1 rounded-full font-bold">จัดส่งสำเร็จ</span>
                         </div>
@@ -832,7 +813,7 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Tracking Number ตีกลับ</label>
-                            <input type="text" id="return-tracking" placeholder="ระบุเลข NTL-XXXXXX" class="w-full border border-slate-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500">
+                            <input type="text" id="return-tracking" placeholder="สแกนหรือระบุ Tracking / Barcode" class="w-full border border-slate-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">ประเภทการตีกลับ</label>
@@ -910,7 +891,7 @@
                         <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-lg"><i class="fa-regular fa-envelope"></i></div>
                         <div>
                             <h3 class="text-lg font-bold text-slate-800">Auto Mail Notification</h3>
-                            <p class="text-xs text-slate-500">แจ้งสถานะเอกสารอัตโนมัติทางอีเมล</p>
+                            <p class="text-xs text-slate-500">แจ้งสถานะเอกสารอัตโนมัติแบบ No-Reply</p>
                         </div>
                     </div>
 
@@ -935,7 +916,7 @@
                         <div class="p-5">
                             <p class="text-xs text-slate-400 mb-1">ถึง: <span id="mail-preview-to" class="text-slate-700 font-semibold">user@ntl.co.th</span></p>
                             <p class="text-sm font-bold text-slate-800 mb-3">เรียน คุณผู้ใช้บริการ</p>
-                            <p class="text-xs text-slate-600 leading-relaxed">เอกสารหมายเลข <span id="mail-preview-tracking" class="font-bold text-slate-800">NTL-895671</span> ได้ดำเนินการเรียบร้อยแล้ว สถานะ: <span id="mail-preview-status" class="font-bold text-emerald-600">Delivered</span></p>
+                            <p class="text-xs text-slate-600 leading-relaxed">เอกสารหมายเลข <span id="mail-preview-tracking" class="font-bold text-slate-800">TH123456789</span> ได้ดำเนินการเรียบร้อยแล้ว สถานะ: <span id="mail-preview-status" class="font-bold text-emerald-600">Delivered</span></p><div class="mt-3 rounded-lg bg-rose-50 border border-rose-100 p-2.5 text-[11px] text-rose-700 font-semibold"><i class="fa-solid fa-ban mr-1"></i>อีเมลจากระบบอัตโนมัติ กรุณาอย่าตอบกลับ (No Reply)</div>
                             <button onclick="sendTestAutoMail()" class="mt-4 bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-lg hover:bg-slate-800 transition cursor-pointer"><i class="fa-regular fa-paper-plane mr-1.5"></i> ดูรายละเอียด / ทดสอบส่งอีเมล</button>
                         </div>
                     </div>
@@ -945,46 +926,17 @@
                         <div class="flex justify-between items-center p-3 rounded-xl bg-slate-50 border border-slate-100">
                             <div class="flex items-center gap-3">
                                 <i class="fa-solid fa-circle-check text-emerald-500"></i>
-                                <div><p class="text-sm font-bold text-slate-800">NTL-89012</p><p class="text-[11px] text-slate-400">ส่งถึง finance@ntl.co.th · 5 นาทีที่แล้ว</p></div>
+                                <div><p class="text-sm font-bold text-slate-800">DHL987654321</p><p class="text-[11px] text-slate-400">ส่งถึง finance@ntl.co.th · 5 นาทีที่แล้ว</p></div>
                             </div>
                             <span class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md text-[10px] font-bold border border-emerald-100">Sent</span>
                         </div>
                         <div class="flex justify-between items-center p-3 rounded-xl bg-slate-50 border border-slate-100">
                             <div class="flex items-center gap-3">
                                 <i class="fa-solid fa-circle-check text-emerald-500"></i>
-                                <div><p class="text-sm font-bold text-slate-800">NTL-89013</p><p class="text-[11px] text-slate-400">ส่งถึง hr@ntl.co.th · 40 นาทีที่แล้ว</p></div>
+                                <div><p class="text-sm font-bold text-slate-800">00123456789</p><p class="text-[11px] text-slate-400">ส่งถึง hr@ntl.co.th · 40 นาทีที่แล้ว</p></div>
                             </div>
                             <span class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md text-[10px] font-bold border border-emerald-100">Sent</span>
                         </div>
-                    </div>
-                </section>
-
-                <!-- MODULE 9: CHAT BOT -->
-                <section id="page-chatbot" class="page-section hidden max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200/80 animate-fade-in overflow-hidden flex flex-col" style="height: calc(100vh - 220px); min-height:420px;">
-                    <div class="flex items-center gap-3 px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-cyan-50 to-indigo-50 flex-shrink-0">
-                        <div class="w-11 h-11 bg-white text-cyan-600 rounded-full flex items-center justify-center text-xl shadow-sm border border-cyan-100"><i class="fa-solid fa-robot"></i></div>
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-800">NTL Bot ผู้ช่วยอัจฉริยะ</h3>
-                            <p class="text-[11px] text-emerald-600 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ยินดีให้บริการ 24 ชม.</p>
-                        </div>
-                    </div>
-
-                    <div id="chatbot-messages" class="flex-1 overflow-y-auto p-5 space-y-3 no-scrollbar bg-slate-50/50">
-                        <div class="flex items-start gap-2.5">
-                            <div class="w-8 h-8 bg-cyan-600 text-white rounded-full flex items-center justify-center text-xs flex-shrink-0"><i class="fa-solid fa-robot"></i></div>
-                            <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-sm px-4 py-2.5 text-xs text-slate-700 max-w-[75%] shadow-sm">สวัสดีค่ะ ผมคือ NTL Bot ยินดีให้บริการค่ะ 😊 สอบถามสถานะเอกสารหรือพัสดุได้เลยค่ะ</div>
-                        </div>
-                    </div>
-
-                    <div class="px-5 py-3 flex gap-2 flex-wrap border-t border-slate-100 flex-shrink-0">
-                        <button onclick="chatQuickAction('status')" class="text-[11px] font-bold px-3 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 transition cursor-pointer">ตรวจสอบสถานะเอกสาร</button>
-                        <button onclick="chatQuickAction('track')" class="text-[11px] font-bold px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition cursor-pointer">ค้นหาด้วย Tracking Number</button>
-                        <button onclick="chatQuickAction('proof')" class="text-[11px] font-bold px-3 py-2 rounded-lg bg-slate-800 text-white hover:bg-slate-900 transition cursor-pointer">ดาวน์โหลดหลักฐานการรับ</button>
-                    </div>
-
-                    <div class="px-5 pb-5 pt-2 flex gap-2 flex-shrink-0">
-                        <input type="text" id="chatbot-input" placeholder="พิมพ์ข้อความ หรือ หมายเลข Tracking..." class="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" onkeydown="if(event.key==='Enter'){sendChatMessage();}">
-                        <button onclick="sendChatMessage()" class="bg-cyan-600 text-white w-11 h-11 rounded-xl flex items-center justify-center hover:bg-cyan-700 transition cursor-pointer flex-shrink-0"><i class="fa-solid fa-paper-plane"></i></button>
                     </div>
                 </section>
 
@@ -1010,10 +962,7 @@
             <i class="fa-solid fa-file-signature text-base"></i>
             <span class="text-[10px]">E-Sign</span>
         </button>
-        <button onclick="navigateTo('chatbot')" class="admin-only flex flex-col items-center gap-1 hover:text-white cursor-pointer">
-            <i class="fa-solid fa-robot text-base"></i>
-            <span class="text-[10px]">Bot</span>
-        </button>
+        <button onclick="navigateTo('operations')" class="flex flex-col items-center gap-1 hover:text-white cursor-pointer"><i class="fa-solid fa-route text-base"></i><span class="text-[10px]">Ops</span></button>
     </nav>
 
     <!-- ================= JAVASCRIPT CONTROLLER ================= -->
@@ -1026,6 +975,8 @@
         let scannerStream = null;
         let scannerLoopTimer = null;
         let latestOcrText = '';
+        let scanProgressCount = 0;
+        let scanProgressLastAt = 0;
         let esignPendingItems = [];
         let currentReportRange = 'monthly';
         let currentUser = null;
@@ -1378,29 +1329,86 @@
             applyTheme(app.classList.contains('dark-mode') ? 'light' : 'dark');
         }
 
-        function handleLogin() {
-            if (!requireGas()) return;
-            const username = document.getElementById('login-username').value.trim();
-            const password = document.getElementById('login-password').value;
-            if (!username || !password) {
-                alert('กรุณากรอก Username และ Password');
+        function setLoginStatus(message, type) {
+            const box = document.getElementById('login-status');
+            if (!box) return;
+
+            if (!message) {
+                box.classList.add('hidden');
+                box.textContent = '';
                 return;
             }
 
-            apiCall('checkLogin', { username: username, password: password })
-                .then(function(raw) {
-                    const res = normalizeResponse(raw, 'เข้าสู่ระบบไม่สำเร็จ');
-                    if (!res.success || !res.token) {
-                        alert(res.message || 'Username หรือ Password ไม่ถูกต้อง');
-                        return;
+            box.className = 'rounded-xl border px-3.5 py-3 text-xs font-bold ' +
+                (type === 'success'
+                    ? 'bg-emerald-950/60 border-emerald-700/60 text-emerald-300'
+                    : type === 'warning'
+                    ? 'bg-amber-950/60 border-amber-700/60 text-amber-300'
+                    : 'bg-rose-950/60 border-rose-700/60 text-rose-300');
+
+            box.innerHTML =
+                '<i class="fa-solid ' +
+                (type === 'success' ? 'fa-circle-check' : type === 'warning' ? 'fa-triangle-exclamation' : 'fa-circle-xmark') +
+                ' mr-2"></i>' + escapeHtml(message);
+
+            box.classList.remove('hidden');
+        }
+
+        function setLoginLoading(isLoading) {
+            const btn = document.getElementById('login-submit-btn');
+            const text = document.getElementById('login-submit-text');
+            const icon = document.getElementById('login-submit-icon');
+
+            if (btn) btn.disabled = !!isLoading;
+            if (text) text.textContent = isLoading ? 'กำลังตรวจสอบ...' : 'Sign In to Service';
+            if (icon) icon.className = isLoading
+                ? 'fa-solid fa-spinner fa-spin text-xs'
+                : 'fa-solid fa-arrow-right text-xs';
+        }
+
+        async function handleLogin() {
+            if (!requireGas()) return;
+
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            setLoginStatus('', '');
+
+            if (!username || !password) {
+                setLoginStatus('กรุณากรอก Username และ Password', 'error');
+                return;
+            }
+
+            setLoginLoading(true);
+
+            try {
+                const raw = await apiCall('checkLogin', { username: username, password: password });
+                const res = normalizeResponse(raw, 'เข้าสู่ระบบไม่สำเร็จ');
+
+                if (!res.success || !res.token) {
+                    if (res && res.code === 'ACCOUNT_DISABLED') {
+                        setLoginStatus('บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ', 'warning');
+                    } else {
+                        setLoginStatus(res.message || 'Username หรือ Password ไม่ถูกต้อง', 'error');
                     }
-                    saveSession(res);
-                    document.getElementById('login-password').value = '';
+                    return;
+                }
+
+                saveSession(res);
+                document.getElementById('login-password').value = '';
+                setLoginStatus('Login สำเร็จ', 'success');
+                showSystemToast('Login สำเร็จ', 'success');
+
+                setTimeout(function() {
+                    setLoginStatus('', '');
                     showMainApp(res.role);
-                })
-                .catch(function(err) {
-                    alert('เข้าสู่ระบบไม่สำเร็จ: ' + normalizeError(err));
-                });
+                }, 450);
+
+            } catch (err) {
+                setLoginStatus('เข้าสู่ระบบไม่สำเร็จ: ' + normalizeError(err), 'error');
+            } finally {
+                setLoginLoading(false);
+            }
         }
 
         function showMainApp(role) {
@@ -1433,15 +1441,15 @@
         }
 
         const titles = {
-            home: 'Digital Mail Service', dashboard: 'Executive Dashboard', keyin: 'Document Entry (Key In)',
+            home: 'Digital Mail Service', dashboard: 'Executive Dashboard', operations: 'Operations Control', keyin: 'Document Entry (Key In)',
             track: 'Track & Trace', esign: 'E-Signature', return: 'Document Return', report: 'Report',
-            automail: 'Auto Mail', chatbot: 'Chat Bot'
+            automail: 'Auto Mail'
         };
 
         function navigateTo(pageId) {
             const session = currentUser || getSession();
             if (!session || !session.token) return;
-            if (session.role === 'Operation Staff' && ['report','automail','chatbot'].includes(pageId)) {
+            if (session.role === 'Operation Staff' && ['report','automail'].includes(pageId)) {
                 alert('บัญชี Operation Staff ไม่มีสิทธิ์เข้าเมนูนี้');
                 return;
             }
@@ -1459,11 +1467,41 @@
             }
             if (pageId === 'esign') { if (signaturePad) setTimeout(resizeCanvas, 100); loadEsignDepartments(); }
             if (pageId === 'dashboard') loadDashboardStats();
+            if (pageId === 'operations') loadOperationsControl();
         }
 
-        function generateTracking() {
-            document.getElementById('keyin-tracking').value = 'NTL-' + Math.floor(100000 + Math.random() * 900000);
+        function showSystemToast(message, type) {
+            const old = document.getElementById('ntl-system-toast'); if (old) old.remove();
+            const toast = document.createElement('div'); toast.id = 'ntl-system-toast';
+            toast.className = 'fixed z-[10000] left-1/2 -translate-x-1/2 top-5 max-w-[92vw] sm:max-w-md px-4 py-3 rounded-xl shadow-2xl text-sm font-bold border ' +
+                (type === 'success' ? 'bg-emerald-600 text-white border-emerald-500' : type === 'error' ? 'bg-rose-600 text-white border-rose-500' : 'bg-slate-900 text-white border-slate-700');
+            toast.innerHTML = '<i class="fa-solid ' + (type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-triangle-exclamation' : 'fa-bell') + ' mr-2"></i>' + escapeHtml(message);
+            document.body.appendChild(toast); setTimeout(function(){ toast.remove(); }, 2800);
         }
+
+        function updateScanProgress() {
+            const qty = Math.max(1, Number(document.getElementById('keyin-qty')?.value || 1));
+            const text = document.getElementById('scan-progress-text'), bar = document.getElementById('scan-progress-bar'), hint = document.getElementById('scan-progress-hint');
+            const percent = Math.min(100, Math.round((scanProgressCount / qty) * 100));
+            if (text) text.textContent = 'สแกนแล้ว ' + scanProgressCount + ' / ' + qty + ' ชิ้น';
+            if (bar) { bar.style.width = percent + '%'; bar.classList.toggle('bg-emerald-500', scanProgressCount === qty); bar.classList.toggle('bg-indigo-600', scanProgressCount !== qty); }
+            if (hint) {
+                if (scanProgressCount === qty) { hint.textContent = 'จำนวนการสแกนครบแล้ว พร้อมบันทึก'; hint.className = 'text-[10px] text-emerald-600 font-bold mt-2'; }
+                else if (scanProgressCount > qty) { hint.textContent = 'สแกนเกินจำนวนที่ระบุ กรุณาตรวจสอบหรือ Reset'; hint.className = 'text-[10px] text-rose-600 font-bold mt-2'; }
+                else { hint.textContent = 'เหลือสแกนอีก ' + (qty - scanProgressCount) + ' ชิ้น'; hint.className = 'text-[10px] text-slate-500 mt-2'; }
+            }
+        }
+
+        function registerSuccessfulScan(detail) {
+            const now = Date.now(); if (now - scanProgressLastAt < 450) return; scanProgressLastAt = now; scanProgressCount++; updateScanProgress();
+            const qty = Math.max(1, Number(document.getElementById('keyin-qty')?.value || 1));
+            if (scanProgressCount < qty) showSystemToast('สแกนสำเร็จ ' + scanProgressCount + '/' + qty + (detail ? ' • ' + detail : ''), 'info');
+            else if (scanProgressCount === qty) { showSystemToast('สแกนครบ ' + qty + '/' + qty + ' ชิ้น พร้อมบันทึก', 'success'); if (navigator.vibrate) navigator.vibrate([80,50,80]); }
+            else showSystemToast('สแกนเกินจำนวนที่เลือก (' + scanProgressCount + '/' + qty + ')', 'error');
+        }
+
+        function resetScanProgress() { scanProgressCount = 0; scanProgressLastAt = 0; updateScanProgress(); showSystemToast('รีเซ็ตตัวนับการสแกนแล้ว', 'info'); }
+
 
         function setScannerStatus(message, type) {
             const el = document.getElementById('scanner-status');
@@ -1510,12 +1548,33 @@
             if (panel) panel.classList.add('hidden');
         }
 
+        async function createBarcodeDetector() {
+            if (!('BarcodeDetector' in window)) return null;
+
+            try {
+                const desired = [
+                    'aztec','code_128','code_39','code_93','codabar',
+                    'data_matrix','ean_13','ean_8','itf','pdf417',
+                    'qr_code','upc_a','upc_e'
+                ];
+
+                if (typeof BarcodeDetector.getSupportedFormats === 'function') {
+                    const supported = await BarcodeDetector.getSupportedFormats();
+                    const formats = desired.filter(format => supported.includes(format));
+                    return new BarcodeDetector(formats.length ? { formats: formats } : undefined);
+                }
+
+                return new BarcodeDetector();
+            } catch (err) {
+                console.warn('BarcodeDetector init failed', err);
+                return null;
+            }
+        }
+
         async function startLiveBarcodeDetection() {
             if (!('BarcodeDetector' in window)) return;
-            let detector;
-            try {
-                detector = new BarcodeDetector({ formats: ['code_128','code_39','ean_13','ean_8','qr_code','data_matrix','itf','codabar'] });
-            } catch (e) { return; }
+            const detector = await createBarcodeDetector();
+            if (!detector) return;
             const video = document.getElementById('parcel-scanner-video');
             const loop = async () => {
                 if (!scannerStream || !video || video.readyState < 2) {
@@ -1540,7 +1599,8 @@
             const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
             capturedImages.push(dataUrl);
             renderImagePreviews();
-            await analyzeParcelImage(dataUrl);
+            const ok = await analyzeParcelImage(dataUrl);
+            if (ok) registerSuccessfulScan(document.getElementById('keyin-tracking')?.value || 'Captured');
         }
 
         async function handleImageCapture(event) {
@@ -1550,14 +1610,15 @@
             reader.onload = async e => {
                 capturedImages.push(e.target.result);
                 renderImagePreviews();
-                await analyzeParcelImage(e.target.result);
+                const ok = await analyzeParcelImage(e.target.result);
+                if (ok) registerSuccessfulScan(document.getElementById('keyin-tracking')?.value || 'Image');
             };
             reader.readAsDataURL(file);
             event.target.value = '';
         }
 
         async function analyzeParcelImage(dataUrl) {
-            setScannerStatus('กำลังอ่าน Barcode และข้อความบนหน้าพัสดุ…', 'info');
+            setScannerStatus('กำลังอ่าน Barcode / QR Code และข้อความบนหน้าพัสดุ…', 'info');
             let barcodeValue = '';
             try {
                 barcodeValue = await scanBarcodeFromImage(dataUrl);
@@ -1580,14 +1641,17 @@
                 console.warn('OCR error', err);
             }
 
-            if (barcodeValue || ocrText) setScannerStatus('อ่านข้อมูลจากหน้าพัสดุเรียบร้อย ตรวจสอบ Tracking และชื่อก่อนบันทึก', 'success');
-            else setScannerStatus('ยังอ่าน Barcode/ข้อความไม่ชัด กรุณาถ่ายใหม่ให้ตรง ไม่เบลอ และมีแสงเพียงพอ', 'error');
+            const success = !!(barcodeValue || ocrText);
+            if (success) setScannerStatus('อ่านข้อมูลจากหน้าพัสดุเรียบร้อย ตรวจสอบ Tracking และชื่อก่อนบันทึก', 'success');
+            else setScannerStatus('ยังอ่าน Barcode / QR / ข้อความไม่ชัด กรุณาถ่ายใหม่ให้ตรง ไม่เบลอ และมีแสงเพียงพอ', 'error');
+            return success;
         }
 
         async function scanBarcodeFromImage(dataUrl) {
             if ('BarcodeDetector' in window) {
                 try {
-                    const detector = new BarcodeDetector({ formats: ['code_128','code_39','ean_13','ean_8','qr_code','data_matrix','itf','codabar'] });
+                    const detector = await createBarcodeDetector();
+                    if (!detector) throw new Error('BarcodeDetector unavailable');
                     const blob = await (await fetch(dataUrl)).blob();
                     const bitmap = await createImageBitmap(blob);
                     const codes = await detector.detect(bitmap);
@@ -1608,36 +1672,145 @@
         }
 
         function applyDetectedTracking(value, source) {
-            const raw = String(value || '').trim();
-            if (!raw) return;
-            const match = raw.match(/NTL[-\s]?\d{4,10}/i);
-            const tracking = match ? match[0].replace(/\s/g,'').replace(/^NTL(?=\d)/i,'NTL-').toUpperCase() : raw;
+            const tracking = String(value == null ? '' : value).trim();
+            if (!tracking) return;
+
             const input = document.getElementById('keyin-tracking');
-            if (input && (!input.value || source === 'Barcode')) input.value = tracking;
+            if (input && (!input.value.trim() || source === 'Barcode' || source === 'QR')) {
+                input.value = tracking;
+                input.dataset.source = source || '';
+            }
+
             updateOcrSummary();
+        }
+
+        function cleanOcrCandidate(value) {
+            return String(value || '')
+                .trim()
+                .replace(/^[\s"'`([{<]+/, '')
+                .replace(/[\s"'`\])}>.,;:]+$/, '')
+                .trim();
+        }
+
+        function extractGenericTrackingCandidates(text) {
+            if (!text) return [];
+
+            const candidateMap = new Map();
+            const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+            const labelRegex = /(tracking|track\s*no|awb|waybill|barcode|parcel|consignment|shipment|เลขพัสดุ|เลขติดตาม|หมายเลขพัสดุ)/i;
+            const noiseRegex = /(address|ที่อยู่|โทร|phone|tel|postcode|รหัสไปรษณีย์|sender|ผู้ส่ง|recipient|ผู้รับ|email|e-mail)/i;
+
+            function addCandidate(raw, score) {
+                const value = cleanOcrCandidate(raw);
+                if (!value || value.length < 5 || value.length > 160) return;
+                if (/\s{2,}/.test(value)) return;
+                if (/^[^\wก-๙]+$/u.test(value)) return;
+                if (/@/.test(value)) return;
+
+                const compact = value.replace(/\s+/g, '');
+                const hasDigit = /\d/.test(compact);
+                const hasLetter = /[A-Za-zก-๙]/.test(compact);
+                const allowedShape = /^[A-Za-z0-9ก-๙._:/#?&=+\-]+$/u.test(compact);
+
+                if (!allowedShape || (!hasDigit && compact.length < 8)) return;
+
+                if (hasDigit && hasLetter) score += 3;
+                if (/[-_/]/.test(compact)) score += 1;
+                if (/^\d{8,30}$/.test(compact)) score += 2;
+                if (compact.length >= 8 && compact.length <= 40) score += 1;
+
+                const existing = candidateMap.get(compact);
+                if (!existing || score > existing.score) {
+                    candidateMap.set(compact, { value: compact, score: score });
+                }
+            }
+
+            lines.forEach(function(line) {
+                const labelScore = labelRegex.test(line) ? 5 : 0;
+                if (noiseRegex.test(line) && !labelScore) return;
+
+                const afterLabel = line.match(/(?:tracking|track\s*no|awb|waybill|barcode|parcel|consignment|shipment|เลขพัสดุ|เลขติดตาม|หมายเลขพัสดุ)\s*[:#\-]?\s*(.+)$/i);
+                if (afterLabel && afterLabel[1]) addCandidate(afterLabel[1], 7);
+
+                const tokens = line.match(/[A-Za-z0-9ก-๙][A-Za-z0-9ก-๙._:/#?&=+\-]{4,}/gu) || [];
+                tokens.forEach(token => addCandidate(token, 1 + labelScore));
+            });
+
+            return Array.from(candidateMap.values())
+                .sort((a, b) => b.score - a.score || a.value.length - b.value.length)
+                .slice(0, 8);
+        }
+
+        function renderOcrTrackingCandidates(candidates) {
+            const wrap = document.getElementById('ocr-tracking-candidates');
+            const list = document.getElementById('ocr-tracking-candidate-list');
+            if (!wrap || !list) return;
+
+            if (!candidates || !candidates.length) {
+                wrap.classList.add('hidden');
+                list.innerHTML = '';
+                return;
+            }
+
+            list.innerHTML = candidates.map(function(item) {
+                return '<button type="button" data-tracking="' + encodeURIComponent(item.value) + '" ' +
+                    'onclick="selectOcrTrackingCandidate(this)" ' +
+                    'class="max-w-full break-all px-2.5 py-1.5 rounded-lg bg-white border border-indigo-200 text-indigo-700 text-[10px] font-bold hover:bg-indigo-50">' +
+                    escapeHtml(item.value) + '</button>';
+            }).join('');
+
+            wrap.classList.remove('hidden');
+        }
+
+        function selectOcrTrackingCandidate(button) {
+            const value = decodeURIComponent(button.getAttribute('data-tracking') || '');
+            if (!value) return;
+
+            applyDetectedTracking(value, 'OCR');
+            showSystemToast('เลือก Tracking จาก OCR แล้ว กรุณาตรวจสอบก่อนบันทึก', 'info');
         }
 
         function applyOcrData(text) {
             if (!text) return;
-            const trackingMatches = text.match(/NTL[-\s]?\d{4,10}/ig);
-            if (trackingMatches && trackingMatches.length) applyDetectedTracking(trackingMatches[0], 'OCR');
 
-            const lines = text.split(/\r?\n/).map(x => x.replace(/\s+/g,' ').trim()).filter(Boolean);
-            const bad = /(tracking|เลข|โทร|tel|address|ที่อยู่|ถนน|แขวง|เขต|ตำบล|อำเภอ|จังหวัด|postcode|รหัสไปรษณีย์|ผู้ส่ง|sender|ผู้รับ|recipient)/i;
-            const candidate = lines.find(line =>
+            const candidates = extractGenericTrackingCandidates(text);
+            renderOcrTrackingCandidates(candidates);
+
+            const top = candidates[0];
+            const second = candidates[1];
+
+            // Auto-fill only if OCR confidence is clearly high.
+            if (top && top.score >= 7 && (!second || top.score >= second.score + 2)) {
+                const current = document.getElementById('keyin-tracking')?.value.trim() || '';
+                if (!current) applyDetectedTracking(top.value, 'OCR');
+            }
+
+            const lines = text
+                .split(/\r?\n/)
+                .map(x => x.replace(/\s+/g,' ').trim())
+                .filter(Boolean);
+
+            const bad = /(tracking|track\s*no|awb|waybill|barcode|parcel|consignment|shipment|เลขพัสดุ|เลขติดตาม|หมายเลขพัสดุ|เลข|โทร|tel|phone|address|ที่อยู่|ถนน|แขวง|เขต|ตำบล|อำเภอ|จังหวัด|postcode|รหัสไปรษณีย์|ผู้ส่ง|sender|ผู้รับ|recipient|email)/i;
+
+            const candidateName = lines.find(line =>
                 !bad.test(line) &&
                 !/^\d[\d\s\-\/]+$/.test(line) &&
-                !/NTL[-\s]?\d/i.test(line) &&
                 ((line.match(/[ก-๙]/g)||[]).length >= 4 || (line.match(/[A-Za-z]/g)||[]).length >= 5) &&
                 line.split(' ').length >= 2 &&
                 line.length <= 80
             );
+
             const nameInput = document.getElementById('keyin-recipient-name');
-            if (candidate && nameInput && !nameInput.value.trim()) nameInput.value = candidate;
+            if (candidateName && nameInput && !nameInput.value.trim()) {
+                nameInput.value = candidateName;
+            }
+
             const raw = document.getElementById('ocr-raw-text');
             if (raw) raw.textContent = text;
+
             const box = document.getElementById('ocr-result-box');
             if (box) box.classList.remove('hidden');
+
             updateOcrSummary();
         }
 
@@ -1669,8 +1842,9 @@
 
         function removeImage(index) { capturedImages.splice(index, 1); renderImagePreviews(); }
 
-        function submitKeyInForm() {
+        async function submitKeyInForm() {
             if (!requireGas()) return;
+
             const audit = getAuditUser();
             const payload = {
                 route: document.getElementById('keyin-route').value,
@@ -1681,26 +1855,92 @@
                 trackingId: document.getElementById('keyin-tracking').value.trim(),
                 remarks: document.getElementById('keyin-remarks').value.trim(),
                 images: capturedImages,
-                status: 'Registered', createdBy: audit.username, createdByRole: audit.role,
+                status: 'Registered',
+                createdBy: audit.username,
+                createdByRole: audit.role,
                 authToken: getAuthToken()
             };
-            if (!payload.route || !payload.department || !payload.trackingId) { alert('กรุณากรอก เส้นทาง, แผนก และ Tracking ให้ครบ'); return; }
-            if (payload.qty < 1) { alert('จำนวนพัสดุต้องไม่น้อยกว่า 1'); return; }
-            apiCall('saveKeyIn', payload)
-                .then(function(raw) {
-                    const res = normalizeResponse(raw, 'บันทึก KeyIn ไม่สำเร็จ');
-                    if (handleAuthFailure(res)) return;
-                    if (!res.success) { alert(res.message); return; }
-                    alert(res.message + (res.trackingId ? `
-Tracking: ${res.trackingId}` : ''));
-                    capturedImages = []; renderImagePreviews();
-                    clearForm(['keyin-route','keyin-dept','keyin-recipient-name','keyin-recipient-email','keyin-tracking','keyin-remarks']);
-                    document.getElementById('keyin-qty').value = 1;
-                    loadDashboardStats(); navigateTo('home');
-                })
-                .catch(function(err) {
-                    alert('บันทึก KeyIn ไม่สำเร็จ: ' + normalizeError(err));
-                });
+
+            if (!payload.route || !payload.department || !payload.trackingId) {
+                showSystemToast('กรุณากรอกเส้นทาง แผนก และ Tracking / Barcode ให้ครบ', 'error');
+                return;
+            }
+
+            if (payload.qty < 1) {
+                showSystemToast('จำนวนพัสดุต้องไม่น้อยกว่า 1', 'error');
+                return;
+            }
+
+            if (payload.qty > 1 && scanProgressCount !== payload.qty) {
+                showSystemToast('จำนวนการสแกนไม่ตรงกับ Quantity (' + scanProgressCount + '/' + payload.qty + ')', 'error');
+                return;
+            }
+
+            try {
+                const raw = await apiCall('saveKeyIn', payload);
+                const res = normalizeResponse(raw, 'บันทึก KeyIn ไม่สำเร็จ');
+
+                if (handleAuthFailure(res)) return;
+
+                if (!res.success) {
+                    showSystemToast(res.message || 'บันทึก KeyIn ไม่สำเร็จ', 'error');
+                    return;
+                }
+
+                showSystemToast('บันทึกสำเร็จ • ' + (res.trackingId || payload.trackingId), 'success');
+
+                capturedImages = [];
+                renderImagePreviews();
+                clearForm([
+                    'keyin-route','keyin-dept','keyin-recipient-name',
+                    'keyin-recipient-email','keyin-tracking','keyin-remarks'
+                ]);
+
+                document.getElementById('keyin-qty').value = 1;
+                scanProgressCount = 0;
+                updateScanProgress();
+                renderOcrTrackingCandidates([]);
+                loadDashboardStats();
+
+                setTimeout(function() {
+                    navigateTo('home');
+                }, 500);
+
+            } catch (err) {
+                showSystemToast('บันทึก KeyIn ไม่สำเร็จ: ' + normalizeError(err), 'error');
+            }
+        }
+
+        async function loadOperationsControl() {
+            if (!requireGas() || !getAuthToken()) return;
+            const list = document.getElementById('ops-pending-list'); if (list) list.innerHTML = '<div class="p-6 text-center text-sm text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดข้อมูล...</div>';
+            try {
+                const res = await apiCall('getOperationsSummary', { authToken: getAuthToken() }); if (handleAuthFailure(res)) return;
+                if (!res || !res.success) { if (list) list.innerHTML = '<div class="p-6 text-center text-sm text-rose-500">' + escapeHtml((res && res.message) || 'โหลดข้อมูลไม่สำเร็จ') + '</div>'; return; }
+                const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = Number(value || 0).toLocaleString('th-TH'); };
+                setText('ops-received', res.received); setText('ops-dispatched', res.dispatched); setText('ops-delivered', res.delivered); setText('ops-delivered-small', res.delivered); setText('ops-transit', res.inTransit); setText('ops-pending', res.pendingDispatch); setText('ops-returned', res.returned);
+                const completion = Math.max(0, Math.min(100, Number(res.completionPercent || 0))); const label = document.getElementById('ops-completion-label'), bar = document.getElementById('ops-completion-bar'); if (label) label.textContent = completion.toFixed(0) + '%'; if (bar) bar.style.width = completion + '%';
+                renderOperationsPending(res.pendingItems || []);
+            } catch (err) { if (list) list.innerHTML = '<div class="p-6 text-center text-sm text-rose-500">เชื่อมต่อ Operations ไม่สำเร็จ</div>'; console.error(err); }
+        }
+
+        function renderOperationsPending(items) {
+            const list = document.getElementById('ops-pending-list'); if (!list) return;
+            if (!items.length) { list.innerHTML = '<div class="p-8 text-center"><i class="fa-solid fa-circle-check text-3xl text-emerald-500"></i><p class="text-sm font-bold text-slate-700 mt-3">ไม่มีรายการรอ Dispatch</p><p class="text-xs text-slate-400 mt-1">รายการรับเข้าวันนี้ถูกส่งออกครบแล้ว</p></div>'; return; }
+            list.innerHTML = items.map(function(item) { return '<label class="flex items-start gap-3 p-4 hover:bg-slate-50 cursor-pointer"><input type="checkbox" class="ops-dispatch-check mt-1 w-4 h-4" value="' + escapeHtml(item.trackingId) + '"><div class="flex-1 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2"><p class="font-black text-slate-800 text-sm">' + escapeHtml(item.trackingId) + '</p><span class="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md">' + Number(item.qty || 1) + ' ชิ้น</span></div><p class="text-xs text-slate-600 mt-1">' + escapeHtml(item.department || '-') + (item.recipientName ? ' • ' + escapeHtml(item.recipientName) : '') + '</p><p class="text-[10px] text-slate-400 mt-1">รับเข้า Ari Hills • ' + escapeHtml(item.timeLabel || '') + '</p></div></label>'; }).join('');
+        }
+
+        function toggleAllDispatchItems(checked) { document.querySelectorAll('.ops-dispatch-check').forEach(function(cb){ cb.checked = !!checked; }); }
+
+        async function markSelectedDispatch() {
+            const selected = Array.from(document.querySelectorAll('.ops-dispatch-check:checked')).map(function(cb){ return cb.value; });
+            if (!selected.length) { alert('กรุณาเลือกรายการที่จะส่งออกไป BTS อย่างน้อย 1 รายการ'); return; }
+            if (!confirm('ยืนยัน Dispatch ไป BTS จำนวน ' + selected.length + ' Tracking?')) return;
+            try {
+                const res = await apiCall('markDispatchToBTS', { trackingIds: selected, authToken: getAuthToken() }); if (handleAuthFailure(res)) return;
+                if (!res || !res.success) { alert((res && res.message) || 'บันทึก Dispatch ไม่สำเร็จ'); return; }
+                showSystemToast(res.message || 'บันทึก Dispatch เรียบร้อยแล้ว', 'success'); loadOperationsControl(); loadDashboardStats();
+            } catch (err) { alert('บันทึก Dispatch ไม่สำเร็จ: ' + normalizeError(err)); }
         }
 
         function resizeCanvas() {
@@ -1993,36 +2233,6 @@ Tracking: ${res.trackingId}` : ''));
                 });
         }
 
-        function appendChatMessage(sender,text) {
-            const container=document.getElementById('chatbot-messages'); if(!container)return;
-            const wrap=document.createElement('div'); const safeText=String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-            if(sender==='bot'){wrap.className='flex items-start gap-2.5';wrap.innerHTML=`<div class="w-8 h-8 bg-cyan-600 text-white rounded-full flex items-center justify-center text-xs flex-shrink-0"><i class="fa-solid fa-robot"></i></div><div class="bg-white border border-slate-200 rounded-2xl rounded-tl-sm px-4 py-2.5 text-xs text-slate-700 max-w-[75%] shadow-sm">${safeText}</div>`;}
-            else{wrap.className='flex items-start gap-2.5 justify-end';wrap.innerHTML=`<div class="bg-cyan-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 text-xs max-w-[75%] shadow-sm">${safeText}</div>`;}
-            container.appendChild(wrap); container.scrollTop=container.scrollHeight;
-        }
-
-        function chatQuickAction(action) {
-            if(action==='status'){appendChatMessage('user','ตรวจสอบสถานะเอกสาร');appendChatMessage('bot','กรุณาระบุหมายเลข Tracking Number ที่ต้องการตรวจสอบค่ะ เช่น NTL-895671');}
-            else if(action==='track'){appendChatMessage('user','ค้นหาด้วย Tracking Number');appendChatMessage('bot','พิมพ์หมายเลข Tracking ในช่องด้านล่างได้เลยค่ะ ระบบจะค้นหาสถานะให้ทันที');}
-            else if(action==='proof'){appendChatMessage('user','ดาวน์โหลดหลักฐานการรับ');appendChatMessage('bot','กรุณาระบุหมายเลข Tracking ที่ต้องการตรวจสอบหลักฐานการเซ็นรับค่ะ');}
-        }
-
-        function sendChatMessage() {
-            if (!requireGas()) return;
-            const input=document.getElementById('chatbot-input'); if(!input)return; const msg=input.value.trim(); if(!msg)return;
-            appendChatMessage('user',msg); input.value='';
-            apiCall('chatBotReply', {
-                message: msg,
-                authToken: getAuthToken()
-            })
-                .then(function(reply) {
-                    if(reply&&reply.code&&handleAuthFailure(reply))return;
-                    appendChatMessage('bot',typeof reply==='string'?reply:(reply&&reply.message)||'ไม่พบข้อมูล');
-                })
-                .catch(function() {
-                    appendChatMessage('bot','ขออภัยค่ะ ระบบขัดข้อง กรุณาลองใหม่อีกครั้ง');
-                });
-        }
     </script>
 </body>
 </html>
