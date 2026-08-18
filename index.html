@@ -599,6 +599,30 @@
                                     <input type="email" id="keyin-recipient-email" placeholder="name@ntl.co.th" class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
                                 </div>
                             </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Phone / เบอร์โทร</label>
+                                    <div class="relative">
+                                        <i class="fa-solid fa-phone absolute left-4 top-3.5 text-slate-400"></i>
+                                        <input type="text" id="keyin-recipient-phone" placeholder="ระบบจะอ่านจากหน้าพัสดุ" inputmode="tel"
+                                            class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Postcode / รหัสไปรษณีย์</label>
+                                    <div class="relative">
+                                        <i class="fa-solid fa-location-dot absolute left-4 top-3.5 text-slate-400"></i>
+                                        <input type="text" id="keyin-recipient-postcode" placeholder="ระบบจะอ่านจากหน้าพัสดุ" inputmode="numeric"
+                                            class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Recipient Address / ที่อยู่ผู้รับ</label>
+                                <textarea id="keyin-recipient-address" rows="3" placeholder="ระบบจะสกัดที่อยู่จากหน้าพัสดุให้อัตโนมัติ"
+                                    class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"></textarea>
+                            </div>
 
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Quantity / จำนวน (ชิ้น)</label>
@@ -663,17 +687,46 @@
                                 </div>
 
                                 <div id="scanner-status" class="hidden mt-2 text-xs rounded-lg p-2.5 bg-cyan-50 text-cyan-800 border border-cyan-100"></div>
-                                <div id="ocr-result-box" class="hidden mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <p class="text-xs font-bold text-slate-700"><i class="fa-solid fa-wand-magic-sparkles text-indigo-500 mr-1"></i>ข้อมูลที่ระบบอ่านจากหน้าพัสดุ</p>
-                                        <button type="button" onclick="toggleOcrRawText()" class="text-[10px] font-bold text-indigo-600">ดูข้อความ OCR</button>
+                                <div id="ocr-result-box" class="hidden mt-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p class="text-xs font-black text-slate-800"><i class="fa-solid fa-wand-magic-sparkles text-indigo-500 mr-1.5"></i>Smart Parcel Capture</p>
+                                            <p id="smart-capture-status" class="text-[10px] text-slate-500 mt-1">กำลังวิเคราะห์ข้อมูลจากหน้าพัสดุ</p>
+                                        </div>
+                                        <span id="smart-overall-confidence" class="text-[10px] font-black bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">-</span>
                                     </div>
-                                    <p id="ocr-summary" class="text-[11px] text-slate-600 mt-1"></p>
-                                    <div id="ocr-tracking-candidates" class="hidden mt-2">
-                                        <p class="text-[10px] font-bold text-slate-500 mb-1.5">Tracking ที่ OCR อาจตรวจพบ — เลือกเพื่อตรวจสอบก่อนบันทึก</p>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                                        <div class="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                                            <div class="flex justify-between gap-2"><span class="text-[10px] uppercase font-bold text-slate-400">Tracking</span><span id="smart-tracking-confidence" class="text-[10px] font-bold text-slate-400">-</span></div>
+                                            <p id="smart-tracking-value" class="text-xs font-black text-slate-800 break-all mt-1">ยังไม่พบ</p>
+                                        </div>
+                                        <div class="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                                            <div class="flex justify-between gap-2"><span class="text-[10px] uppercase font-bold text-slate-400">Recipient</span><span id="smart-name-confidence" class="text-[10px] font-bold text-slate-400">-</span></div>
+                                            <p id="smart-name-value" class="text-xs font-black text-slate-800 break-words mt-1">ยังไม่พบ</p>
+                                        </div>
+                                        <div class="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                                            <span class="text-[10px] uppercase font-bold text-slate-400">Phone</span>
+                                            <p id="smart-phone-value" class="text-xs font-bold text-slate-700 mt-1">-</p>
+                                        </div>
+                                        <div class="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                                            <span class="text-[10px] uppercase font-bold text-slate-400">Department</span>
+                                            <p id="smart-department-value" class="text-xs font-bold text-slate-700 mt-1">-</p>
+                                        </div>
+                                    </div>
+
+                                    <div id="smart-review-note" class="hidden mt-3 rounded-xl bg-amber-50 border border-amber-100 p-3 text-[11px] font-semibold text-amber-700">
+                                        <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                                        มีบางข้อมูลที่ความมั่นใจต่ำ กรุณาตรวจเฉพาะช่องที่ระบบไฮไลต์ก่อนบันทึก
+                                    </div>
+
+                                    <div id="ocr-tracking-candidates" class="hidden mt-3">
+                                        <p class="text-[10px] font-bold text-slate-500 mb-1.5">พบ Tracking หลายค่า — เลือกค่าที่ถูกต้อง</p>
                                         <div id="ocr-tracking-candidate-list" class="flex flex-wrap gap-1.5"></div>
                                     </div>
-                                    <pre id="ocr-raw-text" class="hidden whitespace-pre-wrap text-[10px] text-slate-500 mt-2 max-h-32 overflow-auto"></pre>
+
+                                    <pre id="ocr-raw-text" class="hidden"></pre>
+                                    <p id="ocr-summary" class="hidden"></p>
                                 </div>
 
                                 <div id="image-preview-container" class="flex gap-2 mt-3 overflow-x-auto no-scrollbar"></div>
@@ -975,6 +1028,8 @@
         let scannerStream = null;
         let scannerLoopTimer = null;
         let latestOcrText = '';
+        let latestSmartCapture = null;
+        const SMART_DEPARTMENTS = ["ซองสัญญา","นายหน้าประกันภัย","ปฏิบัติการประกันภัย","ทะเบียน","บุคคล","บัญชี","BSCS","BDSM","CLD","Audit","Fraud","CRD","กำกับธุรกรรม","Legal","CAS","MKT","Falcon","IT","จัดซื้อ","MD","CS","DB","A&D","HeyGoody"];
         let scanProgressCount = 0;
         let scanProgressLastAt = 0;
         let esignPendingItems = [];
@@ -1618,33 +1673,537 @@
         }
 
         async function analyzeParcelImage(dataUrl) {
-            setScannerStatus('กำลังอ่าน Barcode / QR Code และข้อความบนหน้าพัสดุ…', 'info');
-            let barcodeValue = '';
-            try {
-                barcodeValue = await scanBarcodeFromImage(dataUrl);
-                if (barcodeValue) applyDetectedTracking(barcodeValue, 'Barcode');
-            } catch (e) {}
+            setScannerStatus('กำลังเตรียมภาพและตรวจ Barcode / QR Code…', 'info');
 
-            let ocrText = '';
-            try {
-                if (window.Tesseract) {
-                    const result = await Tesseract.recognize(dataUrl, 'tha+eng', {
-                        logger: m => {
-                            if (m.status === 'recognizing text') setScannerStatus('กำลัง OCR ข้อความ ' + Math.round((m.progress || 0) * 100) + '%', 'info');
-                        }
-                    });
-                    ocrText = (result && result.data && result.data.text) ? result.data.text.trim() : '';
-                    latestOcrText = ocrText;
-                    applyOcrData(ocrText);
-                }
-            } catch (err) {
-                console.warn('OCR error', err);
+            const original = await loadSmartImage(dataUrl);
+            const variants = await buildSmartImageVariants(original);
+
+            const barcodeCandidates = await scanBarcodeCandidatesFromVariants(variants);
+            const rankedBarcodes = rankBarcodeCandidates(barcodeCandidates);
+
+            let ocrBest = null;
+            if (window.Tesseract) {
+                setScannerStatus('กำลังอ่านชื่อ ที่อยู่ และข้อมูลบนหน้าพัสดุ…', 'info');
+                ocrBest = await runSmartOcrPasses(variants);
             }
 
-            const success = !!(barcodeValue || ocrText);
-            if (success) setScannerStatus('อ่านข้อมูลจากหน้าพัสดุเรียบร้อย ตรวจสอบ Tracking และชื่อก่อนบันทึก', 'success');
-            else setScannerStatus('ยังอ่าน Barcode / QR / ข้อความไม่ชัด กรุณาถ่ายใหม่ให้ตรง ไม่เบลอ และมีแสงเพียงพอ', 'error');
-            return success;
+            const text = ocrBest ? ocrBest.text : '';
+            latestOcrText = text;
+
+            const extracted = extractParcelFields(text);
+            const ocrTracking = extractGenericTrackingCandidates(text);
+
+            let trackingCandidates = rankedBarcodes.slice();
+            ocrTracking.forEach(function(item) {
+                if (!trackingCandidates.some(x => x.value === item.value)) {
+                    trackingCandidates.push({
+                        value: item.value,
+                        score: Math.min(80, 45 + Number(item.score || 0) * 4),
+                        source: 'OCR'
+                    });
+                }
+            });
+
+            trackingCandidates = trackingCandidates
+                .sort((a,b) => b.score - a.score)
+                .slice(0, 8);
+
+            const topTracking = trackingCandidates[0] || null;
+            const secondTracking = trackingCandidates[1] || null;
+
+            if (topTracking && (
+                topTracking.source === 'Barcode' ||
+                topTracking.score >= 78 ||
+                !secondTracking ||
+                topTracking.score >= secondTracking.score + 15
+            )) {
+                applyDetectedTracking(topTracking.value, topTracking.source);
+            }
+
+            renderOcrTrackingCandidates(trackingCandidates);
+            applySmartParcelFields(extracted);
+
+            latestSmartCapture = {
+                tracking: topTracking,
+                trackingCandidates: trackingCandidates,
+                fields: extracted,
+                ocr: ocrBest
+            };
+
+            renderSmartCaptureResult(latestSmartCapture);
+
+            const hasUsefulData = !!(
+                topTracking ||
+                extracted.recipientName ||
+                extracted.phone ||
+                extracted.address ||
+                extracted.department
+            );
+
+            if (hasUsefulData) {
+                setScannerStatus('วิเคราะห์หน้าพัสดุเรียบร้อย ระบบเติมข้อมูลที่ตรวจพบให้แล้ว', 'success');
+            } else {
+                setScannerStatus('ยังอ่านข้อมูลไม่ชัด กรุณาจัดซองให้อยู่ในกรอบ แสงสม่ำเสมอ แล้วถ่ายใหม่', 'error');
+            }
+
+            return hasUsefulData;
+        }
+
+
+        function loadSmartImage(dataUrl) {
+            return new Promise(function(resolve, reject) {
+                const img = new Image();
+                img.onload = function() { resolve(img); };
+                img.onerror = reject;
+                img.src = dataUrl;
+            });
+        }
+
+        function drawSmartVariant(img, rotation, mode) {
+            const maxSide = 1650;
+            const srcW = img.naturalWidth || img.width;
+            const srcH = img.naturalHeight || img.height;
+            const scale = Math.min(1, maxSide / Math.max(srcW, srcH));
+            const w = Math.max(1, Math.round(srcW * scale));
+            const h = Math.max(1, Math.round(srcH * scale));
+
+            const swap = rotation === 90 || rotation === 270;
+            const canvas = document.createElement('canvas');
+            canvas.width = swap ? h : w;
+            canvas.height = swap ? w : h;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+            ctx.save();
+            if (rotation === 90) {
+                ctx.translate(canvas.width, 0);
+                ctx.rotate(Math.PI / 2);
+            } else if (rotation === 180) {
+                ctx.translate(canvas.width, canvas.height);
+                ctx.rotate(Math.PI);
+            } else if (rotation === 270) {
+                ctx.translate(0, canvas.height);
+                ctx.rotate(-Math.PI / 2);
+            }
+            ctx.drawImage(img, 0, 0, w, h);
+            ctx.restore();
+
+            if (mode === 'ocr') {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const d = imageData.data;
+                let min = 255, max = 0;
+
+                for (let i = 0; i < d.length; i += 4) {
+                    const y = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+                    if (y < min) min = y;
+                    if (y > max) max = y;
+                }
+
+                const range = Math.max(40, max - min);
+                for (let i = 0; i < d.length; i += 4) {
+                    let y = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+                    y = ((y - min) / range) * 255;
+                    y = Math.max(0, Math.min(255, (y - 128) * 1.28 + 128));
+                    d[i] = d[i+1] = d[i+2] = y;
+                }
+                ctx.putImageData(imageData, 0, 0);
+            }
+
+            return {
+                rotation: rotation,
+                mode: mode,
+                canvas: canvas,
+                dataUrl: canvas.toDataURL('image/jpeg', 0.88)
+            };
+        }
+
+        async function buildSmartImageVariants(img) {
+            return [0, 90, 270, 180].map(rotation => drawSmartVariant(img, rotation, 'color'));
+        }
+
+        async function scanBarcodeCandidatesFromVariants(variants) {
+            const found = new Map();
+
+            for (const variant of variants) {
+                const values = await scanAllBarcodesFromImage(variant.dataUrl);
+
+                values.forEach(function(raw) {
+                    const value = String(raw || '').trim();
+                    if (!value) return;
+
+                    const current = found.get(value) || {
+                        value: value,
+                        hits: 0,
+                        rotations: [],
+                        source: 'Barcode'
+                    };
+                    current.hits += 1;
+                    current.rotations.push(variant.rotation);
+                    found.set(value, current);
+                });
+
+                if (Array.from(found.values()).some(x => x.hits >= 2)) break;
+            }
+
+            return Array.from(found.values());
+        }
+
+        async function scanAllBarcodesFromImage(dataUrl) {
+            const values = [];
+
+            if ('BarcodeDetector' in window) {
+                try {
+                    const detector = await createBarcodeDetector();
+                    if (detector) {
+                        const blob = await (await fetch(dataUrl)).blob();
+                        const bitmap = await createImageBitmap(blob);
+                        const codes = await detector.detect(bitmap);
+                        (codes || []).forEach(code => {
+                            if (code?.rawValue) values.push(code.rawValue);
+                        });
+                    }
+                } catch (e) {}
+            }
+
+            if (!values.length && window.ZXing) {
+                try {
+                    const reader = new ZXing.BrowserMultiFormatReader();
+                    const img = new Image();
+                    img.src = dataUrl;
+                    await new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = reject;
+                    });
+                    const result = await reader.decodeFromImageElement(img);
+                    if (result?.getText()) values.push(result.getText());
+                } catch (e) {}
+            }
+
+            return Array.from(new Set(values.map(v => String(v).trim()).filter(Boolean)));
+        }
+
+        function rankBarcodeCandidates(items) {
+            return (items || []).map(function(item) {
+                const value = item.value;
+                let score = 65 + Math.min(18, (item.hits || 1) * 8);
+
+                if (/^[A-Z]{2}\d{9}[A-Z]{2}$/i.test(value)) score += 18;
+                if (/[A-Za-z]/.test(value) && /\d/.test(value)) score += 8;
+                if (/^\d{8,30}$/.test(value)) score += 4;
+                if (value.length < 6) score -= 25;
+                if (/^\d{5}$/.test(value)) score -= 30;
+
+                return {
+                    value: value,
+                    score: Math.max(0, Math.min(100, score)),
+                    source: 'Barcode',
+                    hits: item.hits || 1
+                };
+            }).sort((a,b) => b.score - a.score);
+        }
+
+        async function runSmartOcrPasses(colorVariants) {
+            const order = [0, 90, 270, 180];
+            const byRotation = new Map(colorVariants.map(v => [v.rotation, v]));
+            let best = null;
+
+            for (let idx = 0; idx < order.length; idx++) {
+                const color = byRotation.get(order[idx]);
+                if (!color) continue;
+
+                const img = await loadSmartImage(color.dataUrl);
+                const processed = drawSmartVariant(img, 0, 'ocr');
+
+                setScannerStatus(
+                    idx === 0
+                        ? 'กำลัง OCR ข้อความบนหน้าพัสดุ…'
+                        : 'กำลังปรับมุมภาพเพื่ออ่านข้อมูลให้แม่นขึ้น…',
+                    'info'
+                );
+
+                try {
+                    const result = await Tesseract.recognize(processed.dataUrl, 'tha+eng', {
+                        logger: m => {
+                            if (m.status === 'recognizing text') {
+                                setScannerStatus('กำลังอ่านข้อมูล ' + Math.round((m.progress || 0) * 100) + '%', 'info');
+                            }
+                        }
+                    });
+
+                    const text = result?.data?.text?.trim() || '';
+                    const confidence = Number(result?.data?.confidence || 0);
+                    const candidate = {
+                        text: text,
+                        confidence: confidence,
+                        score: scoreParcelOcrText(text, confidence),
+                        rotation: order[idx]
+                    };
+
+                    if (!best || candidate.score > best.score) best = candidate;
+
+                    if (candidate.score >= 82) break;
+                    if (idx >= 2 && best && best.score >= 58) break;
+
+                } catch (err) {
+                    console.warn('OCR pass failed', err);
+                }
+            }
+
+            return best || { text: '', confidence: 0, score: 0, rotation: 0 };
+        }
+
+        function scoreParcelOcrText(text, confidence) {
+            if (!text) return 0;
+
+            let score = Math.max(0, Math.min(45, Number(confidence || 0) * 0.45));
+            [
+                /ชื่อและที่อยู่ผู้รับ|\/\s*TO/i,
+                /ชื่อและที่อยู่ผู้ฝาก|\/\s*FROM/i,
+                /THAILAND/i,
+                /POSTAGE/i,
+                /รหัสไปรษณีย์|POSTCODE/i,
+                /โทร|TEL|PHONE/i,
+                /กรุงเทพ|จังหวัด|อำเภอ|เขต|แขวง|ตำบล/i
+            ].forEach(p => { if (p.test(text)) score += 7; });
+
+            if ((text.match(/[ก-๙]/g) || []).length >= 20) score += 8;
+            if ((text.match(/\d/g) || []).length >= 8) score += 5;
+            if (text.split(/\r?\n/).filter(Boolean).length >= 4) score += 5;
+
+            return Math.max(0, Math.min(100, score));
+        }
+
+        function normalizeThaiPhone(value) {
+            let digits = String(value || '').replace(/\D/g, '');
+            if (digits.startsWith('66') && digits.length >= 11) digits = '0' + digits.slice(2);
+            if ((digits.length === 9 || digits.length === 10) && digits.startsWith('0')) return digits;
+            return '';
+        }
+
+        function extractParcelFields(text) {
+            const raw = String(text || '');
+            const lines = raw.split(/\r?\n/).map(x => x.replace(/\s+/g, ' ').trim()).filter(Boolean);
+
+            const result = {
+                recipientName: '',
+                recipientNameConfidence: 0,
+                phone: '',
+                postcode: '',
+                address: '',
+                department: '',
+                departmentConfidence: 0,
+                route: '',
+                overallConfidence: 0
+            };
+
+            const phoneMatches = raw.match(/(?:\+66[\s\-]?\d{1,2}[\s\-]?\d{3,4}[\s\-]?\d{4}|0\d[\s\-]?\d{3,4}[\s\-]?\d{4})/g) || [];
+            for (const match of phoneMatches) {
+                const phone = normalizeThaiPhone(match);
+                if (phone) { result.phone = phone; break; }
+            }
+
+            const postcodes = (raw.match(/(?<!\d)\d{5}(?!\d)/g) || []).filter(x => !/^0{5}$/.test(x));
+            if (postcodes.length) result.postcode = postcodes[postcodes.length - 1];
+
+            let toIndex = lines.findIndex(line => /ชื่อและที่อยู่ผู้รับ|(?:^|\s)TO(?:\s|$|\/)/i.test(line));
+            if (toIndex < 0) toIndex = lines.findIndex(line => /ผู้รับ|recipient/i.test(line));
+
+            const senderIndex = lines.findIndex(line => /ชื่อและที่อยู่ผู้ฝาก|(?:^|\s)FROM(?:\s|$|\/)/i.test(line));
+            let targetLines = lines;
+
+            if (toIndex >= 0) {
+                targetLines = lines.slice(toIndex + 1, Math.min(lines.length, toIndex + 8));
+            } else if (senderIndex >= 0 && senderIndex < Math.floor(lines.length / 2)) {
+                targetLines = lines.slice(Math.floor(lines.length / 2));
+            }
+
+            const noise = /(THAILAND|POSTAGE|kg|BARCODE|tracking|track|waybill|postcode|รหัสไปรษณีย์|โทร|tel|phone|ผู้ฝาก|FROM|ผู้รับ|\/TO)/i;
+
+            const nameCandidates = targetLines.map(function(line, index) {
+                const clean = line.replace(/[|_=~]+/g, ' ').replace(/\s+/g, ' ').trim();
+                let score = 0;
+                const thai = (clean.match(/[ก-๙]/g) || []).length;
+                const latin = (clean.match(/[A-Za-z]/g) || []).length;
+                const digits = (clean.match(/\d/g) || []).length;
+
+                if (noise.test(clean)) score -= 8;
+                if (digits > 4) score -= 6;
+                if (thai >= 5) score += 8;
+                if (latin >= 5) score += 4;
+                if (clean.split(' ').length >= 2) score += 4;
+                if (clean.length >= 8 && clean.length <= 70) score += 3;
+                score += Math.max(0, 4 - index);
+
+                return { value: clean, score: score };
+            }).filter(x => x.value && x.score >= 6).sort((a,b) => b.score - a.score);
+
+            if (nameCandidates.length) {
+                result.recipientName = nameCandidates[0].value;
+                result.recipientNameConfidence = Math.min(96, 55 + nameCandidates[0].score * 4);
+            }
+
+            const addressLines = targetLines.filter(function(line) {
+                const clean = line.trim();
+                if (!clean || clean === result.recipientName) return false;
+                if (noise.test(clean)) return false;
+                return (
+                    /[ก-๙]/.test(clean) ||
+                    /(road|rd\.|soi|street|bangkok|กรุงเทพ|ถนน|ซอย|แขวง|เขต|ตำบล|อำเภอ|จังหวัด|หมู่|เลขที่)/i.test(clean)
+                );
+            }).slice(0, 4);
+
+            result.address = addressLines.join(' ').replace(/\s+/g, ' ').trim();
+            if (result.postcode && result.address && !result.address.includes(result.postcode)) {
+                result.address += ' ' + result.postcode;
+            }
+
+            const normalizedRaw = raw.toLowerCase().replace(/\s+/g, '');
+            const aliases = {
+                'ซองสัญญา':['ซองสัญญา','สัญญา'],
+                'นายหน้าประกันภัย':['นายหน้าประกันภัย','นายหน้า'],
+                'ปฏิบัติการประกันภัย':['ปฏิบัติการประกันภัย','operationinsurance'],
+                'ทะเบียน':['ทะเบียน'],
+                'บุคคล':['บุคคล','humanresource'],
+                'บัญชี':['บัญชี','accounting'],
+                'BSCS':['bscs'],'BDSM':['bdsm'],'CLD':['cld'],
+                'Audit':['audit','ตรวจสอบ'],'Fraud':['fraud','ทุจริต'],'CRD':['crd'],
+                'กำกับธุรกรรม':['กำกับธุรกรรม'],'Legal':['legal','กฎหมาย'],'CAS':['cas'],
+                'MKT':['mkt','marketing','การตลาด'],'Falcon':['falcon'],
+                'IT':['informationtechnology','เทคโนโลยีสารสนเทศ'],
+                'จัดซื้อ':['จัดซื้อ','procurement'],'MD':['md'],'CS':['cs'],'DB':['db'],
+                'A&D':['a&d'],'HeyGoody':['heygoody']
+            };
+
+            let deptBest = null;
+            Object.keys(aliases).forEach(function(dept) {
+                aliases[dept].forEach(function(alias) {
+                    const a = alias.toLowerCase().replace(/\s+/g,'');
+                    if (a.length >= 2 && normalizedRaw.includes(a)) {
+                        const score = Math.min(98, 72 + Math.min(20, a.length));
+                        if (!deptBest || score > deptBest.score) deptBest = { dept: dept, score: score };
+                    }
+                });
+            });
+
+            if (deptBest) {
+                result.department = deptBest.dept;
+                result.departmentConfidence = deptBest.score;
+            }
+
+            if (/BTS\s*TOWER|บีทีเอส\s*ทาวเวอร์/i.test(raw)) result.route = 'BTS Tower';
+            else if (/ARI\s*HILL|ARI\s*HILLS|อารีย์\s*ฮิล/i.test(raw)) result.route = 'Ari Hill';
+
+            const conf = [];
+            if (result.recipientName) conf.push(result.recipientNameConfidence);
+            if (result.phone) conf.push(90);
+            if (result.postcode) conf.push(88);
+            if (result.department) conf.push(result.departmentConfidence);
+            result.overallConfidence = conf.length ? Math.round(conf.reduce((a,b)=>a+b,0)/conf.length) : 0;
+
+            return result;
+        }
+
+        function setFieldSmartState(id, confidence) {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            el.classList.remove('ring-2','ring-amber-300','ring-emerald-300','bg-amber-50','bg-emerald-50');
+
+            if (confidence >= 80) {
+                el.classList.add('ring-2','ring-emerald-300','bg-emerald-50');
+            } else if (confidence > 0) {
+                el.classList.add('ring-2','ring-amber-300','bg-amber-50');
+            }
+        }
+
+        function applySmartParcelFields(fields) {
+            if (!fields) return;
+
+            const name = document.getElementById('keyin-recipient-name');
+            const phone = document.getElementById('keyin-recipient-phone');
+            const postcode = document.getElementById('keyin-recipient-postcode');
+            const address = document.getElementById('keyin-recipient-address');
+            const dept = document.getElementById('keyin-dept');
+            const route = document.getElementById('keyin-route');
+
+            if (fields.recipientName && name && !name.value.trim()) {
+                name.value = fields.recipientName;
+                setFieldSmartState('keyin-recipient-name', fields.recipientNameConfidence);
+            }
+            if (fields.phone && phone && !phone.value.trim()) {
+                phone.value = fields.phone;
+                setFieldSmartState('keyin-recipient-phone', 90);
+            }
+            if (fields.postcode && postcode && !postcode.value.trim()) {
+                postcode.value = fields.postcode;
+                setFieldSmartState('keyin-recipient-postcode', 88);
+            }
+            if (fields.address && address && !address.value.trim()) {
+                address.value = fields.address;
+                setFieldSmartState('keyin-recipient-address', fields.recipientNameConfidence >= 80 ? 82 : 65);
+            }
+            if (fields.department && dept && !dept.value) {
+                dept.value = fields.department;
+                setFieldSmartState('keyin-dept', fields.departmentConfidence);
+            }
+            if (fields.route && route && !route.value) {
+                route.value = fields.route;
+                setFieldSmartState('keyin-route', 92);
+            }
+        }
+
+        function renderSmartCaptureResult(data) {
+            document.getElementById('ocr-result-box')?.classList.remove('hidden');
+
+            const tracking = data?.tracking || null;
+            const f = data?.fields || {};
+
+            const setText = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = value || '-';
+            };
+
+            setText('smart-tracking-value', tracking?.value || 'ยังไม่พบ');
+            setText('smart-name-value', f.recipientName || 'ยังไม่พบ');
+            setText('smart-phone-value', f.phone || '-');
+            setText('smart-department-value', f.department || '-');
+
+            const tc = document.getElementById('smart-tracking-confidence');
+            const nc = document.getElementById('smart-name-confidence');
+            if (tc) tc.textContent = tracking ? Math.round(tracking.score) + '%' : '-';
+            if (nc) nc.textContent = f.recipientName ? Math.round(f.recipientNameConfidence || 0) + '%' : '-';
+
+            const vals = [];
+            if (tracking) vals.push(tracking.score);
+            if (f.overallConfidence) vals.push(f.overallConfidence);
+            const overall = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+
+            const oe = document.getElementById('smart-overall-confidence');
+            if (oe) {
+                oe.textContent = overall ? 'Confidence ' + overall + '%' : 'ตรวจสอบข้อมูล';
+                oe.className = 'text-[10px] font-black px-2.5 py-1 rounded-full ' +
+                    (overall >= 82 ? 'bg-emerald-100 text-emerald-700' :
+                     overall >= 60 ? 'bg-amber-100 text-amber-700' :
+                     'bg-rose-100 text-rose-700');
+            }
+
+            const needsReview = (
+                !tracking ||
+                !f.recipientName ||
+                (f.recipientName && f.recipientNameConfidence < 80) ||
+                (data?.trackingCandidates?.length > 1 && data.trackingCandidates[1].score >= (tracking?.score || 0) - 10)
+            );
+
+            document.getElementById('smart-review-note')?.classList.toggle('hidden', !needsReview);
+
+            const status = document.getElementById('smart-capture-status');
+            if (status) {
+                status.textContent = needsReview
+                    ? 'ระบบเติมข้อมูลให้แล้ว กรุณาตรวจเฉพาะช่องที่ไฮไลต์'
+                    : 'ข้อมูลสำคัญถูกตรวจพบและเติมลงแบบฟอร์มแล้ว';
+            }
+
+            const raw = document.getElementById('ocr-raw-text');
+            if (raw) raw.textContent = data?.ocr?.text || '';
         }
 
         async function scanBarcodeFromImage(dataUrl) {
@@ -1746,17 +2305,22 @@
             const list = document.getElementById('ocr-tracking-candidate-list');
             if (!wrap || !list) return;
 
-            if (!candidates || !candidates.length) {
+            if (!candidates || candidates.length <= 1) {
                 wrap.classList.add('hidden');
                 list.innerHTML = '';
                 return;
             }
 
             list.innerHTML = candidates.map(function(item) {
-                return '<button type="button" data-tracking="' + encodeURIComponent(item.value) + '" ' +
+                const value = item.value || '';
+                const score = Math.round(Number(item.score || 0));
+                const source = item.source || 'OCR';
+
+                return '<button type="button" data-tracking="' + encodeURIComponent(value) + '" ' +
                     'onclick="selectOcrTrackingCandidate(this)" ' +
-                    'class="max-w-full break-all px-2.5 py-1.5 rounded-lg bg-white border border-indigo-200 text-indigo-700 text-[10px] font-bold hover:bg-indigo-50">' +
-                    escapeHtml(item.value) + '</button>';
+                    'class="max-w-full break-all px-2.5 py-2 rounded-lg bg-white border border-indigo-200 text-indigo-700 text-[10px] font-bold hover:bg-indigo-50">' +
+                    escapeHtml(value) +
+                    '<span class="ml-1 text-slate-400">(' + escapeHtml(source) + (score ? ' ' + score + '%' : '') + ')</span></button>';
             }).join('');
 
             wrap.classList.remove('hidden');
@@ -1773,43 +2337,12 @@
         function applyOcrData(text) {
             if (!text) return;
 
-            const candidates = extractGenericTrackingCandidates(text);
-            renderOcrTrackingCandidates(candidates);
-
-            const top = candidates[0];
-            const second = candidates[1];
-
-            // Auto-fill only if OCR confidence is clearly high.
-            if (top && top.score >= 7 && (!second || top.score >= second.score + 2)) {
-                const current = document.getElementById('keyin-tracking')?.value.trim() || '';
-                if (!current) applyDetectedTracking(top.value, 'OCR');
-            }
-
-            const lines = text
-                .split(/\r?\n/)
-                .map(x => x.replace(/\s+/g,' ').trim())
-                .filter(Boolean);
-
-            const bad = /(tracking|track\s*no|awb|waybill|barcode|parcel|consignment|shipment|เลขพัสดุ|เลขติดตาม|หมายเลขพัสดุ|เลข|โทร|tel|phone|address|ที่อยู่|ถนน|แขวง|เขต|ตำบล|อำเภอ|จังหวัด|postcode|รหัสไปรษณีย์|ผู้ส่ง|sender|ผู้รับ|recipient|email)/i;
-
-            const candidateName = lines.find(line =>
-                !bad.test(line) &&
-                !/^\d[\d\s\-\/]+$/.test(line) &&
-                ((line.match(/[ก-๙]/g)||[]).length >= 4 || (line.match(/[A-Za-z]/g)||[]).length >= 5) &&
-                line.split(' ').length >= 2 &&
-                line.length <= 80
-            );
-
-            const nameInput = document.getElementById('keyin-recipient-name');
-            if (candidateName && nameInput && !nameInput.value.trim()) {
-                nameInput.value = candidateName;
-            }
+            const fields = extractParcelFields(text);
+            applySmartParcelFields(fields);
+            latestOcrText = text;
 
             const raw = document.getElementById('ocr-raw-text');
             if (raw) raw.textContent = text;
-
-            const box = document.getElementById('ocr-result-box');
-            if (box) box.classList.remove('hidden');
 
             updateOcrSummary();
         }
@@ -1851,6 +2384,13 @@
                 department: document.getElementById('keyin-dept').value,
                 recipientName: document.getElementById('keyin-recipient-name').value.trim(),
                 recipientEmail: document.getElementById('keyin-recipient-email').value.trim(),
+                recipientPhone: document.getElementById('keyin-recipient-phone').value.trim(),
+                recipientPostcode: document.getElementById('keyin-recipient-postcode').value.trim(),
+                recipientAddress: document.getElementById('keyin-recipient-address').value.trim(),
+                ocrConfidence: latestSmartCapture ? Math.round(
+                    ((latestSmartCapture.tracking?.score || 0) + (latestSmartCapture.fields?.overallConfidence || 0)) /
+                    ((latestSmartCapture.tracking && latestSmartCapture.fields?.overallConfidence) ? 2 : 1)
+                ) : '',
                 qty: Number(document.getElementById('keyin-qty').value || 1),
                 trackingId: document.getElementById('keyin-tracking').value.trim(),
                 remarks: document.getElementById('keyin-remarks').value.trim(),
@@ -1900,6 +2440,8 @@
                 scanProgressCount = 0;
                 updateScanProgress();
                 renderOcrTrackingCandidates([]);
+                latestSmartCapture = null;
+                document.getElementById('ocr-result-box')?.classList.add('hidden');
                 loadDashboardStats();
 
                 setTimeout(function() {
