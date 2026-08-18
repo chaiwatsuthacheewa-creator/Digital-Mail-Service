@@ -692,6 +692,9 @@
                                         <div>
                                             <p class="text-xs font-black text-slate-800"><i class="fa-solid fa-wand-magic-sparkles text-indigo-500 mr-1.5"></i>Smart Parcel Capture</p>
                                             <p id="smart-capture-status" class="text-[10px] text-slate-500 mt-1">กำลังวิเคราะห์ข้อมูลจากหน้าพัสดุ</p>
+                                            <p class="text-[10px] text-indigo-500 mt-1 font-semibold">
+                                                <i class="fa-solid fa-hand-pointer mr-1"></i>ช่องที่ว่างสามารถแตะเพื่อเลือกข้อมูล OCR ได้
+                                            </p>
                                         </div>
                                         <span id="smart-overall-confidence" class="text-[10px] font-black bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">-</span>
                                     </div>
@@ -1029,6 +1032,8 @@
         let scannerLoopTimer = null;
         let latestOcrText = '';
         let latestSmartCapture = null;
+        let activeOcrTargetField = '';
+        let ocrPickerSuppressUntil = 0;
         const SMART_DEPARTMENTS = ["ซองสัญญา","นายหน้าประกันภัย","ปฏิบัติการประกันภัย","ทะเบียน","บุคคล","บัญชี","BSCS","BDSM","CLD","Audit","Fraud","CRD","กำกับธุรกรรม","Legal","CAS","MKT","Falcon","IT","จัดซื้อ","MD","CS","DB","A&D","HeyGoody"];
         let scanProgressCount = 0;
         let scanProgressLastAt = 0;
@@ -1077,6 +1082,7 @@
                 }
             });
 
+            setupOcrTapToFill();
             bootstrapApplication(false);
         });
 
@@ -2149,6 +2155,8 @@
                 route.value = fields.route;
                 setFieldSmartState('keyin-route', 92);
             }
+
+            setupOcrTapToFill();
         }
 
         function renderSmartCaptureResult(data) {
@@ -2359,6 +2367,297 @@
             document.getElementById('ocr-raw-text')?.classList.toggle('hidden');
         }
 
+
+        const OCR_FIELD_CONFIG = {
+            'keyin-tracking': { label: 'Tracking ID', type: 'tracking' },
+            'keyin-recipient-name': { label: 'Recipient Name / ชื่อ-นามสกุล', type: 'name' },
+            'keyin-recipient-phone': { label: 'Phone / เบอร์โทร', type: 'phone' },
+            'keyin-recipient-postcode': { label: 'Postcode / รหัสไปรษณีย์', type: 'postcode' },
+            'keyin-recipient-address': { label: 'Recipient Address / ที่อยู่ผู้รับ', type: 'address' },
+            'keyin-dept': { label: 'Department / แผนกผู้รับ', type: 'department' },
+            'keyin-route': { label: 'Route / เส้นทาง', type: 'route' }
+        };
+
+        function setupOcrTapToFill() {
+            Object.keys(OCR_FIELD_CONFIG).forEach(function(id) {
+                const field = document.getElementById(id);
+                if (!field || field.dataset.ocrTapReady === '1') return;
+                field.dataset.ocrTapReady = '1';
+
+                // Text fields: click/tap an empty field to open OCR choices.
+                if (field.tagName !== 'SELECT') {
+                    field.addEventListener('click', function() {
+                        if (Date.now() < ocrPickerSuppressUntil) return;
+                        if (!field.value.trim() && hasOcrCandidatesForField(id)) {
+                            openOcrFieldPicker(id);
+                        }
+                    });
+                    field.addEventListener('focus', function() {
+                        // Mobile Safari can emit focus without click.
+                        if (Date.now() < ocrPickerSuppressUntil) return;
+                        if (!field.value.trim() && hasOcrCandidatesForField(id)) {
+                            setTimeout(function() {
+                                if (!field.value.trim()) openOcrFieldPicker(id);
+                            }, 80);
+                        }
+                    });
+                }
+
+                // Add explicit OCR button for every field; especially useful for SELECT fields.
+                const wrapper = field.closest('div');
+                if (wrapper && !wrapper.querySelector('[data-ocr-button-for="' + id + '"]')) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.dataset.ocrButtonFor = id;
+                    button.className = 'mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 active:scale-[0.98]';
+                    button.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i><span>ใช้ข้อมูล OCR</span>';
+                    button.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openOcrFieldPicker(id);
+                    });
+                    wrapper.appendChild(button);
+                }
+            });
+        }
+
+        function getUsefulOcrLines() {
+            const text = String(latestOcrText || '');
+            const seen = new Set();
+            const result = [];
+
+            text.split(/\r?\n/).forEach(function(raw) {
+                const line = String(raw || '')
+                    .replace(/[|_=~]{2,}/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                if (!line || line.length < 2 || line.length > 160) return;
+                const key = line.toLowerCase();
+                if (seen.has(key)) return;
+
+                // Avoid obvious OCR noise.
+                const visibleChars = (line.match(/[A-Za-z0-9ก-๙]/g) || []).length;
+                if (visibleChars < Math.min(3, line.length)) return;
+
+                seen.add(key);
+                result.push(line);
+            });
+
+            return result.slice(0, 40);
+        }
+
+        function candidateObject(value, source, score, hint) {
+            value = String(value == null ? '' : value).trim();
+            if (!value) return null;
+            return {
+                value: value,
+                source: source || 'OCR',
+                score: Number(score || 0),
+                hint: hint || ''
+            };
+        }
+
+        function uniqueOcrCandidates(items) {
+            const map = new Map();
+            (items || []).forEach(function(item) {
+                if (!item || !item.value) return;
+                const key = item.value.trim().toLowerCase();
+                const old = map.get(key);
+                if (!old || Number(item.score || 0) > Number(old.score || 0)) {
+                    map.set(key, item);
+                }
+            });
+            return Array.from(map.values())
+                .sort(function(a,b) { return Number(b.score || 0) - Number(a.score || 0); })
+                .slice(0, 24);
+        }
+
+        function buildOcrCandidatesForField(fieldId) {
+            const cfg = OCR_FIELD_CONFIG[fieldId];
+            if (!cfg) return [];
+
+            const smart = latestSmartCapture || {};
+            const fields = smart.fields || {};
+            const rawLines = getUsefulOcrLines();
+            const candidates = [];
+
+            if (cfg.type === 'tracking') {
+                (smart.trackingCandidates || []).forEach(function(item) {
+                    candidates.push(candidateObject(
+                        item.value,
+                        item.source || 'Barcode/OCR',
+                        item.score || 0,
+                        item.source === 'Barcode' ? 'อ่านจาก Barcode / QR โดยตรง' : 'ตรวจพบจากข้อความ OCR'
+                    ));
+                });
+            }
+
+            if (cfg.type === 'name') {
+                candidates.push(candidateObject(fields.recipientName, 'Smart Extract', fields.recipientNameConfidence || 0, 'ระบบคาดว่าเป็นชื่อผู้รับ'));
+                rawLines.forEach(function(line, index) {
+                    const digitCount = (line.match(/\d/g) || []).length;
+                    const thai = (line.match(/[ก-๙]/g) || []).length;
+                    const latin = (line.match(/[A-Za-z]/g) || []).length;
+                    if (digitCount <= 3 && (thai >= 4 || latin >= 5) && line.length <= 90) {
+                        candidates.push(candidateObject(line, 'OCR', Math.max(40, 68 - index), 'ข้อความที่อ่านได้จากหน้าพัสดุ'));
+                    }
+                });
+            }
+
+            if (cfg.type === 'phone') {
+                candidates.push(candidateObject(fields.phone, 'Smart Extract', 90, 'ตรวจพบรูปแบบเบอร์โทร'));
+                const joined = rawLines.join(' ');
+                const matches = joined.match(/(?:\+66[\s\-]?\d{1,2}[\s\-]?\d{3,4}[\s\-]?\d{4}|0\d[\s\-]?\d{3,4}[\s\-]?\d{4})/g) || [];
+                matches.forEach(function(value) {
+                    candidates.push(candidateObject(value, 'OCR', 80, 'ตรวจพบรูปแบบเบอร์โทร'));
+                });
+            }
+
+            if (cfg.type === 'postcode') {
+                candidates.push(candidateObject(fields.postcode, 'Smart Extract', 88, 'ตรวจพบรูปแบบรหัสไปรษณีย์'));
+                const matches = (rawLines.join(' ').match(/(?<!\d)\d{5}(?!\d)/g) || []);
+                matches.forEach(function(value) {
+                    candidates.push(candidateObject(value, 'OCR', 72, 'เลข 5 หลักที่ตรวจพบ'));
+                });
+            }
+
+            if (cfg.type === 'address') {
+                candidates.push(candidateObject(fields.address, 'Smart Extract', fields.recipientNameConfidence >= 80 ? 82 : 65, 'ระบบรวมข้อความที่คาดว่าเป็นที่อยู่'));
+                rawLines.forEach(function(line, index) {
+                    if (/[ก-๙]/.test(line) || /(road|rd\.|soi|street|bangkok|กรุงเทพ|ถนน|ซอย|แขวง|เขต|ตำบล|อำเภอ|จังหวัด|หมู่|เลขที่)/i.test(line)) {
+                        candidates.push(candidateObject(line, 'OCR', Math.max(38, 64 - index), 'บรรทัดข้อความจากหน้าพัสดุ'));
+                    }
+                });
+            }
+
+            if (cfg.type === 'department') {
+                candidates.push(candidateObject(fields.department, 'Smart Extract', fields.departmentConfidence || 0, 'จับคู่กับ Master Department'));
+                const sourceText = (latestOcrText || '').toLowerCase().replace(/\s+/g,'');
+                SMART_DEPARTMENTS.forEach(function(dept) {
+                    const key = dept.toLowerCase().replace(/\s+/g,'');
+                    if (key.length >= 2 && sourceText.includes(key)) {
+                        candidates.push(candidateObject(dept, 'Department Match', 82, 'พบชื่อแผนกในหน้าพัสดุ'));
+                    }
+                });
+            }
+
+            if (cfg.type === 'route') {
+                candidates.push(candidateObject(fields.route, 'Smart Extract', fields.route ? 92 : 0, 'ตรวจพบสถานที่จากหน้าพัสดุ'));
+                const raw = latestOcrText || '';
+                if (/BTS\s*TOWER|บีทีเอส\s*ทาวเวอร์/i.test(raw)) {
+                    candidates.push(candidateObject('BTS Tower', 'Route Match', 92, 'พบ BTS Tower'));
+                }
+                if (/ARI\s*HILL|ARI\s*HILLS|อารีย์\s*ฮิล/i.test(raw)) {
+                    candidates.push(candidateObject('Ari Hill', 'Route Match', 92, 'พบ Ari Hill'));
+                }
+            }
+
+            return uniqueOcrCandidates(candidates.filter(Boolean));
+        }
+
+        function hasOcrCandidatesForField(fieldId) {
+            return buildOcrCandidatesForField(fieldId).length > 0;
+        }
+
+        function openOcrFieldPicker(fieldId) {
+            const cfg = OCR_FIELD_CONFIG[fieldId];
+            if (!cfg) return;
+
+            const picker = document.getElementById('ocr-field-picker');
+            const list = document.getElementById('ocr-picker-list');
+            const title = document.getElementById('ocr-picker-title');
+            const subtitle = document.getElementById('ocr-picker-subtitle');
+            if (!picker || !list) return;
+
+            activeOcrTargetField = fieldId;
+            if (title) title.textContent = 'เลือกข้อมูลสำหรับ ' + cfg.label;
+            if (subtitle) subtitle.textContent = 'แตะ Candidate ที่ถูกต้องเพื่อเติมลงช่องทันที';
+
+            const candidates = buildOcrCandidatesForField(fieldId);
+
+            if (!candidates.length) {
+                list.innerHTML =
+                    '<div class="py-8 px-4 text-center">' +
+                    '<i class="fa-solid fa-magnifying-glass text-2xl text-slate-300"></i>' +
+                    '<p class="text-sm font-bold text-slate-600 mt-3">ยังไม่มี Candidate ที่เหมาะกับช่องนี้</p>' +
+                    '<p class="text-xs text-slate-400 mt-1">ถ่ายภาพใหม่ให้ข้อความชัดขึ้น หรือสามารถพิมพ์ข้อมูลเองได้ตามปกติ</p>' +
+                    '</div>';
+            } else {
+                list.innerHTML = candidates.map(function(item, index) {
+                    const confidence = Math.round(Number(item.score || 0));
+                    const badgeClass = confidence >= 80
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : confidence >= 60
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-slate-200 text-slate-600';
+
+                    return '<button type="button" data-ocr-picker-index="' + index + '" ' +
+                        'class="w-full text-left bg-white border border-slate-200 rounded-2xl p-3.5 hover:border-indigo-300 hover:shadow-sm active:scale-[0.99] transition">' +
+                        '<div class="flex items-start justify-between gap-3">' +
+                            '<div class="min-w-0 flex-1">' +
+                                '<p class="text-sm font-black text-slate-800 break-words">' + escapeHtml(item.value) + '</p>' +
+                                '<p class="text-[10px] text-slate-400 mt-1">' + escapeHtml(item.source + (item.hint ? ' • ' + item.hint : '')) + '</p>' +
+                            '</div>' +
+                            (confidence
+                                ? '<span class="text-[10px] font-black px-2 py-1 rounded-full shrink-0 ' + badgeClass + '">' + confidence + '%</span>'
+                                : '') +
+                        '</div>' +
+                    '</button>';
+                }).join('');
+
+                list.querySelectorAll('[data-ocr-picker-index]').forEach(function(button) {
+                    button.addEventListener('click', function() {
+                        const index = Number(button.dataset.ocrPickerIndex);
+                        const item = candidates[index];
+                        if (item) assignOcrCandidateToField(fieldId, item.value);
+                    });
+                });
+            }
+
+            picker.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function assignOcrCandidateToField(fieldId, value) {
+            const field = document.getElementById(fieldId);
+            if (!field) return;
+
+            const text = String(value == null ? '' : value).trim();
+            if (!text) return;
+
+            if (field.tagName === 'SELECT') {
+                const exactOption = Array.from(field.options).find(function(option) {
+                    return option.value === text || option.text.trim() === text;
+                });
+
+                if (!exactOption) {
+                    showSystemToast('ข้อมูล OCR นี้ไม่ตรงกับตัวเลือกของระบบ กรุณาเลือกจากรายการ', 'error');
+                    return;
+                }
+
+                field.value = exactOption.value;
+                field.dispatchEvent(new Event('change', { bubbles: true }));
+            } else {
+                field.value = text;
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+                field.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            setFieldSmartState(fieldId, 85);
+            updateOcrSummary();
+            closeOcrFieldPicker();
+            showSystemToast('เติมข้อมูลจาก OCR แล้ว • ' + (OCR_FIELD_CONFIG[fieldId]?.label || 'Field'), 'success');
+        }
+
+        function closeOcrFieldPicker() {
+            const picker = document.getElementById('ocr-field-picker');
+            if (picker) picker.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            activeOcrTargetField = '';
+            ocrPickerSuppressUntil = Date.now() + 300;
+        }
+
         function renderImagePreviews() {
             const container = document.getElementById('image-preview-container');
             if (!container) return;
@@ -2374,6 +2673,71 @@
         }
 
         function removeImage(index) { capturedImages.splice(index, 1); renderImagePreviews(); }
+
+
+        function setKeyInSaving(isSaving) {
+            const buttons = Array.from(document.querySelectorAll('[onclick="submitKeyInForm()"]'));
+            buttons.forEach(function(button) {
+                button.disabled = !!isSaving;
+                button.classList.toggle('opacity-60', !!isSaving);
+                button.classList.toggle('cursor-wait', !!isSaving);
+
+                if (!button.dataset.originalHtml) button.dataset.originalHtml = button.innerHTML;
+                if (isSaving) {
+                    button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังบันทึกและ Sync...';
+                } else if (button.dataset.originalHtml) {
+                    button.innerHTML = button.dataset.originalHtml;
+                }
+            });
+        }
+
+        async function refreshWorkflowAfterKeyIn(trackingId, department) {
+            const jobs = [];
+
+            try { jobs.push(Promise.resolve(loadOperationsControl())); } catch (e) {}
+            try { jobs.push(Promise.resolve(loadEsignDepartments())); } catch (e) {}
+
+            // Dashboard loader uses promise chaining internally; execute immediately.
+            try { loadDashboardStats(); } catch (e) {}
+
+            // Confirm Track can immediately read the same record.
+            jobs.push(
+                apiCall('searchTracking', {
+                    trackingId: trackingId,
+                    authToken: getAuthToken()
+                }).then(function(result) {
+                    if (result && result.success && result.found !== false) {
+                        return { module: 'Track', success: true };
+                    }
+                    return { module: 'Track', success: false };
+                }).catch(function() {
+                    return { module: 'Track', success: false };
+                })
+            );
+
+            await Promise.allSettled(jobs);
+        }
+
+        function showWorkflowSyncToast(sync, trackingId) {
+            if (!sync) {
+                showSystemToast('บันทึกสำเร็จ • ' + trackingId, 'success');
+                return;
+            }
+
+            const ready = [
+                sync.trackReady,
+                sync.operationsReady,
+                sync.esignReady,
+                sync.reportReady,
+                sync.dashboardReady
+            ].filter(Boolean).length;
+
+            if (ready >= 5) {
+                showSystemToast('บันทึกและ Sync สำเร็จทุก Module • ' + trackingId, 'success');
+            } else {
+                showSystemToast('บันทึกสำเร็จ • Sync พร้อมใช้ ' + ready + '/5 Module', ready >= 3 ? 'info' : 'error');
+            }
+        }
 
         async function submitKeyInForm() {
             if (!requireGas()) return;
@@ -2416,24 +2780,34 @@
                 return;
             }
 
+            setKeyInSaving(true);
+
             try {
+                // Backend does not return success until the row is written, flushed and read back.
                 const raw = await apiCall('saveKeyIn', payload);
                 const res = normalizeResponse(raw, 'บันทึก KeyIn ไม่สำเร็จ');
 
                 if (handleAuthFailure(res)) return;
 
-                if (!res.success) {
-                    showSystemToast(res.message || 'บันทึก KeyIn ไม่สำเร็จ', 'error');
+                if (!res.success || !res.verified) {
+                    showSystemToast(
+                        res.message || 'Backend ยังไม่ยืนยันการบันทึก ข้อมูลในฟอร์มจะยังคงอยู่ กรุณาลองใหม่',
+                        'error'
+                    );
                     return;
                 }
 
-                showSystemToast('บันทึกสำเร็จ • ' + (res.trackingId || payload.trackingId), 'success');
+                await refreshWorkflowAfterKeyIn(res.trackingId || payload.trackingId, payload.department);
+                showWorkflowSyncToast(res.sync, res.trackingId || payload.trackingId);
 
+                // Clear only after verified save + workflow refresh.
                 capturedImages = [];
                 renderImagePreviews();
+
                 clearForm([
-                    'keyin-route','keyin-dept','keyin-recipient-name',
-                    'keyin-recipient-email','keyin-tracking','keyin-remarks'
+                    'keyin-route','keyin-dept','keyin-recipient-name','keyin-recipient-email',
+                    'keyin-recipient-phone','keyin-recipient-postcode','keyin-recipient-address',
+                    'keyin-tracking','keyin-remarks'
                 ]);
 
                 document.getElementById('keyin-qty').value = 1;
@@ -2441,15 +2815,19 @@
                 updateScanProgress();
                 renderOcrTrackingCandidates([]);
                 latestSmartCapture = null;
+                latestOcrText = '';
                 document.getElementById('ocr-result-box')?.classList.add('hidden');
-                loadDashboardStats();
 
+                // Stay briefly so user sees confirmed state; then return Home.
                 setTimeout(function() {
                     navigateTo('home');
-                }, 500);
+                }, 750);
 
             } catch (err) {
-                showSystemToast('บันทึก KeyIn ไม่สำเร็จ: ' + normalizeError(err), 'error');
+                // Do not clear form/images on any error.
+                showSystemToast('บันทึกไม่สำเร็จ: ' + normalizeError(err) + ' • ข้อมูลยังอยู่ในฟอร์ม', 'error');
+            } finally {
+                setKeyInSaving(false);
             }
         }
 
@@ -2776,5 +3154,38 @@
         }
 
     </script>
+
+    <!-- ================= OCR TAP-TO-FILL PICKER ================= -->
+    <div id="ocr-field-picker" class="hidden fixed inset-0 z-[12000]">
+        <div class="absolute inset-0 bg-slate-950/55 backdrop-blur-[2px]" onclick="closeOcrFieldPicker()"></div>
+        <div class="absolute inset-x-0 bottom-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2
+                    bg-white rounded-t-3xl md:rounded-3xl shadow-2xl border border-slate-200
+                    max-h-[78vh] md:w-[560px] md:max-w-[92vw] flex flex-col overflow-hidden">
+            <div class="p-4 md:p-5 border-b border-slate-100 flex items-start justify-between gap-3 bg-white">
+                <div>
+                    <p class="text-[10px] uppercase tracking-[0.18em] font-black text-indigo-500">OCR Tap to Fill</p>
+                    <h3 id="ocr-picker-title" class="text-lg font-black text-slate-800 mt-0.5">เลือกข้อมูลจากหน้าพัสดุ</h3>
+                    <p id="ocr-picker-subtitle" class="text-xs text-slate-500 mt-1">แตะข้อมูลเพื่อเติมลงช่องโดยไม่ต้องพิมพ์</p>
+                </div>
+                <button type="button" onclick="closeOcrFieldPicker()"
+                    class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="ocr-picker-list" class="p-4 md:p-5 overflow-y-auto space-y-2 bg-slate-50/60">
+                <div class="text-sm text-slate-400 text-center py-8">ยังไม่มีข้อมูล OCR สำหรับเลือก</div>
+            </div>
+
+            <div class="p-3 md:p-4 border-t border-slate-100 bg-white flex items-center justify-between gap-3">
+                <p class="text-[10px] text-slate-400 leading-relaxed">
+                    ระบบไม่แก้ค่าต้นฉบับของ Barcode/Tracking และสามารถพิมพ์แก้เองได้หลังเลือก
+                </p>
+                <button type="button" onclick="closeOcrFieldPicker()"
+                    class="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold shrink-0">ปิด</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
