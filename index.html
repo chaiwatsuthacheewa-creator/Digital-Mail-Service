@@ -846,17 +846,28 @@
                         <button onclick="searchTracking()" class="bg-emerald-600 text-white px-6 rounded-xl font-bold text-sm hover:bg-emerald-700 transition cursor-pointer">ค้นหา</button>
                     </div>
 
-                    <div id="track-result" class="hidden border border-slate-100 rounded-2xl p-6 bg-slate-50">
-                        <div class="flex justify-between items-center pb-4 border-b border-slate-200 mb-4">
-                            <div>
-                                <p class="text-xs font-bold text-slate-400">TRACKING NO.</p>
-                                <p class="text-lg font-black text-slate-800" id="result-tracking-id">DHL987654321</p>
+                    <div id="track-result" class="hidden border border-slate-100 rounded-2xl p-5 md:p-6 bg-slate-50">
+                        <button type="button" onclick="toggleTrackDetails()" class="w-full text-left cursor-pointer" aria-expanded="true" id="track-result-toggle">
+                            <div class="flex justify-between items-center gap-3 pb-4 border-b border-slate-200">
+                                <div class="min-w-0">
+                                    <p class="text-xs font-bold text-slate-400">TRACKING NO.</p>
+                                    <p class="text-lg font-black text-slate-800 break-all" id="result-tracking-id">-</p>
+                                    <p class="text-xs text-slate-500 mt-1" id="result-track-summary">แตะเพื่อดูรายละเอียดสถานะ</p>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <span id="result-status-badge" class="bg-slate-100 text-slate-700 text-xs px-3 py-1 rounded-full font-bold">-</span>
+                                    <i id="track-result-chevron" class="fa-solid fa-chevron-up text-slate-400"></i>
+                                </div>
                             </div>
-                            <span class="bg-emerald-100 text-emerald-800 text-xs px-3 py-1 rounded-full font-bold">จัดส่งสำเร็จ</span>
-                        </div>
-                        <div class="space-y-4 text-xs">
-                            <div class="flex gap-3"><i class="fa-solid fa-circle text-emerald-500 mt-0.5"></i><div><p class="font-bold">14:30 น. - รับเอกสารเรียบร้อย</p><p class="text-slate-400">ผู้รับ: สมชาย ใจดี (E-Signed)</p></div></div>
-                            <div class="flex gap-3"><i class="fa-solid fa-circle text-slate-300 mt-0.5"></i><div><p class="font-bold">11:15 น. - อยู่ระหว่างนำส่งโดย Messenger</p><p class="text-slate-400">เส้นทาง: Ari Hill</p></div></div>
+                        </button>
+                        <div id="track-detail-panel" class="pt-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5 text-xs">
+                                <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">แผนกผู้รับ</p><p id="result-track-dept" class="font-bold text-slate-700 mt-1">-</p></div>
+                                <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">เส้นทาง</p><p id="result-track-route" class="font-bold text-slate-700 mt-1">-</p></div>
+                                <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">ผู้รับ</p><p id="result-track-recipient" class="font-bold text-slate-700 mt-1">-</p></div>
+                                <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">จำนวน</p><p id="result-track-qty" class="font-bold text-slate-700 mt-1">-</p></div>
+                            </div>
+                            <div id="result-track-timeline" class="space-y-4 text-xs"></div>
                         </div>
                     </div>
                 </section>
@@ -1691,7 +1702,7 @@
             let trackingCandidates = rankBarcodeCandidates(barcodeCandidates);
 
             // ENGINE B: dedicated Tracking OCR — only if barcode is not strong enough.
-            if (!trackingCandidates.length || trackingCandidates[0].score < 86) {
+            if (!trackingCandidates.length) {
                 setScannerStatus('กำลังค้นหาเลข Tracking บนฉลาก…', 'info');
 
                 try {
@@ -1865,37 +1876,34 @@
         async function scanBarcodeCandidatesFromVariants(variants) {
             const found = new Map();
 
-            for (const variant of variants) {
-                const regions = buildBarcodeScanRegions(variant);
+            // FAST BARCODE MODE: try full frame at 0/90 first.
+            const preferred = variants.filter(v => v.rotation === 0 || v.rotation === 90);
+
+            for (const variant of preferred) {
+                const regions = [
+                    variant,
+                    cropSmartRegion(variant, 0.00, 0.00, 1.00, 0.58, 'top'),
+                    cropSmartRegion(variant, 0.00, 0.42, 1.00, 0.58, 'bottom')
+                ];
 
                 for (const region of regions) {
                     const values = await scanAllBarcodesFromImage(region.dataUrl);
-
                     values.forEach(function(raw) {
                         const value = String(raw || '').trim();
                         if (!value) return;
-
                         const current = found.get(value) || {
-                            value: value,
-                            hits: 0,
-                            rotations: [],
-                            regions: [],
-                            source: 'Barcode'
+                            value, hits: 0, rotations: [], regions: [], source: 'Barcode'
                         };
-
                         current.hits += 1;
                         current.rotations.push(variant.rotation);
                         current.regions.push(region.region || 'full');
                         found.set(value, current);
                     });
 
-                    // Strong repeat detection; stop unnecessary work.
-                    if (Array.from(found.values()).some(x => x.hits >= 2)) break;
+                    // Barcode decoder result is authoritative; no need to scan every crop.
+                    if (found.size) return Array.from(found.values());
                 }
-
-                if (Array.from(found.values()).some(x => x.hits >= 2)) break;
             }
-
             return Array.from(found.values());
         }
 
@@ -2135,48 +2143,49 @@
             const worker = await getTrackingOcrWorker();
             const found = new Map();
 
-            // Use only first 3 orientations to keep iPad/mobile latency reasonable.
-            const rotations = [0, 90, 270];
+            // FAST MODE: 0° first, 90° only when necessary.
+            // iPad/mobile must not run 20+ OCR recognitions for one photo.
+            const rotations = [0, 90];
             const byRotation = new Map(colorVariants.map(v => [v.rotation, v]));
 
             for (const rotation of rotations) {
                 const full = byRotation.get(rotation);
                 if (!full) continue;
 
-                // Tracking often sits on white barcode stickers or in upper/lower label areas.
-                const regions = [
-                    full,
-                    cropSmartRegion(full, 0.00, 0.00, 1.00, 0.58, 'tracking-top'),
-                    cropSmartRegion(full, 0.00, 0.42, 1.00, 0.58, 'tracking-bottom'),
-                    cropSmartRegion(full, 0.36, 0.08, 0.64, 0.84, 'tracking-right')
-                ];
+                const regions = rotation === 0
+                    ? [
+                        full,
+                        cropSmartRegion(full, 0.00, 0.00, 1.00, 0.55, 'tracking-top'),
+                        cropSmartRegion(full, 0.00, 0.45, 1.00, 0.55, 'tracking-bottom')
+                    ]
+                    : [full];
 
                 for (const region of regions) {
-                    const processedVariants = createTrackingOcrVariants(region);
+                    // One high-contrast pass per region. Avoid duplicate binary OCR work.
+                    const processed = createTrackingOcrVariants(region)[0];
 
-                    for (const processed of processedVariants) {
-                        try {
-                            const result = await worker.recognize(processed.dataUrl);
-                            const text = result?.data?.text || '';
-                            const confidence = Number(result?.data?.confidence || 0);
-                            const items = extractTrackingFromDedicatedOcr(text, confidence);
+                    try {
+                        const result = await worker.recognize(processed.dataUrl);
+                        const text = result?.data?.text || '';
+                        const confidence = Number(result?.data?.confidence || 0);
+                        const items = extractTrackingFromDedicatedOcr(text, confidence);
 
-                            items.forEach(function(item) {
-                                const old = found.get(item.value);
-                                if (!old || item.score > old.score) found.set(item.value, item);
-                            });
+                        items.forEach(function(item) {
+                            const old = found.get(item.value);
+                            if (!old || item.score > old.score) found.set(item.value, item);
+                        });
 
-                            // High-confidence candidate: stop expensive OCR early.
-                            if (Array.from(found.values()).some(x => x.score >= 91)) {
-                                return Array.from(found.values()).sort((a,b) => b.score - a.score).slice(0, 6);
-                            }
-                        } catch (err) {
-                            console.warn('Tracking OCR region failed', err);
+                        if (Array.from(found.values()).some(x => x.score >= 84)) {
+                            return Array.from(found.values())
+                                .sort((a,b) => b.score - a.score)
+                                .slice(0, 6);
                         }
+                    } catch (err) {
+                        console.warn('Tracking OCR region failed', err);
                     }
                 }
 
-                if (Array.from(found.values()).some(x => x.score >= 86)) break;
+                if (found.size) break;
             }
 
             return Array.from(found.values())
@@ -2205,7 +2214,7 @@
         }
 
         async function runSmartOcrPasses(colorVariants) {
-            const order = [0, 90, 270, 180];
+            const order = [0, 90];
             const byRotation = new Map(colorVariants.map(v => [v.rotation, v]));
             let best = null;
 
@@ -2213,67 +2222,40 @@
                 const color = byRotation.get(order[idx]);
                 if (!color) continue;
 
-                const img = await loadSmartImage(color.dataUrl);
+                setScannerStatus('กำลังอ่านชื่อและข้อมูลผู้รับ…', 'info');
 
-                // Compare original-color OCR with enhanced grayscale.
-                const inputs = [
-                    { dataUrl: color.dataUrl, mode: 'color' },
-                    { ...drawSmartVariant(img, 0, 'ocr'), mode: 'enhanced' }
-                ];
-
-                for (const input of inputs) {
-                    setScannerStatus(
-                        idx === 0
-                            ? 'กำลังอ่านภาษาไทยและอังกฤษบนหน้าพัสดุ…'
-                            : 'กำลังปรับมุมภาพเพื่ออ่านชื่อให้ชัดขึ้น…',
-                        'info'
-                    );
-
-                    try {
-                        const result = await Tesseract.recognize(input.dataUrl, 'tha+eng', {
-                            logger: m => {
-                                if (m.status === 'recognizing text') {
-                                    const pct = Math.round((m.progress || 0) * 100);
-                                    setScannerStatus('กำลังอ่านข้อความ ' + pct + '%', 'info');
-                                }
+                try {
+                    const result = await Tesseract.recognize(color.dataUrl, 'tha+eng', {
+                        logger: m => {
+                            if (m.status === 'recognizing text') {
+                                const pct = Math.round((m.progress || 0) * 100);
+                                setScannerStatus('กำลังอ่านข้อความ ' + pct + '%', 'info');
                             }
-                        });
-
-                        const text = result?.data?.text?.trim() || '';
-                        const confidence = Number(result?.data?.confidence || 0);
-
-                        const lines = (result?.data?.lines || [])
-                            .map(function(line) {
-                                return {
-                                    text: String(line?.text || '').replace(/\s+/g, ' ').trim(),
-                                    confidence: Number(line?.confidence || 0),
-                                    bbox: line?.bbox || null
-                                };
-                            })
-                            .filter(line => line.text);
-
-                        const candidate = {
-                            text: text,
-                            confidence: confidence,
-                            lines: lines,
-                            score: scoreParcelOcrText(text, confidence, lines),
-                            rotation: order[idx],
-                            mode: input.mode
-                        };
-
-                        if (!best || candidate.score > best.score) best = candidate;
-
-                        // Very good Thai/English result: don't keep running on mobile.
-                        if (candidate.score >= 88 && confidence >= 65) {
-                            return candidate;
                         }
-                    } catch (err) {
-                        console.warn('General OCR pass failed', err);
-                    }
-                }
+                    });
 
-                if (idx >= 1 && best && best.score >= 74) break;
-                if (idx >= 2 && best && best.score >= 60) break;
+                    const text = result?.data?.text?.trim() || '';
+                    const confidence = Number(result?.data?.confidence || 0);
+                    const lines = (result?.data?.lines || []).map(function(line) {
+                        return {
+                            text: String(line?.text || '').replace(/\s+/g, ' ').trim(),
+                            confidence: Number(line?.confidence || 0),
+                            bbox: line?.bbox || null
+                        };
+                    }).filter(line => line.text);
+
+                    const candidate = {
+                        text, confidence, lines,
+                        score: scoreParcelOcrText(text, confidence, lines),
+                        rotation: order[idx],
+                        mode: 'fast-color'
+                    };
+
+                    if (!best || candidate.score > best.score) best = candidate;
+                    if (candidate.score >= 62 || confidence >= 55) break;
+                } catch (err) {
+                    console.warn('General OCR pass failed', err);
+                }
             }
 
             return best || { text: '', confidence: 0, lines: [], score: 0, rotation: 0 };
@@ -3470,8 +3452,18 @@
 
         function searchTracking() {
             if (!requireGas()) return;
-            const trackingId = document.getElementById('track-search-input').value.trim();
-            if (!trackingId) { alert('กรุณากรอกรหัส Tracking'); return; }
+            const input = document.getElementById('track-search-input');
+            const trackingId = input.value.trim();
+
+            if (!trackingId) {
+                showSystemToast('กรุณากรอก Tracking / Barcode', 'error');
+                input.focus();
+                return;
+            }
+
+            const result = document.getElementById('track-result');
+            if (result) result.classList.add('hidden');
+
             apiCall('searchTracking', {
                 trackingId: trackingId,
                 authToken: getAuthToken()
@@ -3479,21 +3471,89 @@
                 .then(function(res) {
                     if (handleAuthFailure(res)) return;
                     if (!res || res.success === false || res.found === false) {
-                        alert((res && res.message) || 'ไม่พบ Tracking นี้ในระบบ');
+                        showSystemToast((res && res.message) || 'ไม่พบ Tracking นี้ในระบบ', 'error');
                         return;
                     }
                     renderTrackResult(res);
                 })
                 .catch(function(err) {
-                    alert('ค้นหาไม่สำเร็จ: ' + normalizeError(err));
+                    showSystemToast('ค้นหาไม่สำเร็จ: ' + normalizeError(err), 'error');
                 });
+        }
+
+        function formatTrackTime(value) {
+            if (!value) return '-';
+            const d = new Date(value);
+            if (Number.isNaN(d.getTime())) return String(value);
+            return d.toLocaleString('th-TH', {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        function toggleTrackDetails() {
+            const panel = document.getElementById('track-detail-panel');
+            const icon = document.getElementById('track-result-chevron');
+            const toggle = document.getElementById('track-result-toggle');
+            if (!panel) return;
+            const willHide = !panel.classList.contains('hidden');
+            panel.classList.toggle('hidden', willHide);
+            icon?.classList.toggle('fa-chevron-down', willHide);
+            icon?.classList.toggle('fa-chevron-up', !willHide);
+            toggle?.setAttribute('aria-expanded', String(!willHide));
         }
 
         function renderTrackResult(res) {
             const result = document.getElementById('track-result');
-            const tracking = document.getElementById('result-tracking-id');
-            if (tracking) tracking.innerText = res.trackingId || 'N/A';
-            if (result) result.classList.remove('hidden');
+            const setText = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = value || '-';
+            };
+
+            setText('result-tracking-id', res.trackingId);
+            setText('result-track-dept', res.department);
+            setText('result-track-route', res.route);
+            setText('result-track-recipient', res.recipientName);
+            setText('result-track-qty', String(res.qty || 1));
+            setText('result-track-summary', (res.timeline || []).length + ' เหตุการณ์ • แตะเพื่อย่อ/ขยาย');
+
+            const badge = document.getElementById('result-status-badge');
+            if (badge) {
+                badge.textContent = res.status || 'Registered';
+                badge.className = 'text-xs px-3 py-1 rounded-full font-bold ' +
+                    (/deliver/i.test(res.status || '') ? 'bg-emerald-100 text-emerald-800' :
+                     /return/i.test(res.status || '') ? 'bg-rose-100 text-rose-800' :
+                     /dispatch|transit/i.test(res.status || '') ? 'bg-amber-100 text-amber-800' :
+                     'bg-sky-100 text-sky-800');
+            }
+
+            const timeline = document.getElementById('result-track-timeline');
+            if (timeline) {
+                const items = Array.isArray(res.timeline) ? res.timeline.slice().reverse() : [];
+                timeline.innerHTML = items.length ? items.map(function(item, index) {
+                    const active = index === 0;
+                    return '<div class="flex gap-3">' +
+                        '<i class="fa-solid fa-circle ' + (active ? 'text-emerald-500' : 'text-slate-300') + ' mt-1"></i>' +
+                        '<div class="min-w-0"><p class="font-bold text-slate-700">' +
+                        escapeHtml(formatTrackTime(item.time) + ' • ' + (item.title || 'อัปเดตสถานะ')) +
+                        '</p><p class="text-slate-500 mt-1 break-words">' +
+                        escapeHtml(item.detail || '') +
+                        '</p>' +
+                        (item.signatureUrl ? '<a class="inline-block mt-2 text-indigo-600 font-bold" target="_blank" rel="noopener" href="' + escapeHtml(item.signatureUrl) + '">ดูลายเซ็น</a>' : '') +
+                        '</div></div>';
+                }).join('') : '<div class="text-slate-400">ยังไม่มี Timeline เพิ่มเติม</div>';
+            }
+
+            const panel = document.getElementById('track-detail-panel');
+            panel?.classList.remove('hidden');
+            const icon = document.getElementById('track-result-chevron');
+            icon?.classList.remove('fa-chevron-down');
+            icon?.classList.add('fa-chevron-up');
+
+            if (result) {
+                result.classList.remove('hidden');
+                result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
 
         function submitReturnForm() {
@@ -3590,7 +3650,16 @@
                 });
         }
 
-    </script>
+    
+
+        // Professional keyboard support for Track & Trace.
+        document.getElementById('track-search-input')?.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                searchTracking();
+            }
+        });
+</script>
 
     <!-- ================= OCR TAP-TO-FILL PICKER ================= -->
     <div id="ocr-field-picker" class="hidden fixed inset-0 z-[12000]">
