@@ -291,9 +291,6 @@
                 <button onclick="navigateTo('report')" id="side-report" class="admin-only sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
                     <i class="fa-solid fa-chart-column w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> รายงาน (Report)
                 </button>
-                <button onclick="navigateTo('automail')" id="side-automail" class="admin-only sidebar-btn w-full flex items-center text-left px-4 py-3 rounded-xl transition-all text-sm font-medium hover:bg-slate-800 hover:text-white group">
-                    <i class="fa-regular fa-envelope w-6 text-slate-400 group-hover:text-indigo-400 transition-colors"></i> Auto Mail
-                </button>
             </nav>
 
             <div class="p-4 border-t border-slate-800 bg-slate-950">
@@ -415,12 +412,6 @@
                                 <i class="fa-solid fa-chart-column text-2xl"></i>
                             </div>
                             <span class="text-sm font-bold text-slate-700 group-hover:text-sky-600">Report</span>
-                        </button>
-                        <button onclick="navigateTo('automail')" class="admin-only group bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-xl hover:border-amber-400 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer">
-                            <div class="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-amber-600 group-hover:text-white transition-all duration-300 shadow-sm">
-                                <i class="fa-regular fa-envelope text-2xl"></i>
-                            </div>
-                            <span class="text-sm font-bold text-slate-700 group-hover:text-amber-600">Auto Mail</span>
                         </button>
                     </div>
                 </section>
@@ -582,13 +573,6 @@
                                 <p class="text-[10px] text-slate-400 mt-1.5">เลือกจากรายชื่อ RecipientMaster หรือพิมพ์ชื่อเองได้ตามปกติ • สามารถแก้ไขได้หลังเลือก</p>
                             </div>
 
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Recipient Email / อีเมลผู้รับ (สำหรับ Auto Mail)</label>
-                                <div class="relative">
-                                    <i class="fa-regular fa-envelope absolute left-4 top-3.5 text-slate-400"></i>
-                                    <input type="email" id="keyin-recipient-email" placeholder="name@ntl.co.th" class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-                                </div>
-                            </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1.5">Phone / เบอร์โทร</label>
@@ -838,18 +822,18 @@
                             <div class="w-10 h-10 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center text-lg"><i class="fa-solid fa-building-shield"></i></div>
                             <div>
                                 <h3 class="text-lg font-bold text-slate-800">ตรวจสอบสถานะเอกสาร</h3>
-                                <p class="text-xs text-slate-500">Department Status Monitor — ภาพรวมและสถานะเอกสารรายแผนก</p>
+                                <p class="text-xs text-slate-500">Department Status Monitor — ภาพรวมเอกสารทุกแผนก ทุกสถานะ</p>
                             </div>
                         </div>
 
                         <!-- Overview KPI -->
                         <div id="deptstatus-overview" class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
                             <div class="bg-slate-50 border border-slate-100 rounded-xl p-4">
-                                <p class="text-[10px] font-bold text-slate-400 uppercase">Total Documents</p>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase">งานทั้งหมด</p>
                                 <p id="deptstatus-kpi-total" class="text-xl font-black text-slate-800 mt-1">-</p>
                             </div>
                             <div class="bg-amber-50 border border-amber-100 rounded-xl p-4">
-                                <p class="text-[10px] font-bold text-amber-600 uppercase">Pending E-Sign</p>
+                                <p class="text-[10px] font-bold text-amber-600 uppercase">รอรับ/ยังไม่ปิดงาน</p>
                                 <p id="deptstatus-kpi-pending" class="text-xl font-black text-amber-700 mt-1">-</p>
                             </div>
                             <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
@@ -861,7 +845,7 @@
                                 <p id="deptstatus-kpi-returned" class="text-xl font-black text-rose-700 mt-1">-</p>
                             </div>
                             <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 col-span-2 md:col-span-1">
-                                <p class="text-[10px] font-bold text-indigo-600 uppercase">Departments Pending</p>
+                                <p class="text-[10px] font-bold text-indigo-600 uppercase">แผนกที่ยังมีงานค้าง</p>
                                 <p id="deptstatus-kpi-depts" class="text-xl font-black text-indigo-700 mt-1">-</p>
                             </div>
                         </div>
@@ -870,35 +854,43 @@
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">เลือกแผนก / Department</label>
                             <select id="deptstatus-department-select" onchange="renderDepartmentStatusDetail()"
                                 class="w-full sm:w-80 border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                <option value="">-- ภาพรวมทุกแผนก --</option>
+                                <option value="__ALL__">ทุกแผนก / All Departments</option>
                             </select>
                         </div>
 
-                        <div id="deptstatus-detail-summary" class="hidden grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        <div id="deptstatus-detail-summary" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                             <div class="bg-white border border-slate-200 rounded-xl p-3"><p class="text-[10px] font-bold text-slate-400">งานทั้งหมด</p><p id="deptstatus-detail-total" class="text-lg font-black text-slate-800 mt-0.5">0</p></div>
-                            <div class="bg-white border border-slate-200 rounded-xl p-3"><p class="text-[10px] font-bold text-slate-400">รอเซ็นรับ</p><p id="deptstatus-detail-pending" class="text-lg font-black text-amber-600 mt-0.5">0</p></div>
+                            <div class="bg-white border border-slate-200 rounded-xl p-3"><p class="text-[10px] font-bold text-slate-400">รอรับ/ยังไม่ปิดงาน</p><p id="deptstatus-detail-pending" class="text-lg font-black text-amber-600 mt-0.5">0</p></div>
                             <div class="bg-white border border-slate-200 rounded-xl p-3"><p class="text-[10px] font-bold text-slate-400">เซ็นรับแล้ว</p><p id="deptstatus-detail-delivered" class="text-lg font-black text-emerald-600 mt-0.5">0</p></div>
                             <div class="bg-white border border-slate-200 rounded-xl p-3"><p class="text-[10px] font-bold text-slate-400">ตีกลับ</p><p id="deptstatus-detail-returned" class="text-lg font-black text-rose-600 mt-0.5">0</p></div>
                         </div>
 
+                        <p id="deptstatus-status-line" class="text-xs text-slate-400 mb-3 font-medium">กำลังโหลดข้อมูลเอกสาร...</p>
+
                         <!-- Desktop / tablet table (horizontal-scroll contained to this box only) -->
                         <div class="hidden sm:block overflow-x-auto border border-slate-100 rounded-xl">
-                            <table class="w-full text-xs min-w-[560px]">
+                            <table class="w-full text-xs min-w-[720px]">
                                 <thead class="bg-slate-50 text-slate-500">
                                     <tr>
+                                        <th class="text-left font-bold px-4 py-3">Date</th>
                                         <th class="text-left font-bold px-4 py-3">Tracking</th>
+                                        <th class="text-left font-bold px-4 py-3">Department</th>
                                         <th class="text-left font-bold px-4 py-3">Recipient</th>
+                                        <th class="text-left font-bold px-4 py-3">Route</th>
+                                        <th class="text-right font-bold px-4 py-3">Qty</th>
                                         <th class="text-left font-bold px-4 py-3">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="deptstatus-table-body" class="divide-y divide-slate-100">
-                                    <tr><td colspan="3" class="text-center text-slate-400 py-8">เลือกแผนกเพื่อดูรายการเอกสาร</td></tr>
+                                    <tr><td colspan="7" class="text-center text-slate-400 py-8"><i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดข้อมูลเอกสาร...</td></tr>
                                 </tbody>
                             </table>
                         </div>
 
                         <!-- Mobile card list -->
-                        <div id="deptstatus-card-list" class="sm:hidden space-y-2"></div>
+                        <div id="deptstatus-card-list" class="sm:hidden space-y-2">
+                            <div class="text-center text-slate-400 text-xs py-8"><i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดข้อมูลเอกสาร...</div>
+                        </div>
                     </div>
                 </section>
 
@@ -1080,120 +1072,6 @@
                     </div>
                 </section>
 
-                <!-- MODULE 8: AUTO MAIL -->
-                <section id="page-automail" class="page-section hidden max-w-6xl mx-auto space-y-6 animate-fade-in">
-                    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80">
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-lg">
-                                    <i class="fa-regular fa-envelope"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-bold text-slate-800">Auto Mail Notification</h3>
-                                    <p class="text-xs text-slate-500">เลือกแผนกและเอกสารจาก Key In แล้วระบุอีเมลปลายทาง</p>
-                                </div>
-                            </div>
-                            <span id="automail-document-badge" class="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-full">
-                                0 เอกสาร
-                            </span>
-                        </div>
-
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">
-                                        Select Department / แผนกผู้รับ <span class="text-rose-500">*</span>
-                                    </label>
-                                    <select id="automail-department" onchange="loadAutoMailDocuments()"
-                                        class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition">
-                                        <option value="">-- กรุณาเลือกแผนก --</option>
-                                    </select>
-                                    <p class="text-[10px] text-slate-400 mt-1.5">รายการแผนกอ้างอิงจากช่อง Select Department ใน Document Entry (Key In)</p>
-                                </div>
-
-                                <div class="rounded-2xl border border-slate-200 overflow-hidden">
-                                    <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between gap-3">
-                                        <div>
-                                            <p class="text-xs font-black text-slate-700">เอกสารของแผนกที่เลือก</p>
-                                            <p id="automail-list-subtitle" class="text-[10px] text-slate-400 mt-0.5">เลือกแผนกเพื่อแสดงรายการจาก Key In</p>
-                                        </div>
-                                        <label class="flex items-center gap-2 text-[11px] font-bold text-slate-600 cursor-pointer">
-                                            <input id="automail-select-all" type="checkbox" onchange="toggleAutoMailSelectAll(this.checked)" class="w-4 h-4 accent-amber-500">
-                                            เลือกทั้งหมด
-                                        </label>
-                                    </div>
-                                    <div id="automail-document-list" class="max-h-[430px] overflow-y-auto divide-y divide-slate-100">
-                                        <div class="p-8 text-center text-sm text-slate-400">
-                                            <i class="fa-regular fa-folder-open text-2xl mb-2"></i>
-                                            <p>กรุณาเลือกแผนก</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">
-                                        Destination Email / อีเมลปลายทาง <span class="text-rose-500">*</span>
-                                    </label>
-                                    <div class="relative">
-                                        <i class="fa-regular fa-envelope absolute left-4 top-3.5 text-slate-400"></i>
-                                        <input type="email" id="automail-recipient-email"
-                                            placeholder="กรอกอีเมลที่ต้องการส่งถึง"
-                                            oninput="renderAutoMailPreview()"
-                                            autocomplete="email" inputmode="email"
-                                            class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition">
-                                    </div>
-                                </div>
-
-                                <div class="border border-slate-200 rounded-2xl overflow-hidden">
-                                    <div class="bg-slate-50 px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
-                                        <div class="flex items-center gap-2">
-                                            <i class="fa-regular fa-envelope-open text-slate-400"></i>
-                                            <span class="text-xs font-bold text-slate-500">ตัวอย่างข้อความที่จะส่ง</span>
-                                        </div>
-                                        <span id="automail-selected-count" class="text-[10px] font-black bg-white border border-slate-200 text-slate-600 px-2.5 py-1 rounded-full">เลือก 0 รายการ</span>
-                                    </div>
-                                    <div class="p-5">
-                                        <p class="text-xs text-slate-400 mb-4">
-                                            ถึง: <span id="automail-preview-to" class="text-slate-700 font-semibold">-</span>
-                                        </p>
-                                        <div class="text-sm text-slate-700 leading-7 whitespace-normal">
-                                            <p>เรียน คุณผู้ใช้บริการ</p>
-                                            <p class="mt-4">เอกสารหมายเลข <span id="automail-preview-tracking" class="font-bold text-slate-900">-</span> มีการอัปเดตสถานะในระบบ</p>
-                                            <p class="mt-4">สถานะ: <span id="automail-preview-status" class="font-bold text-amber-700">-</span></p>
-                                            <p class="mt-4">สามารถตรวจสอบสถานะเพิ่มเติมได้ที่ระบบ NTL<br>Digital Mail Service</p>
-                                            <p class="mt-4">ขอบคุณที่ใช้บริการ</p>
-                                            <p class="mt-4 font-semibold">NTL Digital Mail Service</p>
-                                        </div>
-                                        <p id="automail-preview-note" class="hidden mt-4 rounded-xl bg-indigo-50 border border-indigo-100 px-3 py-2 text-[11px] text-indigo-700"></p>
-                                    </div>
-                                </div>
-
-                                <button id="automail-send-btn" type="button" onclick="sendSelectedAutoMail()" disabled
-                                    class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <i class="fa-regular fa-paper-plane mr-2"></i>ส่งอีเมลเอกสารที่เลือก
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
-                        <div class="flex items-center justify-between gap-3 mb-4">
-                            <div>
-                                <h4 class="text-sm font-bold text-slate-800">ประวัติการแจ้งเตือนล่าสุด</h4>
-                                <p class="text-[11px] text-slate-400 mt-0.5">ข้อมูลจริงจาก MailLog</p>
-                            </div>
-                            <button type="button" onclick="loadAutoMailLog()" class="px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100">
-                                <i class="fa-solid fa-rotate mr-1"></i> Refresh
-                            </button>
-                        </div>
-                        <div id="automail-log" class="space-y-3">
-                            <div class="p-6 text-center text-sm text-slate-400">กำลังโหลดประวัติ...</div>
-                        </div>
-                    </div>
-                </section>
-
             </div>
         </main>
     </div>
@@ -1231,7 +1109,6 @@
         let latestOcrText = '';
         let latestSmartCapture = null;
         let activeOcrTargetField = '';
-        let ocrPickerSuppressUntil = 0;
         let liveBarcodeLocked = false;
         let liveBarcodeLastValue = '';
         let liveBarcodeLastAt = 0;
@@ -1244,7 +1121,6 @@
         let parcelOcrWorkerPromise = null;
         let parcelOcrQueue = Promise.resolve();
         let serverOcrEnabled = false;
-        let autoMailDocuments = [];
         const SMART_DEPARTMENTS = ["ซองสัญญา","นายหน้าประกันภัย","ปฏิบัติการประกันภัย","ทะเบียน","บุคคล","บัญชี","BSCS","BDSM","CLD","Audit","Fraud","CRD","กำกับธุรกรรม","Legal","CAS","MKT","Falcon","IT","จัดซื้อ","MD","CS","DB","A&D","HeyGoody"];
         let scanProgressCount = 0;
         let scanProgressLastAt = 0;
@@ -1734,13 +1610,13 @@
         const titles = {
             home: 'Digital Mail Service', dashboard: 'Executive Dashboard', operations: 'Operations Control', keyin: 'Document Entry (Key In)',
             track: 'Track & Trace', esign: 'E-Signature', return: 'Document Return', report: 'Report',
-            automail: 'Auto Mail', deptstatus: 'Department Status Monitor / ตรวจสอบสถานะเอกสาร'
+            deptstatus: 'Department Status Monitor / ตรวจสอบสถานะเอกสาร'
         };
 
         function navigateTo(pageId) {
             const session = currentUser || getSession();
             if (!session || !session.token) return;
-            if (session.role === 'Operation Staff' && ['report','automail'].includes(pageId)) {
+            if (session.role === 'Operation Staff' && ['report'].includes(pageId)) {
                 alert('บัญชี Operation Staff ไม่มีสิทธิ์เข้าเมนูนี้');
                 return;
             }
@@ -1764,7 +1640,6 @@
             if (pageId === 'deptstatus') loadDepartmentStatusMonitor();
             if (pageId === 'dashboard') loadDashboardStats();
             if (pageId === 'operations') loadOperationsControl();
-            if (pageId === 'automail') loadAutoMailWorkspace();
             if (pageId === 'report') loadReportSummaryForSelectedMonth();
 
             if (pageId === 'track' && latestSavedTracking) {
@@ -3446,24 +3321,9 @@
                 if (!field || field.dataset.ocrTapReady === '1') return;
                 field.dataset.ocrTapReady = '1';
 
-                // Text fields: click/tap an empty field to open OCR choices.
-                if (field.tagName !== 'SELECT') {
-                    field.addEventListener('click', function() {
-                        if (Date.now() < ocrPickerSuppressUntil) return;
-                        if (!field.value.trim() && hasOcrCandidatesForField(id)) {
-                            openOcrFieldPicker(id);
-                        }
-                    });
-                    field.addEventListener('focus', function() {
-                        // Mobile Safari can emit focus without click.
-                        if (Date.now() < ocrPickerSuppressUntil) return;
-                        if (!field.value.trim() && hasOcrCandidatesForField(id)) {
-                            setTimeout(function() {
-                                if (!field.value.trim()) openOcrFieldPicker(id);
-                            }, 80);
-                        }
-                    });
-                }
+                // OCR must be an assistive/opt-in helper only — it must NEVER hijack a click or
+                // focus into the field. Users can always tap the field and type immediately.
+                // The explicit "ใช้ข้อมูล OCR" button below is the ONLY way to open the picker.
 
                 // Add explicit OCR button for every field; especially useful for SELECT fields.
                 const wrapper = field.closest('div');
@@ -3622,10 +3482,6 @@
             return uniqueOcrCandidates(candidates.filter(Boolean));
         }
 
-        function hasOcrCandidatesForField(fieldId) {
-            return buildOcrCandidatesForField(fieldId).length > 0;
-        }
-
         function openOcrFieldPicker(fieldId) {
             const cfg = OCR_FIELD_CONFIG[fieldId];
             if (!cfg) return;
@@ -3718,10 +3574,21 @@
 
         function closeOcrFieldPicker() {
             const picker = document.getElementById('ocr-field-picker');
+            const fieldToRefocus = activeOcrTargetField;
+
             if (picker) picker.classList.add('hidden');
             document.body.classList.remove('overflow-hidden');
             activeOcrTargetField = '';
-            ocrPickerSuppressUntil = Date.now() + 300;
+
+            // Requirement 2: closing OCR must hand control straight back to manual typing —
+            // no lingering overlay, no scroll lock, and (where sensible) focus returns to the
+            // field the user was working on so the on-screen keyboard reappears normally.
+            if (fieldToRefocus) {
+                const field = document.getElementById(fieldToRefocus);
+                if (field && field.tagName !== 'SELECT') {
+                    setTimeout(function() { field.focus(); }, 0);
+                }
+            }
         }
 
         function renderImagePreviews() {
@@ -3913,13 +3780,11 @@
             if (!item) return;
 
             const nameInput = document.getElementById('keyin-recipient-name');
-            const emailInput = document.getElementById('keyin-recipient-email');
             const phoneInput = document.getElementById('keyin-recipient-phone');
             const deptSelect = document.getElementById('keyin-dept');
 
-            // Autofill — user can still edit any of these before Save (per Requirement 1.3).
+            // Autofill only the fields Key In still uses (Requirement 1.4 — Email dropped from Key In UI).
             if (nameInput) nameInput.value = item.recipientName || '';
-            if (emailInput) emailInput.value = item.recipientEmail || '';
             if (phoneInput) phoneInput.value = item.recipientPhone || '';
             if (deptSelect && item.department) {
                 const hasOption = Array.from(deptSelect.options).some(function(opt) { return opt.value === item.department; });
@@ -3943,7 +3808,9 @@
                 route: document.getElementById('keyin-route').value,
                 department: document.getElementById('keyin-dept').value,
                 recipientName: document.getElementById('keyin-recipient-name').value.trim(),
-                recipientEmail: document.getElementById('keyin-recipient-email').value.trim(),
+                // Requirement 1: Recipient Email removed from Key In UI. Sent as '' only for
+                // backend/Sheet compatibility — saveKeyIn() and the KeyIn sheet still accept it.
+                recipientEmail: '',
                 recipientPhone: document.getElementById('keyin-recipient-phone').value.trim(),
                 recipientPostcode: document.getElementById('keyin-recipient-postcode').value.trim(),
                 recipientAddress: document.getElementById('keyin-recipient-address').value.trim(),
@@ -4011,7 +3878,7 @@
                 renderImagePreviews();
 
                 clearForm([
-                    'keyin-route','keyin-dept','keyin-recipient-name','keyin-recipient-email',
+                    'keyin-route','keyin-dept','keyin-recipient-name',
                     'keyin-recipient-phone','keyin-recipient-postcode','keyin-recipient-address',
                     'keyin-tracking','keyin-remarks'
                 ]);
@@ -4682,10 +4549,20 @@
         async function loadDepartmentStatusMonitor() {
             if (!requireGas() || !getAuthToken()) return;
 
-            const setText = function(id, value) {
-                const el = document.getElementById(id);
-                if (el) el.textContent = Number(value || 0).toLocaleString('th-TH');
-            };
+            const statusLine = document.getElementById('deptstatus-status-line');
+            if (statusLine) statusLine.textContent = 'กำลังโหลดข้อมูลเอกสาร...';
+
+            // Requirement 2.8: dropdown built once from the system's central department list —
+            // available immediately, independent of whether the data request has returned yet.
+            const select = document.getElementById('deptstatus-department-select');
+            if (select && select.options.length <= 1) {
+                const previousValue = select.value || '__ALL__';
+                select.innerHTML = '<option value="__ALL__">ทุกแผนก / All Departments</option>' +
+                    SMART_DEPARTMENTS.map(function(name) {
+                        return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + '</option>';
+                    }).join('');
+                select.value = previousValue;
+            }
 
             try {
                 const res = await apiCall('getDepartmentStatusSummary', { authToken: getAuthToken() });
@@ -4694,6 +4571,10 @@
 
                 deptStatusData = res; // single load — Department switches below filter this in Browser only.
 
+                const setText = function(id, value) {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = Number(value || 0).toLocaleString('th-TH');
+                };
                 setText('deptstatus-kpi-total', res.summary.total);
                 setText('deptstatus-kpi-pending', res.summary.pending);
                 setText('deptstatus-kpi-delivered', res.summary.delivered);
@@ -4701,52 +4582,63 @@
                 const deptsEl = document.getElementById('deptstatus-kpi-depts');
                 if (deptsEl) deptsEl.textContent = res.summary.departmentsPending + ' / ' + res.summary.totalDepartments;
 
-                const select = document.getElementById('deptstatus-department-select');
-                if (select) {
-                    const previousValue = select.value;
-                    const deptNames = Object.keys(res.departments || {}).sort(function(a, b) { return a.localeCompare(b, 'th'); });
-                    select.innerHTML = '<option value="">-- ภาพรวมทุกแผนก --</option>' +
-                        deptNames.map(function(name) {
-                            const d = res.departments[name];
-                            return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + ' (' + d.total + ')</option>';
-                        }).join('');
-                    if (previousValue && deptNames.includes(previousValue)) select.value = previousValue;
-                }
-
+                // Requirement 2.1: default view (All Departments) renders immediately — no
+                // department selection required first.
                 renderDepartmentStatusDetail();
 
             } catch (err) {
+                deptStatusData = null;
+                if (statusLine) statusLine.textContent = '';
                 showSystemToast('โหลด Department Status ไม่สำเร็จ: ' + normalizeError(err), 'error');
+                const tbody = document.getElementById('deptstatus-table-body');
+                const cardList = document.getElementById('deptstatus-card-list');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-rose-500 py-8">โหลดข้อมูลไม่สำเร็จ</td></tr>';
+                if (cardList) cardList.innerHTML = '<div class="text-center text-rose-500 text-xs py-8">โหลดข้อมูลไม่สำเร็จ</div>';
             }
         }
 
         function renderDepartmentStatusDetail() {
             const select = document.getElementById('deptstatus-department-select');
-            const department = select ? select.value : '';
-            const summaryBox = document.getElementById('deptstatus-detail-summary');
+            const department = select ? (select.value || '__ALL__') : '__ALL__';
+            const statusLine = document.getElementById('deptstatus-status-line');
             const tbody = document.getElementById('deptstatus-table-body');
             const cardList = document.getElementById('deptstatus-card-list');
 
-            if (!deptStatusData || !department) {
-                if (summaryBox) summaryBox.classList.add('hidden');
-                if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center text-slate-400 py-8">เลือกแผนกเพื่อดูรายการเอกสาร</td></tr>';
-                if (cardList) cardList.innerHTML = '<div class="text-center text-slate-400 text-xs py-8">เลือกแผนกเพื่อดูรายการเอกสาร</div>';
-                return;
-            }
+            if (!deptStatusData) return; // still loading / failed — loadDepartmentStatusMonitor already shows that state
 
-            const bucket = deptStatusData.departments[department] || { total: 0, pending: 0, delivered: 0, returned: 0, items: [] };
+            // Requirement 2.5 / 2.9: filter + recompute KPIs from the array already in memory —
+            // never call the API again just because the Department dropdown changed.
+            const allItems = deptStatusData.items || [];
+            const items = (department === '__ALL__')
+                ? allItems
+                : allItems.filter(function(item) { return String(item.department || '').trim() === department; });
 
-            if (summaryBox) {
-                summaryBox.classList.remove('hidden');
-                document.getElementById('deptstatus-detail-total').textContent = bucket.total;
-                document.getElementById('deptstatus-detail-pending').textContent = bucket.pending;
-                document.getElementById('deptstatus-detail-delivered').textContent = bucket.delivered;
-                document.getElementById('deptstatus-detail-returned').textContent = bucket.returned;
-            }
-
-            const items = (bucket.items || []).slice().sort(function(a, b) {
-                return new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime();
+            let total = 0, pending = 0, delivered = 0, returned = 0;
+            items.forEach(function(item) {
+                const s = String(item.status || '').toLowerCase();
+                const isDelivered = s === 'delivered' || s === 'signed' || s === 'signed / delivered';
+                const isReturned = s === 'returned' || s === 'return';
+                total++;
+                if (isDelivered) delivered++;
+                else if (isReturned) returned++;
+                else pending++; // Registered, In Transit, Dispatched to BTS, etc.
             });
+
+            const setNum = function(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; };
+            setNum('deptstatus-detail-total', total);
+            setNum('deptstatus-detail-pending', pending);
+            setNum('deptstatus-detail-delivered', delivered);
+            setNum('deptstatus-detail-returned', returned);
+
+            const emptyMessage = !allItems.length
+                ? 'ยังไม่มีรายการเอกสารในระบบ'
+                : (department === '__ALL__' ? 'ยังไม่มีรายการเอกสารในระบบ' : 'ไม่พบรายการเอกสารของแผนก ' + department);
+
+            if (statusLine) {
+                statusLine.textContent = items.length
+                    ? 'พบทั้งหมด ' + items.length.toLocaleString('th-TH') + ' รายการ'
+                    : emptyMessage;
+            }
 
             const statusBadgeClass = function(status) {
                 return /deliver/i.test(status || '') ? 'bg-emerald-100 text-emerald-800' :
@@ -4756,16 +4648,21 @@
             };
 
             if (!items.length) {
-                if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center text-slate-400 py-8">ไม่มีรายการในแผนกนี้</td></tr>';
-                if (cardList) cardList.innerHTML = '<div class="text-center text-slate-400 text-xs py-8">ไม่มีรายการในแผนกนี้</div>';
+                if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-8">' + escapeHtml(emptyMessage) + '</td></tr>';
+                if (cardList) cardList.innerHTML = '<div class="text-center text-slate-400 text-xs py-8">' + escapeHtml(emptyMessage) + '</div>';
                 return;
             }
 
             if (tbody) {
                 tbody.innerHTML = items.map(function(item) {
-                    return '<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTrackFromDeptStatus(\'' + escapeHtml(item.trackingId).replace(/'/g, "\\'") + '\')">' +
-                        '<td class="px-4 py-3 font-bold text-slate-800 break-all">' + escapeHtml(item.trackingId) + '</td>' +
+                    const trackId = escapeHtml(item.trackingId || '').replace(/'/g, "\\'");
+                    return '<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTrackFromDeptStatus(\'' + trackId + '\')">' +
+                        '<td class="px-4 py-3 text-slate-500 whitespace-nowrap">' + escapeHtml(formatTrackTime(item.timestamp) || '-') + '</td>' +
+                        '<td class="px-4 py-3 font-bold text-slate-800 break-all">' + escapeHtml(item.trackingId || '-') + '</td>' +
+                        '<td class="px-4 py-3 text-slate-600">' + escapeHtml(item.department || '-') + '</td>' +
                         '<td class="px-4 py-3 text-slate-600">' + escapeHtml(item.recipientName || '-') + '</td>' +
+                        '<td class="px-4 py-3 text-slate-600">' + escapeHtml(item.route || '-') + '</td>' +
+                        '<td class="px-4 py-3 text-right">' + Number(item.qty || 1) + '</td>' +
                         '<td class="px-4 py-3"><span class="text-[10px] font-bold px-2 py-1 rounded-full ' + statusBadgeClass(item.status) + '">' + escapeHtml(item.status || '-') + '</span></td>' +
                     '</tr>';
                 }).join('');
@@ -4773,12 +4670,16 @@
 
             if (cardList) {
                 cardList.innerHTML = items.map(function(item) {
-                    return '<div class="border border-slate-200 rounded-xl p-3 cursor-pointer hover:border-teal-300" onclick="openTrackFromDeptStatus(\'' + escapeHtml(item.trackingId).replace(/'/g, "\\'") + '\')">' +
+                    const trackId = escapeHtml(item.trackingId || '').replace(/'/g, "\\'");
+                    return '<div class="border border-slate-200 rounded-xl p-3 cursor-pointer hover:border-teal-300 active:scale-[0.99] transition" onclick="openTrackFromDeptStatus(\'' + trackId + '\')">' +
                         '<div class="flex items-center justify-between gap-2">' +
-                            '<p class="text-sm font-black text-slate-800 break-all">' + escapeHtml(item.trackingId) + '</p>' +
+                            '<p class="text-sm font-black text-slate-800 break-all">' + escapeHtml(item.trackingId || '-') + '</p>' +
                             '<span class="text-[10px] font-bold px-2 py-1 rounded-full shrink-0 ' + statusBadgeClass(item.status) + '">' + escapeHtml(item.status || '-') + '</span>' +
                         '</div>' +
-                        '<p class="text-xs text-slate-500 mt-1">' + escapeHtml(item.recipientName || '-') + '</p>' +
+                        '<p class="text-xs text-slate-500 mt-1.5">' + escapeHtml(item.department || '-') + '</p>' +
+                        '<p class="text-xs text-slate-700 mt-0.5">' + escapeHtml(item.recipientName || '-') + '</p>' +
+                        '<p class="text-[11px] text-slate-400 mt-1">' + escapeHtml((item.route || '-') + ' • ' + Number(item.qty || 1) + ' ชิ้น') + '</p>' +
+                        '<p class="text-[10px] text-slate-400 mt-0.5">' + escapeHtml(formatTrackTime(item.timestamp) || '-') + '</p>' +
                     '</div>';
                 }).join('');
             }
@@ -4849,7 +4750,62 @@
             toggle?.setAttribute('aria-expanded', String(!willHide));
         }
 
+        // Requirement 3: Signature Preview — lazy-loaded, authenticated (no direct Drive links).
+        let trackSignatureEntries = [];
+
+        async function openSignaturePreview(index) {
+            const entry = trackSignatureEntries[index];
+            if (!entry) return;
+
+            const modal = document.getElementById('signature-preview-modal');
+            const img = document.getElementById('signature-preview-image');
+            const loading = document.getElementById('signature-preview-loading');
+            const errorBox = document.getElementById('signature-preview-error');
+            const recipientEl = document.getElementById('signature-preview-recipient');
+            const timeEl = document.getElementById('signature-preview-time');
+            if (!modal) return;
+
+            if (recipientEl) recipientEl.textContent = entry.recipientName || '-';
+            if (timeEl) timeEl.textContent = formatTrackTime(entry.time);
+            if (img) { img.classList.add('hidden'); img.removeAttribute('src'); }
+            if (errorBox) errorBox.classList.add('hidden');
+            if (loading) loading.classList.remove('hidden');
+
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+
+            try {
+                const res = await apiCall('getSignatureImage', {
+                    signatureUrl: entry.signatureUrl,
+                    authToken: getAuthToken()
+                });
+                if (handleAuthFailure(res)) return;
+                if (!res || res.success === false || !res.imageData) {
+                    throw new Error((res && res.message) || 'ไม่สามารถโหลดรูปลายเซ็นได้');
+                }
+                if (img) {
+                    img.src = res.imageData;
+                    img.classList.remove('hidden');
+                }
+            } catch (err) {
+                if (errorBox) {
+                    errorBox.textContent = normalizeError(err);
+                    errorBox.classList.remove('hidden');
+                }
+            } finally {
+                if (loading) loading.classList.add('hidden');
+            }
+        }
+
+        function closeSignaturePreview() {
+            document.getElementById('signature-preview-modal')?.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            const img = document.getElementById('signature-preview-image');
+            if (img) { img.classList.add('hidden'); img.removeAttribute('src'); }
+        }
+
         function renderTrackResult(res) {
+            trackSignatureEntries = []; // reset per search — Signature Preview Modal reads from this
             const result = document.getElementById('track-result');
             const setText = (id, value) => {
                 const el = document.getElementById(id);
@@ -4878,6 +4834,25 @@
                 const items = Array.isArray(res.timeline) ? res.timeline.slice().reverse() : [];
                 timeline.innerHTML = items.length ? items.map(function(item, index) {
                     const active = index === 0;
+
+                    // Requirement 3: never link/img straight to the Google Drive URL — that
+                    // triggers Drive's "You need access" prompt. Instead, queue this entry and
+                    // load it lazily (authenticated, base64) only when the user asks to view it.
+                    let signatureBlock = '';
+                    if (item.signatureUrl) {
+                        const sigIndex = trackSignatureEntries.length;
+                        trackSignatureEntries.push({
+                            signatureUrl: item.signatureUrl,
+                            recipientName: res.recipientName || '',
+                            time: item.time
+                        });
+                        signatureBlock =
+                            '<button type="button" onclick="openSignaturePreview(' + sigIndex + ')" ' +
+                            'class="mt-3 inline-flex items-center gap-2 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 border border-indigo-100 px-3 py-2 rounded-xl active:scale-[0.98] transition">' +
+                            '<i class="fa-regular fa-image"></i> ดูรูปลายเซ็น' +
+                            '</button>';
+                    }
+
                     return '<div class="flex gap-3">' +
                         '<i class="fa-solid fa-circle ' + (active ? 'text-emerald-500' : 'text-slate-300') + ' mt-1"></i>' +
                         '<div class="min-w-0 flex-1"><p class="font-bold text-slate-700">' +
@@ -4885,15 +4860,7 @@
                         '</p><p class="text-slate-500 mt-1 break-words">' +
                         escapeHtml(item.detail || '') +
                         '</p>' +
-                        (item.signatureUrl
-                            ? '<div class="mt-3 inline-block max-w-full sm:max-w-[300px] border border-slate-200 rounded-xl bg-white p-2">' +
-                                '<p class="text-[10px] font-bold text-slate-400 uppercase mb-1.5">รูปลายเซ็นผู้รับ</p>' +
-                                '<a href="' + escapeHtml(item.signatureUrl) + '" target="_blank" rel="noopener">' +
-                                    '<img src="' + escapeHtml(item.signatureUrl) + '" alt="ลายเซ็นผู้รับ" ' +
-                                    'class="w-full h-auto max-w-full sm:max-w-[280px] rounded-lg border border-slate-100 object-contain bg-slate-50" loading="lazy">' +
-                                '</a>' +
-                              '</div>'
-                            : '') +
+                        signatureBlock +
                         '</div></div>';
                 }).join('') : '<div class="text-slate-400">ยังไม่มี Timeline เพิ่มเติม</div>';
             }
@@ -5106,364 +5073,6 @@
                 });
         }
 
-        async function loadAutoMailWorkspace() {
-            await Promise.all([
-                loadAutoMailDepartments(),
-                loadAutoMailLog()
-            ]);
-        }
-
-
-        async function loadAutoMailDepartments() {
-            const select = document.getElementById('automail-department');
-            if (!select || !getAuthToken()) return;
-
-            const previous = select.value || '';
-            select.disabled = true;
-
-            try {
-                const res = await apiCall('getAutoMailDepartments', {
-                    authToken: getAuthToken()
-                });
-
-                if (handleAuthFailure(res)) return;
-                if (!res || !res.success) {
-                    throw new Error((res && res.message) || 'โหลดรายชื่อแผนกไม่สำเร็จ');
-                }
-
-                const departments = Array.isArray(res.departments)
-                    ? res.departments
-                    : [];
-
-                select.innerHTML =
-                    '<option value="">-- กรุณาเลือกแผนก --</option>' +
-                    departments.map(function(item) {
-                        const department = String(item.department || '').trim();
-                        const count = Number(item.count || 0);
-                        return '<option value="' + escapeHtml(department) + '">' +
-                            escapeHtml(department) + ' — ' + count + ' เอกสาร</option>';
-                    }).join('');
-
-                if (
-                    previous &&
-                    departments.some(function(item) {
-                        return String(item.department || '').trim() === previous;
-                    })
-                ) {
-                    select.value = previous;
-                }
-
-            } catch (err) {
-                showSystemToast(
-                    'โหลดแผนก Auto Mail ไม่สำเร็จ: ' + normalizeError(err),
-                    'error'
-                );
-            } finally {
-                select.disabled = false;
-            }
-        }
-
-
-        async function loadAutoMailDocuments() {
-            const department = document.getElementById('automail-department')?.value || '';
-            const list = document.getElementById('automail-document-list');
-            const badge = document.getElementById('automail-document-badge');
-            const subtitle = document.getElementById('automail-list-subtitle');
-            const all = document.getElementById('automail-select-all');
-
-            autoMailDocuments = [];
-            if (all) all.checked = false;
-            renderAutoMailPreview();
-
-            if (!department) {
-                if (badge) badge.textContent = '0 เอกสาร';
-                if (subtitle) subtitle.textContent = 'เลือกแผนกเพื่อแสดงรายการจาก Key In';
-                if (list) {
-                    list.innerHTML =
-                        '<div class="p-8 text-center text-sm text-slate-400">' +
-                        '<i class="fa-regular fa-folder-open text-2xl mb-2"></i>' +
-                        '<p>กรุณาเลือกแผนก</p></div>';
-                }
-                return;
-            }
-
-            if (list) {
-                list.innerHTML =
-                    '<div class="p-8 text-center text-sm text-slate-400">' +
-                    '<i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดเอกสารจาก Key In...</div>';
-            }
-
-            try {
-                const res = await apiCall('getAutoMailDocuments', {
-                    department: department,
-                    authToken: getAuthToken()
-                });
-
-                if (handleAuthFailure(res)) return;
-                if (!res || !res.success) {
-                    throw new Error((res && res.message) || 'โหลดเอกสารไม่สำเร็จ');
-                }
-
-                autoMailDocuments = (res.items || []).map(function(item) {
-                    return { ...item, selected: false };
-                });
-
-                if (badge) badge.textContent = autoMailDocuments.length + ' เอกสาร';
-                if (subtitle) {
-                    subtitle.textContent =
-                        'แผนก ' + department + ' • พบ ' +
-                        autoMailDocuments.length + ' เอกสาร';
-                }
-
-                renderAutoMailDocuments();
-
-            } catch (err) {
-                if (list) {
-                    list.innerHTML =
-                        '<div class="p-6 text-center text-sm text-rose-500">' +
-                        escapeHtml(normalizeError(err)) + '</div>';
-                }
-            }
-        }
-
-
-        function renderAutoMailDocuments() {
-            const list = document.getElementById('automail-document-list');
-            const all = document.getElementById('automail-select-all');
-            if (!list) return;
-
-            if (!autoMailDocuments.length) {
-                list.innerHTML =
-                    '<div class="p-8 text-center text-sm text-slate-400">' +
-                    '<i class="fa-solid fa-box-open text-2xl mb-2"></i>' +
-                    '<p>ไม่พบเอกสารในแผนกนี้</p></div>';
-                if (all) all.checked = false;
-                renderAutoMailPreview();
-                return;
-            }
-
-            list.innerHTML = autoMailDocuments.map(function(item, index) {
-                return '<label class="flex gap-3 p-4 hover:bg-amber-50/40 cursor-pointer">' +
-                    '<input type="checkbox" class="mt-1 w-4 h-4 accent-amber-500" ' +
-                    (item.selected ? 'checked ' : '') +
-                    'onchange="setAutoMailDocumentSelected(' + index + ',this.checked)">' +
-                    '<div class="min-w-0 flex-1">' +
-                    '<div class="flex flex-wrap items-center justify-between gap-2">' +
-                    '<p class="text-sm font-black text-slate-800 break-all">' +
-                    escapeHtml(item.trackingId || '-') + '</p>' +
-                    '<span class="text-[10px] font-bold px-2 py-1 rounded-md bg-slate-100 text-slate-600">' +
-                    escapeHtml(item.status || 'Registered') + '</span>' +
-                    '</div>' +
-                    '<p class="text-xs text-slate-600 mt-1">' +
-                    escapeHtml(item.recipientName || '-') +
-                    (item.route ? ' • ' + escapeHtml(item.route) : '') +
-                    '</p>' +
-                    '<p class="text-[10px] text-slate-400 mt-1">' +
-                    escapeHtml(item.timestampText || '') + '</p>' +
-                    '</div></label>';
-            }).join('');
-
-            const selected = autoMailDocuments.filter(function(item) {
-                return item.selected;
-            }).length;
-
-            if (all) {
-                all.checked =
-                    selected > 0 &&
-                    selected === autoMailDocuments.length;
-            }
-
-            renderAutoMailPreview();
-        }
-
-
-        function setAutoMailDocumentSelected(index, checked) {
-            if (autoMailDocuments[index]) {
-                autoMailDocuments[index].selected = !!checked;
-            }
-            renderAutoMailDocuments();
-        }
-
-
-        function toggleAutoMailSelectAll(checked) {
-            autoMailDocuments.forEach(function(item) {
-                item.selected = !!checked;
-            });
-            renderAutoMailDocuments();
-        }
-
-
-        function renderAutoMailPreview() {
-            const selected = autoMailDocuments.filter(function(item) {
-                return item.selected;
-            });
-
-            const first = selected[0] || null;
-            const email = document.getElementById('automail-recipient-email')?.value.trim() || '';
-
-            const setText = function(id, value) {
-                const el = document.getElementById(id);
-                if (el) el.textContent = value || '-';
-            };
-
-            setText('automail-preview-to', email || '-');
-            setText('automail-preview-tracking', first ? first.trackingId : '-');
-            setText('automail-preview-status', first ? (first.status || 'Registered') : '-');
-            setText('automail-selected-count', 'เลือก ' + selected.length + ' รายการ');
-
-            const note = document.getElementById('automail-preview-note');
-            if (note) {
-                if (selected.length > 1) {
-                    note.textContent =
-                        'เมื่อกดส่ง ระบบจะส่งอีเมลแยก 1 ฉบับต่อ 1 เอกสาร ไปยังอีเมลปลายทางเดียวกัน รวม ' +
-                        selected.length + ' ฉบับ';
-                    note.classList.remove('hidden');
-                } else {
-                    note.classList.add('hidden');
-                    note.textContent = '';
-                }
-            }
-
-            const sendBtn = document.getElementById('automail-send-btn');
-            if (sendBtn) {
-                sendBtn.disabled = !selected.length || !isValidClientEmail(email);
-            }
-        }
-
-
-        function isValidClientEmail(value) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
-        }
-
-
-        async function sendSelectedAutoMail() {
-            if (!requireGas()) return;
-
-            const selected = autoMailDocuments.filter(function(item) {
-                return item.selected;
-            });
-
-            const recipientEmail =
-                document.getElementById('automail-recipient-email')?.value.trim() || '';
-
-            if (!selected.length) {
-                showSystemToast('กรุณาเลือกเอกสารอย่างน้อย 1 รายการ', 'error');
-                return;
-            }
-
-            if (!isValidClientEmail(recipientEmail)) {
-                showSystemToast('กรุณากรอกอีเมลปลายทางให้ถูกต้อง', 'error');
-                return;
-            }
-
-            if (!confirm(
-                'ยืนยันส่งอีเมล ' + selected.length +
-                ' ฉบับ ไปยัง ' + recipientEmail + ' ?'
-            )) return;
-
-            const button = document.getElementById('automail-send-btn');
-            if (button) {
-                button.disabled = true;
-                button.dataset.originalHtml = button.dataset.originalHtml || button.innerHTML;
-                button.innerHTML =
-                    '<i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังส่งอีเมล...';
-            }
-
-            try {
-                const res = await apiCall('sendAutoMailBatch', {
-                    trackingIds: selected.map(function(item) {
-                        return item.trackingId;
-                    }),
-                    recipientEmail: recipientEmail,
-                    authToken: getAuthToken()
-                });
-
-                if (handleAuthFailure(res)) return;
-
-                if (!res || (!res.success && !res.partialSuccess)) {
-                    throw new Error((res && res.message) || 'ส่งอีเมลไม่สำเร็จ');
-                }
-
-                showSystemToast(
-                    res.message || 'ส่งอีเมลเรียบร้อยแล้ว',
-                    res.failed ? 'info' : 'success'
-                );
-
-                autoMailDocuments.forEach(function(item) {
-                    item.selected = false;
-                });
-
-                renderAutoMailDocuments();
-                loadAutoMailLog();
-
-            } catch (err) {
-                showSystemToast(
-                    'ส่งอีเมลไม่สำเร็จ: ' + normalizeError(err),
-                    'error'
-                );
-            } finally {
-                if (button) {
-                    button.innerHTML =
-                        button.dataset.originalHtml ||
-                        '<i class="fa-regular fa-paper-plane mr-2"></i>ส่งอีเมลเอกสารที่เลือก';
-                }
-                renderAutoMailPreview();
-            }
-        }
-
-
-        async function loadAutoMailLog() {
-            const log = document.getElementById('automail-log');
-            if (!log || !getAuthToken()) return;
-
-            log.innerHTML =
-                '<div class="p-6 text-center text-sm text-slate-400">' +
-                '<i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดประวัติ...</div>';
-
-            try {
-                const res = await apiCall('getAutoMailLog', {
-                    limit: 20,
-                    authToken: getAuthToken()
-                });
-
-                if (handleAuthFailure(res)) return;
-                if (!res || !res.success) {
-                    throw new Error((res && res.message) || 'โหลด MailLog ไม่สำเร็จ');
-                }
-
-                const items = Array.isArray(res.items) ? res.items : [];
-
-                if (!items.length) {
-                    log.innerHTML =
-                        '<div class="p-6 text-center text-sm text-slate-400">ยังไม่มีประวัติการส่งอีเมล</div>';
-                    return;
-                }
-
-                log.innerHTML = items.map(function(item) {
-                    const sent = String(item.result || '') === 'Sent';
-                    return '<div class="flex justify-between items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">' +
-                        '<div class="flex items-start gap-3 min-w-0">' +
-                        '<i class="fa-solid ' + (sent ? 'fa-circle-check text-emerald-500' : 'fa-circle-exclamation text-rose-500') + ' mt-0.5"></i>' +
-                        '<div class="min-w-0">' +
-                        '<p class="text-sm font-bold text-slate-800 break-all">' + escapeHtml(item.trackingId || '-') + '</p>' +
-                        '<p class="text-[11px] text-slate-500 mt-0.5 break-all">ส่งถึง ' + escapeHtml(item.recipientEmail || '-') + '</p>' +
-                        '<p class="text-[10px] text-slate-400 mt-1">' + escapeHtml((item.status || '-') + ' • ' + (item.timestampText || '')) + '</p>' +
-                        '</div></div>' +
-                        '<span class="' + (sent ? 'text-emerald-700 bg-emerald-50 border-emerald-100' : 'text-rose-700 bg-rose-50 border-rose-100') +
-                        ' px-2.5 py-1 rounded-md text-[10px] font-bold border">' +
-                        escapeHtml(sent ? 'Sent' : 'Failed') + '</span>' +
-                        '</div>';
-                }).join('');
-
-            } catch (err) {
-                log.innerHTML =
-                    '<div class="p-6 text-center text-sm text-rose-500">' +
-                    escapeHtml(normalizeError(err)) + '</div>';
-            }
-        }
-
-    
-
         // Professional keyboard support for Track & Trace.
         document.getElementById('track-search-input')?.addEventListener('keydown', function(event) {
             if (event.key === 'Enter') {
@@ -5509,6 +5118,33 @@
 <div id="keyin-confirm-modal" class="hidden fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm p-4 flex items-center justify-center" onclick="if(event.target===this)closeKeyInConfirm()"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-auto p-5 md:p-6"><div class="flex justify-between gap-3"><div><h3 class="text-lg font-black text-slate-900">กรุณาตรวจสอบข้อมูลก่อนบันทึก</h3><p class="text-xs text-slate-500 mt-1">ตรวจสอบ Tracking, ผู้รับ, แผนก และข้อมูลหน้าพัสดุให้ถูกต้อง</p></div><button type="button" onclick="closeKeyInConfirm()" class="w-9 h-9 rounded-full bg-slate-100">✕</button></div><div id="keyin-confirm-summary" class="mt-4"></div><div class="flex gap-3 mt-5"><button type="button" onclick="closeKeyInConfirm()" class="flex-1 border border-slate-200 py-3 rounded-xl font-bold">กลับไปแก้ไข</button><button type="button" onclick="confirmKeyInSave()" class="flex-1 bg-indigo-700 text-white py-3 rounded-xl font-bold">ยืนยันการบันทึก</button></div></div></div>
 <div id="parcel-lightbox" class="hidden fixed inset-0 z-[110] bg-black/90 p-3 md:p-8 flex items-center justify-center" onclick="if(event.target===this)closeParcelImage()"><button type="button" onclick="closeParcelImage()" class="absolute top-4 right-4 bg-white/90 rounded-full w-11 h-11 text-xl">✕</button><img id="parcel-lightbox-image" src="" alt="Parcel image" class="max-w-full max-h-full object-contain rounded-xl shadow-2xl"></div>
 <div id="dashboard-detail-modal" class="hidden fixed inset-0 z-[105] bg-slate-950/60 backdrop-blur-sm p-4 flex items-center justify-center" onclick="if(event.target===this)closeDashboardDetail()"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"><div class="p-5 border-b flex justify-between"><h3 id="dashboard-detail-title" class="font-black text-lg">Dashboard Detail</h3><button type="button" onclick="closeDashboardDetail()" class="w-9 h-9 rounded-full bg-slate-100">✕</button></div><div id="dashboard-detail-list" class="p-4 overflow-auto space-y-2"></div></div></div>
+
+<!-- Signature Preview Modal — Requirement 3: authenticated in-app preview, never a raw Drive link -->
+<div id="signature-preview-modal" class="hidden fixed inset-0 z-[130] bg-slate-950/70 backdrop-blur-sm p-4 flex items-center justify-center" onclick="if(event.target===this)closeSignaturePreview()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md sm:max-w-[420px]" style="max-width: 94vw;">
+        <div class="flex items-center justify-between gap-3 p-4 md:p-5 border-b border-slate-100">
+            <h3 class="text-base font-black text-slate-900">ลายเซ็นผู้รับ</h3>
+            <button type="button" onclick="closeSignaturePreview()" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="p-4 md:p-5">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center min-h-[180px] overflow-hidden">
+                <div id="signature-preview-loading" class="py-10 text-center text-slate-400 text-xs">
+                    <i class="fa-solid fa-spinner fa-spin text-xl mb-2"></i>
+                    <p>กำลังโหลดรูปลายเซ็น...</p>
+                </div>
+                <div id="signature-preview-error" class="hidden py-10 px-4 text-center text-rose-500 text-xs"></div>
+                <img id="signature-preview-image" class="hidden w-full h-auto max-w-full object-contain" alt="ลายเซ็นผู้รับ">
+            </div>
+            <div class="mt-4 space-y-1.5 text-sm">
+                <p class="text-slate-600"><span class="text-slate-400 font-bold">ผู้รับ:</span> <span id="signature-preview-recipient">-</span></p>
+                <p class="text-slate-600"><span class="text-slate-400 font-bold">วันที่:</span> <span id="signature-preview-time">-</span></p>
+            </div>
+            <button type="button" onclick="closeSignaturePreview()" class="mt-5 w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-800 transition">ปิด</button>
+        </div>
+    </div>
+</div>
 
 <!-- E-Sign Save Result — Professional Success / Partial-failure Popup (Requirement 2.5) -->
 <div id="esign-result-modal" class="hidden fixed inset-0 z-[120] bg-slate-950/60 backdrop-blur-sm p-4 flex items-center justify-center" onclick="if(event.target===this)closeEsignResultModal()">
