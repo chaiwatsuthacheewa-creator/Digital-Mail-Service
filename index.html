@@ -515,6 +515,11 @@
 
                 <!-- MODULE 3: KEY IN FORM -->
                 <section id="page-keyin" class="page-section hidden max-w-5xl mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200/80 animate-fade-in">
+                    <!-- Requirement 15: Sticky Batch Status — only shown while Batch Entry Mode (Qty > 1) is active -->
+                    <div id="keyin-batch-sticky" class="hidden sticky top-0 z-20 -mx-6 md:-mx-8 -mt-6 md:-mt-8 mb-5 px-4 md:px-6 py-2.5 bg-indigo-700 text-white flex items-center justify-between gap-3 rounded-t-2xl shadow-md">
+                        <span id="keyin-batch-sticky-text" class="text-xs font-bold truncate">รายการ 1/1 | บันทึกแล้ว 0 | เหลือ 0</span>
+                        <button type="button" onclick="cancelKeyInForm()" class="text-[10px] font-bold text-white/80 hover:text-white underline shrink-0 min-h-[32px] px-2">ยกเลิก Batch</button>
+                    </div>
                     <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
                         <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg"><i class="fa-solid fa-file-circle-plus"></i></div>
                         <div>
@@ -610,15 +615,29 @@
                             </div>
 
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Quantity / จำนวน (ชิ้น)</label>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Quantity / จำนวนเอกสารที่จะบันทึกชุดนี้</label>
                                 <div class="relative w-1/2">
                                     <i class="fa-solid fa-layer-group absolute left-4 top-3.5 text-slate-400"></i>
-                                    <input type="number" id="keyin-qty" value="1" min="1" max="50" oninput="updateScanProgress()" class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-bold">
+                                    <input type="number" id="keyin-qty" value="1" min="1" max="50" oninput="onKeyInQtyChange()" class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-bold">
                                 </div>
-                                <div id="scan-progress-card" class="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/70 p-3">
-                                    <div class="flex items-center justify-between gap-2"><div><p class="text-[11px] font-bold text-indigo-900">Scan Control</p><p id="scan-progress-text" class="text-xs text-indigo-700 mt-0.5">สแกนแล้ว 0 / 1 ชิ้น</p></div><button type="button" onclick="resetScanProgress()" class="text-[10px] font-bold text-slate-500 hover:text-rose-600">Reset</button></div>
-                                    <div class="h-2 bg-white rounded-full overflow-hidden mt-2 border border-indigo-100"><div id="scan-progress-bar" class="h-full bg-indigo-600 rounded-full transition-all duration-300" style="width:0%"></div></div>
-                                    <p id="scan-progress-hint" class="text-[10px] text-slate-500 mt-2">เมื่อเลือกมากกว่า 1 ชิ้น ระบบจะตรวจจำนวนการสแกนก่อนบันทึก</p>
+                                <p class="text-[10px] text-slate-400 mt-1.5">มากกว่า 1 = เข้าสู่ Batch Entry Mode — บันทึกทีละ Tracking จริงทันทีที่กด "บันทึกรายการนี้" (1 Tracking = 1 Document = 1 KeyIn Row)</p>
+
+                                <!-- Evidence/scan capture indicator for the CURRENT item — informational only, never blocks Save (Requirement 14) -->
+                                <div id="scan-progress-card" class="mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                                    <div class="flex items-center justify-between gap-2"><div><p class="text-[11px] font-bold text-slate-600">Evidence Capture (รายการปัจจุบัน)</p><p id="scan-progress-text" class="text-xs text-slate-500 mt-0.5">สแกน/แนบหลักฐานแล้ว 0 ครั้ง</p></div><button type="button" onclick="resetScanProgress()" class="text-[10px] font-bold text-slate-500 hover:text-rose-600">Reset</button></div>
+                                </div>
+
+                                <!-- Requirement 3: Batch Entry Progress — only visible when Batch Entry Mode is active -->
+                                <div id="batch-progress-card" class="hidden mt-3 rounded-xl border border-indigo-100 bg-indigo-50/70 p-3">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div>
+                                            <p class="text-[11px] font-bold text-indigo-900">Batch Entry</p>
+                                            <p id="batch-progress-text" class="text-xs text-indigo-700 mt-0.5">รายการปัจจุบัน 1 / 1 • บันทึกสำเร็จ 0 • คงเหลือ 1</p>
+                                        </div>
+                                        <button type="button" onclick="cancelKeyInForm()" class="text-[10px] font-bold text-slate-500 hover:text-rose-600 shrink-0">ยกเลิก Batch</button>
+                                    </div>
+                                    <div class="h-2 bg-white rounded-full overflow-hidden mt-2 border border-indigo-100"><div id="batch-progress-bar" class="h-full bg-indigo-600 rounded-full transition-all duration-300" style="width:0%"></div></div>
+                                    <div id="batch-saved-list" class="flex flex-wrap gap-1.5 mt-2"></div>
                                 </div>
                             </div>
                         </div>
@@ -733,8 +752,8 @@
                     </div>
 
                     <div class="flex gap-3 pt-6 mt-6 border-t border-slate-100">
-                        <button onclick="navigateTo('home')" class="w-1/3 bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-bold text-sm hover:bg-slate-50 transition cursor-pointer">ยกเลิก</button>
-                        <button onclick="submitKeyInForm()" class="w-2/3 bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-200 hover:bg-indigo-800 transition cursor-pointer">บันทึกข้อมูลเข้าระบบ</button>
+                        <button id="keyin-cancel-btn" onclick="cancelKeyInForm()" class="w-1/3 bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-bold text-sm hover:bg-slate-50 transition cursor-pointer">ยกเลิก</button>
+                        <button id="keyin-save-btn" onclick="submitKeyInForm()" class="w-2/3 bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-200 hover:bg-indigo-800 transition cursor-pointer min-h-[44px]">บันทึกข้อมูลเข้าระบบ</button>
                     </div>
                 </section>
 
@@ -1162,6 +1181,14 @@
         let serverOcrEnabled = false;
         const SMART_DEPARTMENTS = ["ซองสัญญา","นายหน้าประกันภัย","ปฏิบัติการประกันภัย","ทะเบียน","บุคคล","บัญชี","BSCS","BDSM","CLD","Audit","Fraud","CRD","กำกับธุรกรรม","Legal","CAS","MKT","Falcon","IT","จัดซื้อ","MD","CS","DB","A&D","HeyGoody"];
         let scanProgressCount = 0;
+        // v5.9.6 — Batch Key In Mode state (Requirement 14: separate from scan/OCR success).
+        // batchSavedCount only ever increments after a Backend-verified saveKeyIn() response.
+        let batchActive = false;
+        let batchTotal = 1;
+        let batchSavedCount = 0;
+        let batchCurrentIndex = 1;
+        let batchSavedTrackingIds = [];
+        let batchId = '';
         let scanProgressLastAt = 0;
         let esignPendingItems = [];
         let esignQueueAllItems = [];
@@ -1710,17 +1737,12 @@
             document.body.appendChild(toast); setTimeout(function(){ toast.remove(); }, 2800);
         }
 
+        // Requirement 14: this is PURELY an "evidence captured for the current item" indicator —
+        // it must never be confused with, or gate, the actual Document-saved count. That count
+        // now lives in batchSavedCount, which only advances after a Backend-verified save.
         function updateScanProgress() {
-            const qty = getKeyInQty();
-            const text = document.getElementById('scan-progress-text'), bar = document.getElementById('scan-progress-bar'), hint = document.getElementById('scan-progress-hint');
-            const percent = Math.min(100, Math.round((scanProgressCount / qty) * 100));
-            if (text) text.textContent = 'สแกนแล้ว ' + scanProgressCount + ' / ' + qty + ' ชิ้น';
-            if (bar) { bar.style.width = percent + '%'; bar.classList.toggle('bg-emerald-500', scanProgressCount === qty); bar.classList.toggle('bg-indigo-600', scanProgressCount !== qty); }
-            if (hint) {
-                if (scanProgressCount === qty) { hint.textContent = 'จำนวนการสแกนครบแล้ว พร้อมบันทึก'; hint.className = 'text-[10px] text-emerald-600 font-bold mt-2'; }
-                else if (scanProgressCount > qty) { hint.textContent = 'สแกนเกินจำนวนที่ระบุ กรุณาตรวจสอบหรือ Reset'; hint.className = 'text-[10px] text-rose-600 font-bold mt-2'; }
-                else { hint.textContent = 'เหลือสแกนอีก ' + (qty - scanProgressCount) + ' ชิ้น'; hint.className = 'text-[10px] text-slate-500 mt-2'; }
-            }
+            const text = document.getElementById('scan-progress-text');
+            if (text) text.textContent = 'สแกน/แนบหลักฐานแล้ว ' + scanProgressCount + ' ครั้ง';
         }
 
         // v5.9.5 — Requirement: NaN-safe Qty parsing. A stray/non-numeric value in the Qty field
@@ -1736,10 +1758,7 @@
 
         function registerSuccessfulScan(detail) {
             const now = Date.now(); if (now - scanProgressLastAt < 450) return; scanProgressLastAt = now; scanProgressCount++; updateScanProgress();
-            const qty = getKeyInQty();
-            if (scanProgressCount < qty) showSystemToast('สแกนสำเร็จ ' + scanProgressCount + '/' + qty + (detail ? ' • ' + detail : ''), 'info');
-            else if (scanProgressCount === qty) { showSystemToast('สแกนครบ ' + qty + '/' + qty + ' ชิ้น พร้อมบันทึก', 'success'); if (navigator.vibrate) navigator.vibrate([80,50,80]); }
-            else showSystemToast('สแกนเกินจำนวนที่เลือก (' + scanProgressCount + '/' + qty + ')', 'error');
+            showSystemToast('สแกนสำเร็จ' + (detail ? ' • ' + detail : ''), 'info');
         }
 
         function resetScanProgress() { scanProgressCount = 0; scanProgressLastAt = 0; updateScanProgress(); showSystemToast('รีเซ็ตตัวนับการสแกนแล้ว', 'info'); }
@@ -3659,19 +3678,18 @@
 
 
         function setKeyInSaving(isSaving) {
-            const buttons = Array.from(document.querySelectorAll('[onclick="submitKeyInForm()"]'));
-            buttons.forEach(function(button) {
-                button.disabled = !!isSaving;
-                button.classList.toggle('opacity-60', !!isSaving);
-                button.classList.toggle('cursor-wait', !!isSaving);
-
-                if (!button.dataset.originalHtml) button.dataset.originalHtml = button.innerHTML;
-                if (isSaving) {
-                    button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังบันทึกและ Sync...';
-                } else if (button.dataset.originalHtml) {
-                    button.innerHTML = button.dataset.originalHtml;
-                }
-            });
+            const button = document.getElementById('keyin-save-btn');
+            if (!button) return;
+            button.disabled = !!isSaving;
+            button.classList.toggle('opacity-60', !!isSaving);
+            button.classList.toggle('cursor-wait', !!isSaving);
+            if (isSaving) {
+                button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังบันทึกและ Sync...';
+            } else {
+                // Requirement 3: the resting label always reflects current Batch state — never a
+                // stale cached string — so it correctly shows "บันทึกรายการที่ X / N" once active.
+                renderBatchProgressUI();
+            }
         }
 
         async function refreshWorkflowAfterKeyIn(trackingId, department) {
@@ -3852,9 +3870,128 @@
             }, 150);
         }
 
+        /** ===================== BATCH KEY IN MODE (v5.9.6) ===================== **/
+        // Business rule: 1 Tracking ID = 1 Document = 1 KeyIn Row = 1 item in Operations/E-Sign/Track.
+        // Quantity > 1 means "how many separate Tracking Documents to enter in this session" —
+        // it NEVER means "how many physical pieces share one Tracking". Each item is saved to the
+        // Backend individually and verified before the UI advances (Requirement 7).
+
+        function onKeyInQtyChange() {
+            const qty = getKeyInQty();
+
+            if (qty <= 1) {
+                // Dropping back to 1: if nothing has been saved yet, just exit Batch Mode quietly.
+                if (batchActive && batchSavedCount > 0) {
+                    const proceed = confirm(
+                        'คุณบันทึกสำเร็จแล้ว ' + batchSavedCount + ' จาก ' + batchTotal + ' รายการ\n' +
+                        'ต้องการยกเลิก Batch ที่เหลือหรือไม่? (รายการที่บันทึกแล้วจะยังอยู่ใน Google Sheet)'
+                    );
+                    if (!proceed) {
+                        document.getElementById('keyin-qty').value = batchTotal;
+                        return;
+                    }
+                }
+                resetBatchState();
+                renderBatchProgressUI();
+                return;
+            }
+
+            if (!batchActive) {
+                startBatchMode(qty);
+            } else {
+                // Adjusting batch size mid-batch — never allow shrinking below what's already saved.
+                batchTotal = Math.max(qty, batchSavedCount, 1);
+                renderBatchProgressUI();
+            }
+        }
+
+        function startBatchMode(qty) {
+            batchActive = true;
+            batchTotal = qty;
+            batchSavedCount = 0;
+            batchCurrentIndex = 1;
+            batchSavedTrackingIds = [];
+            batchId = 'KEYIN-' + Utilities_formatBatchDate() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+            renderBatchProgressUI();
+        }
+
+        function Utilities_formatBatchDate() {
+            const d = new Date();
+            const pad = function(n) { return String(n).padStart(2, '0'); };
+            return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes());
+        }
+
+        function resetBatchState() {
+            batchActive = false;
+            batchTotal = 1;
+            batchSavedCount = 0;
+            batchCurrentIndex = 1;
+            batchSavedTrackingIds = [];
+            batchId = '';
+        }
+
+        function renderBatchProgressUI() {
+            const sticky = document.getElementById('keyin-batch-sticky');
+            const card = document.getElementById('batch-progress-card');
+            const saveBtn = document.getElementById('keyin-save-btn');
+            const remaining = Math.max(0, batchTotal - batchSavedCount);
+
+            if (!batchActive) {
+                sticky?.classList.add('hidden');
+                card?.classList.add('hidden');
+                if (saveBtn) saveBtn.innerHTML = 'บันทึกข้อมูลเข้าระบบ';
+                return;
+            }
+
+            sticky?.classList.remove('hidden');
+            card?.classList.remove('hidden');
+
+            const stickyText = 'รายการ ' + batchCurrentIndex + '/' + batchTotal + ' | บันทึกแล้ว ' + batchSavedCount + ' | เหลือ ' + remaining;
+            const stickyEl = document.getElementById('keyin-batch-sticky-text');
+            if (stickyEl) stickyEl.textContent = stickyText;
+
+            const progressText = document.getElementById('batch-progress-text');
+            if (progressText) progressText.textContent = 'รายการปัจจุบัน ' + batchCurrentIndex + ' / ' + batchTotal + ' • บันทึกสำเร็จ ' + batchSavedCount + ' • คงเหลือ ' + remaining;
+
+            const bar = document.getElementById('batch-progress-bar');
+            if (bar) bar.style.width = Math.min(100, Math.round((batchSavedCount / batchTotal) * 100)) + '%';
+
+            const list = document.getElementById('batch-saved-list');
+            if (list) {
+                list.innerHTML = batchSavedTrackingIds.map(function(id) {
+                    return '<span class="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md"><i class="fa-solid fa-check"></i>' + escapeHtml(id) + '</span>';
+                }).join('');
+            }
+
+            if (saveBtn) saveBtn.innerHTML = 'บันทึกรายการที่ ' + batchCurrentIndex + ' / ' + batchTotal;
+        }
+
+        function cancelKeyInForm() {
+            if (batchActive && batchSavedCount > 0) {
+                const proceed = confirm(
+                    'คุณบันทึกสำเร็จแล้ว ' + batchSavedCount + ' จาก ' + batchTotal + ' รายการ\n' +
+                    'ต้องการยกเลิก Batch ที่เหลือหรือไม่? (รายการที่บันทึกแล้วจะยังอยู่ใน Google Sheet)'
+                );
+                if (!proceed) return;
+            }
+            resetBatchState();
+            document.getElementById('keyin-qty').value = 1;
+            renderBatchProgressUI();
+            navigateTo('home');
+        }
+
+        function closeBatchCompleteModal() {
+            document.getElementById('batch-complete-modal')?.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            resetBatchState();
+            document.getElementById('keyin-qty').value = 1;
+            renderBatchProgressUI();
+            navigateTo('home');
+        }
+
         function collectKeyInPayload() {
             const audit = getAuditUser();
-            return {
+            const payload = {
                 route: document.getElementById('keyin-route').value,
                 department: document.getElementById('keyin-dept').value,
                 recipientName: document.getElementById('keyin-recipient-name').value.trim(),
@@ -3865,51 +4002,80 @@
                 recipientPostcode: document.getElementById('keyin-recipient-postcode').value.trim(),
                 recipientAddress: document.getElementById('keyin-recipient-address').value.trim(),
                 ocrConfidence: latestSmartCapture ? Math.round(((latestSmartCapture.tracking?.score || 0) + (latestSmartCapture.fields?.overallConfidence || 0)) / ((latestSmartCapture.tracking && latestSmartCapture.fields?.overallConfidence) ? 2 : 1)) : '',
-                qty: getKeyInQty(),
+                // Requirement 5: every KeyIn row is exactly 1 Document. The "Quantity" field only
+                // ever controls how many separate items this Batch session will collect.
+                qty: 1,
                 trackingId: document.getElementById('keyin-tracking').value.trim(),
                 remarks: document.getElementById('keyin-remarks').value.trim(), images: capturedImages.slice(), status: 'Registered', createdBy: audit.username, createdByRole: audit.role, authToken: getAuthToken()
             };
+            if (batchActive) {
+                payload.batchId = batchId;
+                payload.batchTotal = batchTotal;
+                payload.batchSequence = batchCurrentIndex;
+            }
+            return payload;
         }
+
         function submitKeyInForm() {
             if (!requireGas()) return;
             const payload = collectKeyInPayload();
+
+            // Requirement 4: validation is per CURRENT ITEM only — Tracking, Route, Department
+            // present, and this item hasn't already been saved. Never gate on scan/photo counts.
             if (!payload.route || !payload.department || !payload.trackingId) { showSystemToast('กรุณากรอกเส้นทาง แผนก และ Tracking / Barcode ให้ครบ','error'); return; }
-            if (payload.qty < 1) { showSystemToast('จำนวนพัสดุต้องไม่น้อยกว่า 1','error'); return; }
-            // v5.9.5 — Root cause fix: Qty describes how many physical pieces belong to this ONE
-            // Tracking; it is NOT a requirement to physically barcode-scan that many times. The
-            // old code HARD-BLOCKED Save whenever scanProgressCount !== qty, which meant anyone
-            // typing Qty > 1 by hand (not using the live scanner) could never save at all — the
-            // button looked "stuck" with only a small toast explaining why. This is now a
-            // dismissible confirmation, never a dead end.
-            if (payload.qty > 1 && scanProgressCount !== payload.qty) {
-                const proceed = confirm(
-                    'จำนวนที่สแกน (' + scanProgressCount + ') ไม่ตรงกับ Quantity (' + payload.qty + ')\n\n' +
-                    'ต้องการบันทึกต่อหรือไม่? (Qty ที่ระบุจะถูกบันทึกตามที่กรอกไว้)'
-                );
-                if (!proceed) return;
+
+            if (batchActive && batchSavedTrackingIds.includes(payload.trackingId)) {
+                showSystemToast('Tracking นี้ถูกบันทึกไปแล้วในชุดนี้: ' + payload.trackingId, 'error');
+                return;
             }
-            const summary=document.getElementById('keyin-confirm-summary');
-            if(summary) summary.innerHTML = [
-              ['Tracking ID',payload.trackingId],['Recipient Name',payload.recipientName||'-'],['Department',payload.department],['Phone',payload.recipientPhone||'-'],['Route',payload.route],['Remarks',payload.remarks||'-'],['รูปพัสดุ',payload.images.length+' รูป']
-            ].map(x=>'<div class="grid grid-cols-3 gap-2 py-2 border-b border-slate-100"><span class="text-xs font-bold text-slate-500">'+escapeHtml(x[0])+'</span><span class="col-span-2 text-sm text-slate-800 break-words">'+escapeHtml(String(x[1]))+'</span></div>').join('');
-            window.pendingKeyInPayload=payload; document.getElementById('keyin-confirm-modal')?.classList.remove('hidden'); document.body.classList.add('overflow-hidden');
+
+            if (!batchActive) {
+                // Quantity === 1: unchanged existing single-item review-before-save flow.
+                const summary=document.getElementById('keyin-confirm-summary');
+                if(summary) summary.innerHTML = [
+                  ['Tracking ID',payload.trackingId],['Recipient Name',payload.recipientName||'-'],['Department',payload.department],['Phone',payload.recipientPhone||'-'],['Route',payload.route],['Remarks',payload.remarks||'-'],['รูปพัสดุ',payload.images.length+' รูป']
+                ].map(x=>'<div class="grid grid-cols-3 gap-2 py-2 border-b border-slate-100"><span class="text-xs font-bold text-slate-500">'+escapeHtml(x[0])+'</span><span class="col-span-2 text-sm text-slate-800 break-words">'+escapeHtml(String(x[1]))+'</span></div>').join('');
+                window.pendingKeyInPayload=payload; document.getElementById('keyin-confirm-modal')?.classList.remove('hidden'); document.body.classList.add('overflow-hidden');
+                return;
+            }
+
+            // Batch mode: save this item directly — minimal taps for repeated scanning (Requirement 1/15).
+            performConfirmedKeyInSave(payload);
         }
         function closeKeyInConfirm(){ document.getElementById('keyin-confirm-modal')?.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); window.pendingKeyInPayload=null; }
         function confirmKeyInSave(){ const p=window.pendingKeyInPayload; if(!p)return; document.getElementById('keyin-confirm-modal')?.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); window.pendingKeyInPayload=null; performConfirmedKeyInSave(p); }
         function openParcelImage(index){ const src=capturedImages[index]; if(!src)return; const img=document.getElementById('parcel-lightbox-image'); img.src=src; img.alt='Parcel image '+(index+1); document.getElementById('parcel-lightbox')?.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); }
         function closeParcelImage(){ document.getElementById('parcel-lightbox')?.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); }
 
+        // Requirement 13: reset only ITEM-specific state after each successful save. Common fields
+        // (Route/Department/Recipient/.../Remarks) are deliberately left untouched.
+        function resetItemSpecificFields() {
+            capturedImages = [];
+            renderImagePreviews();
+            document.getElementById('keyin-tracking').value = '';
+            scanProgressCount = 0;
+            updateScanProgress();
+            renderOcrTrackingCandidates([]);
+            latestSmartCapture = null;
+            latestOcrText = '';
+            document.getElementById('ocr-result-box')?.classList.add('hidden');
+        }
+
         async function performConfirmedKeyInSave(payload) {
             setKeyInSaving(true);
 
             try {
-                // Backend does not return success until the row is written, flushed and read back.
+                // Requirement 7: Frontend NEVER advances the Batch counter until the Backend
+                // responds verified:true — LockService + duplicate check + flush + read-back all
+                // happen server-side inside saveKeyIn().
                 const raw = await apiCall('saveKeyIn', payload);
                 const res = normalizeResponse(raw, 'บันทึก KeyIn ไม่สำเร็จ');
 
                 if (handleAuthFailure(res)) return;
 
                 if (!res.success || !res.verified) {
+                    // Requirement 6: a rejected/duplicate item must NOT advance the Batch counter —
+                    // the current item slot (and any already-saved items) are left exactly as-is.
                     showSystemToast(
                         res.message || 'Backend ยังไม่ยืนยันการบันทึก ข้อมูลในฟอร์มจะยังคงอยู่ กรุณาลองใหม่',
                         'error'
@@ -3928,6 +4094,32 @@
                 const coreReady = workflowResults.track && workflowResults.operations &&
                     workflowResults.dashboard && workflowResults.report;
 
+                if (batchActive) {
+                    // ----- Batch Entry Mode: advance ONLY after this verified save (Requirement 7) -----
+                    batchSavedCount++;
+                    batchSavedTrackingIds.push(res.trackingId || payload.trackingId);
+
+                    if (batchSavedCount >= batchTotal) {
+                        // Requirement 11: Batch complete popup.
+                        const msgList = document.getElementById('batch-complete-tracking-list');
+                        if (msgList) msgList.innerHTML = batchSavedTrackingIds.map(function(id) { return '<div>' + escapeHtml(id) + '</div>'; }).join('');
+                        const msgText = document.getElementById('batch-complete-message');
+                        if (msgText) msgText.textContent = 'บันทึกสำเร็จ ' + batchSavedCount + ' รายการ';
+                        document.getElementById('batch-complete-modal')?.classList.remove('hidden');
+                        document.body.classList.add('overflow-hidden');
+                        resetItemSpecificFields();
+                    } else {
+                        batchCurrentIndex = batchSavedCount + 1;
+                        showSystemToast('✓ บันทึกรายการที่ ' + batchSavedCount + '/' + batchTotal + ' สำเร็จ (' + (res.trackingId || payload.trackingId) + ')', 'success');
+                        resetItemSpecificFields();
+                        renderBatchProgressUI();
+                        // Keep the user on Key In, ready to scan the next item — no navigation away.
+                        document.getElementById('keyin-tracking')?.focus();
+                    }
+                    return;
+                }
+
+                // ----- Single-item Mode (Qty === 1): unchanged existing behaviour -----
                 if (coreReady) {
                     showSystemToast(
                         res.message || ('Key In สำเร็จ พร้อมดำเนินการ Dispatch • ' + (res.trackingId || payload.trackingId)),
@@ -3942,22 +4134,13 @@
                 }
 
                 // Clear only after verified save + workflow refresh.
-                capturedImages = [];
-                renderImagePreviews();
-
+                resetItemSpecificFields();
                 clearForm([
                     'keyin-route','keyin-dept','keyin-recipient-name',
                     'keyin-recipient-phone','keyin-recipient-postcode','keyin-recipient-address',
-                    'keyin-tracking','keyin-remarks'
+                    'keyin-remarks'
                 ]);
-
                 document.getElementById('keyin-qty').value = 1;
-                scanProgressCount = 0;
-                updateScanProgress();
-                renderOcrTrackingCandidates([]);
-                latestSmartCapture = null;
-                latestOcrText = '';
-                document.getElementById('ocr-result-box')?.classList.add('hidden');
 
                 // Stay briefly so user sees confirmed state; then return Home.
                 setTimeout(function() {
@@ -5298,6 +5481,17 @@
 
 
 <div id="keyin-confirm-modal" class="hidden fixed inset-0 z-[100] bg-slate-950/60 backdrop-blur-sm p-4 flex items-center justify-center" onclick="if(event.target===this)closeKeyInConfirm()"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-auto p-5 md:p-6"><div class="flex justify-between gap-3"><div><h3 class="text-lg font-black text-slate-900">กรุณาตรวจสอบข้อมูลก่อนบันทึก</h3><p class="text-xs text-slate-500 mt-1">ตรวจสอบ Tracking, ผู้รับ, แผนก และข้อมูลหน้าพัสดุให้ถูกต้อง</p></div><button type="button" onclick="closeKeyInConfirm()" class="w-9 h-9 rounded-full bg-slate-100">✕</button></div><div id="keyin-confirm-summary" class="mt-4"></div><div class="flex gap-3 mt-5"><button type="button" onclick="closeKeyInConfirm()" class="flex-1 border border-slate-200 py-3 rounded-xl font-bold">กลับไปแก้ไข</button><button type="button" onclick="confirmKeyInSave()" class="flex-1 bg-indigo-700 text-white py-3 rounded-xl font-bold">ยืนยันการบันทึก</button></div></div></div>
+
+<!-- Requirement 11: Batch Entry Complete popup -->
+<div id="batch-complete-modal" class="hidden fixed inset-0 z-[120] bg-slate-950/60 backdrop-blur-sm p-4 flex items-center justify-center" onclick="if(event.target===this)closeBatchCompleteModal()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 text-center animate-fade-in">
+        <div class="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mb-4"><i class="fa-solid fa-circle-check"></i></div>
+        <h3 class="text-lg font-black text-slate-900">✓ บันทึกเอกสารครบแล้ว</h3>
+        <p id="batch-complete-message" class="text-sm text-slate-500 mt-2">บันทึกสำเร็จ 0 รายการ</p>
+        <div id="batch-complete-tracking-list" class="mt-4 text-left bg-slate-50 border border-slate-100 rounded-xl p-3 max-h-40 overflow-y-auto text-xs font-mono text-slate-600 space-y-1"></div>
+        <button type="button" onclick="closeBatchCompleteModal()" class="mt-5 w-full bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-800 transition min-h-[44px]">เสร็จสิ้น</button>
+    </div>
+</div>
 <div id="parcel-lightbox" class="hidden fixed inset-0 z-[110] bg-black/90 p-3 md:p-8 flex items-center justify-center" onclick="if(event.target===this)closeParcelImage()"><button type="button" onclick="closeParcelImage()" class="absolute top-4 right-4 bg-white/90 rounded-full w-11 h-11 text-xl">✕</button><img id="parcel-lightbox-image" src="" alt="Parcel image" class="max-w-full max-h-full object-contain rounded-xl shadow-2xl"></div>
 <div id="dashboard-detail-modal" class="hidden fixed inset-0 z-[105] bg-slate-950/60 backdrop-blur-sm p-4 flex items-center justify-center" onclick="if(event.target===this)closeDashboardDetail()"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"><div class="p-5 border-b flex justify-between"><h3 id="dashboard-detail-title" class="font-black text-lg">Dashboard Detail</h3><button type="button" onclick="closeDashboardDetail()" class="w-9 h-9 rounded-full bg-slate-100">✕</button></div><div id="dashboard-detail-list" class="p-4 overflow-auto space-y-2"></div></div></div>
 
