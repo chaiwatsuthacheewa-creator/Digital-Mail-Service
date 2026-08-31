@@ -472,32 +472,43 @@
                         <div class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div>
                                 <p class="text-[11px] uppercase tracking-[0.22em] text-indigo-300 font-bold">Daily Operations Control</p>
-                                <h3 class="text-2xl font-black mt-1">Ari Hills → BTS Delivery Flow</h3>
-                                <p class="text-sm text-slate-300 mt-2">ควบคุมยอดรับเข้า ส่งออก และยืนยันส่งถึงจริงจาก E-Sign ในหน้าเดียว</p>
+                                <h3 class="text-2xl font-black mt-1">Ari Hills → BTSVP Delivery Flow</h3>
+                                <p class="text-sm text-slate-300 mt-2">ควบคุม Chain of Custody ตั้งแต่รับเข้า Ari Hills จนถึงยืนยันรับที่ BTSVP และ E-Sign</p>
                             </div>
                             <button type="button" onclick="loadOperationsControl()" class="self-start md:self-auto bg-white/10 border border-white/15 hover:bg-white/15 px-4 py-2.5 rounded-xl text-xs font-bold transition"><i class="fa-solid fa-rotate mr-1.5"></i> Refresh Data</button>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                         <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5"><div class="flex items-center gap-2 text-indigo-600"><i class="fa-solid fa-inbox"></i><span class="text-[11px] font-bold uppercase">Received</span></div><p id="ops-received" class="text-3xl font-black text-slate-800 mt-2">-</p><p class="text-[11px] text-slate-400">รับเข้า Ari Hills วันนี้</p></div>
-                        <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5"><div class="flex items-center gap-2 text-blue-600"><i class="fa-solid fa-truck-fast"></i><span class="text-[11px] font-bold uppercase">Dispatched</span></div><p id="ops-dispatched" class="text-3xl font-black text-slate-800 mt-2">-</p><p class="text-[11px] text-slate-400">ส่งออกไป BTS</p></div>
-                        <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5"><div class="flex items-center gap-2 text-emerald-600"><i class="fa-solid fa-circle-check"></i><span class="text-[11px] font-bold uppercase">Delivered</span></div><p id="ops-delivered" class="text-3xl font-black text-slate-800 mt-2">-</p><p class="text-[11px] text-slate-400">ส่งถึงจริง / E-Signed</p></div>
-                        <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5"><div class="flex items-center gap-2 text-amber-600"><i class="fa-solid fa-clock"></i><span class="text-[11px] font-bold uppercase">In Transit</span></div><p id="ops-transit" class="text-3xl font-black text-slate-800 mt-2">-</p><p class="text-[11px] text-slate-400">ส่งแล้วแต่ยังไม่ถึง</p></div>
-                        <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 col-span-2 lg:col-span-1"><div class="flex items-center gap-2 text-rose-600"><i class="fa-solid fa-triangle-exclamation"></i><span class="text-[11px] font-bold uppercase">Pending</span></div><p id="ops-pending" class="text-3xl font-black text-slate-800 mt-2">-</p><p class="text-[11px] text-slate-400">รับแล้ว ยังไม่ Dispatch</p></div>
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5"><div class="flex items-center gap-2 text-rose-600"><i class="fa-solid fa-triangle-exclamation"></i><span class="text-[11px] font-bold uppercase">Pending Dispatch</span></div><p id="ops-pending" class="text-3xl font-black text-slate-800 mt-2">-</p><p class="text-[11px] text-slate-400">รับแล้ว ยังไม่ Dispatch</p></div>
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5"><div class="flex items-center gap-2 text-amber-600"><i class="fa-solid fa-truck-fast"></i><span class="text-[11px] font-bold uppercase">In Transit</span></div><p id="ops-transit" class="text-3xl font-black text-slate-800 mt-2">-</p><p class="text-[11px] text-slate-400">ส่งแล้ว รอถึง BTSVP</p></div>
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5"><div class="flex items-center gap-2 text-purple-600"><i class="fa-solid fa-building-shield"></i><span class="text-[11px] font-bold uppercase">Awaiting E-Sign</span></div><p id="ops-awaiting-esign" class="text-3xl font-black text-slate-800 mt-2">-</p><p class="text-[11px] text-slate-400">ถึง BTSVP แล้ว รอเซ็นรับ</p></div>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                            <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div><h4 class="font-bold text-slate-800">รายการรอส่งจาก Ari Hills → BTS</h4><p class="text-xs text-slate-500 mt-0.5">เลือกรายการที่ส่งออกจริง แล้วบันทึก Dispatch</p></div>
-                                <div class="flex gap-2"><button type="button" onclick="toggleAllDispatchItems(true)" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold">เลือกทั้งหมด</button><button type="button" onclick="markSelectedDispatch()" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold shadow-sm"><i class="fa-solid fa-truck-fast mr-1"></i> Dispatch to BTS</button></div>
+                        <div class="lg:col-span-2 space-y-6">
+                            <!-- Stage A — Waiting Dispatch -->
+                            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                                <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                    <div><h4 class="font-bold text-slate-800">Stage A — รายการรอส่งจาก Ari Hills → BTSVP</h4><p class="text-xs text-slate-500 mt-0.5">เลือกรายการที่ส่งออกจริง แล้วบันทึก Dispatch</p></div>
+                                    <div class="flex gap-2"><button type="button" onclick="toggleAllDispatchItems(true)" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold min-h-[44px]">เลือกทั้งหมด</button><button type="button" onclick="markSelectedDispatch()" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold shadow-sm min-h-[44px]"><i class="fa-solid fa-truck-fast mr-1"></i> Dispatch to BTSVP</button></div>
+                                </div>
+                                <div id="ops-pending-list" class="divide-y divide-slate-100 max-h-[360px] overflow-y-auto"><div class="p-6 text-center text-sm text-slate-400">กำลังโหลดข้อมูล...</div></div>
                             </div>
-                            <div id="ops-pending-list" class="divide-y divide-slate-100 max-h-[430px] overflow-y-auto"><div class="p-6 text-center text-sm text-slate-400">กำลังโหลดข้อมูล...</div></div>
+
+                            <!-- Stage B/C — In Transit → Confirm Arrival at BTSVP -->
+                            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                                <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                    <div><h4 class="font-bold text-slate-800">Stage B — กำลังนำส่ง / รอยืนยันถึง BTSVP</h4><p class="text-xs text-slate-500 mt-0.5">เลือกรายการที่ถึง BTSVP แล้ว จากนั้นยืนยันรับเข้า</p></div>
+                                    <div class="flex gap-2"><button type="button" onclick="toggleAllArrivalItems(true)" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold min-h-[44px]">เลือกทั้งหมด</button><button type="button" onclick="confirmSelectedArrival()" class="px-3 py-2 rounded-lg bg-purple-700 text-white text-xs font-bold shadow-sm min-h-[44px]"><i class="fa-solid fa-building-shield mr-1"></i> ยืนยันรับเอกสารที่ BTSVP</button></div>
+                                </div>
+                                <div id="ops-transit-list" class="divide-y divide-slate-100 max-h-[360px] overflow-y-auto"><div class="p-6 text-center text-sm text-slate-400">กำลังโหลดข้อมูล...</div></div>
+                            </div>
                         </div>
                         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                             <h4 class="font-bold text-slate-800">Daily Delivery Completion</h4><p class="text-xs text-slate-500 mt-1">เทียบจำนวนรับเข้ากับจำนวนส่งถึงจริง</p>
                             <div class="mt-6"><div class="flex justify-between text-xs font-bold mb-2"><span class="text-slate-600">Completion</span><span id="ops-completion-label" class="text-indigo-600">0%</span></div><div class="h-3 rounded-full bg-slate-100 overflow-hidden"><div id="ops-completion-bar" class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-500" style="width:0%"></div></div></div>
                             <div class="mt-6 grid grid-cols-2 gap-3"><div class="rounded-xl bg-emerald-50 border border-emerald-100 p-3"><p class="text-[10px] uppercase font-bold text-emerald-600">Delivered</p><p id="ops-delivered-small" class="text-xl font-black text-emerald-800">0</p></div><div class="rounded-xl bg-rose-50 border border-rose-100 p-3"><p class="text-[10px] uppercase font-bold text-rose-600">Return</p><p id="ops-returned" class="text-xl font-black text-rose-800">0</p></div></div>
-                            <p class="text-[11px] text-slate-400 mt-5 leading-relaxed">“ส่งถึงจริง” จะนับเมื่อรายการได้รับ E-Sign สำเร็จ จึงแยกจากสถานะ “ส่งออกไป BTS” อย่างชัดเจน</p>
+                            <p class="text-[11px] text-slate-400 mt-5 leading-relaxed">“ส่งถึงจริง” จะนับเมื่อรายการได้รับ E-Sign สำเร็จ ซึ่งเปิดให้เซ็นได้ก็ต่อเมื่อยืนยันรับเข้า BTSVP แล้วเท่านั้น</p>
                         </div>
                     </div>
                 </section>
@@ -734,7 +745,7 @@
                             <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-lg"><i class="fa-solid fa-file-signature"></i></div>
                             <div>
                                 <h3 class="text-lg font-bold text-slate-800">E-Signature รับพัสดุแบบกลุ่ม</h3>
-                                <p class="text-xs text-slate-500">เลือกแผนก → ตรวจรายการพัสดุวันนี้ → เซ็นรับครั้งเดียวสำหรับหลาย Tracking</p>
+                                <p class="text-xs text-slate-500">รายการพัสดุที่ BTSVP ยืนยันรับเข้าแล้วและรอผู้รับเซ็น — เลือกแผนก → ตรวจรายการ → เซ็นรับครั้งเดียวสำหรับหลาย Tracking</p>
                             </div>
                         </div>
                         <span id="esign-pending-badge" class="text-xs font-bold text-purple-700 bg-purple-50 border border-purple-100 px-3 py-1.5 rounded-full">รอรับ 0 รายการ</span>
@@ -858,8 +869,11 @@
                             </select>
                         </div>
 
-                        <div id="deptstatus-detail-summary" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        <div id="deptstatus-detail-summary" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
                             <div class="bg-white border border-slate-200 rounded-xl p-3"><p class="text-[10px] font-bold text-slate-400">งานทั้งหมด</p><p id="deptstatus-detail-total" class="text-lg font-black text-slate-800 mt-0.5">0</p></div>
+                            <div class="bg-white border border-slate-200 rounded-xl p-3"><p class="text-[10px] font-bold text-slate-400">At Ari Hills</p><p id="deptstatus-detail-atarihills" class="text-lg font-black text-sky-600 mt-0.5">0</p></div>
+                            <div class="bg-white border border-slate-200 rounded-xl p-3"><p class="text-[10px] font-bold text-slate-400">In Transit</p><p id="deptstatus-detail-intransit" class="text-lg font-black text-amber-600 mt-0.5">0</p></div>
+                            <div class="bg-white border border-slate-200 rounded-xl p-3"><p class="text-[10px] font-bold text-slate-400">Awaiting E-Sign</p><p id="deptstatus-detail-awaitingesign" class="text-lg font-black text-purple-600 mt-0.5">0</p></div>
                             <div class="bg-white border border-slate-200 rounded-xl p-3"><p class="text-[10px] font-bold text-slate-400">รอรับ/ยังไม่ปิดงาน</p><p id="deptstatus-detail-pending" class="text-lg font-black text-amber-600 mt-0.5">0</p></div>
                             <div class="bg-white border border-slate-200 rounded-xl p-3"><p class="text-[10px] font-bold text-slate-400">เซ็นรับแล้ว</p><p id="deptstatus-detail-delivered" class="text-lg font-black text-emerald-600 mt-0.5">0</p></div>
                             <div class="bg-white border border-slate-200 rounded-xl p-3"><p class="text-[10px] font-bold text-slate-400">ตีกลับ</p><p id="deptstatus-detail-returned" class="text-lg font-black text-rose-600 mt-0.5">0</p></div>
@@ -869,14 +883,14 @@
 
                         <!-- Desktop / tablet table (horizontal-scroll contained to this box only) -->
                         <div class="hidden sm:block overflow-x-auto border border-slate-100 rounded-xl">
-                            <table class="w-full text-xs min-w-[720px]">
+                            <table class="w-full text-xs min-w-[860px]">
                                 <thead class="bg-slate-50 text-slate-500">
                                     <tr>
                                         <th class="text-left font-bold px-4 py-3">Date</th>
                                         <th class="text-left font-bold px-4 py-3">Tracking</th>
                                         <th class="text-left font-bold px-4 py-3">Department</th>
                                         <th class="text-left font-bold px-4 py-3">Recipient</th>
-                                        <th class="text-left font-bold px-4 py-3">Route</th>
+                                        <th class="text-left font-bold px-4 py-3">Current Location</th>
                                         <th class="text-right font-bold px-4 py-3">Qty</th>
                                         <th class="text-left font-bold px-4 py-3">Status</th>
                                     </tr>
@@ -920,6 +934,7 @@
                         </button>
                         <div id="track-detail-panel" class="pt-4">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5 text-xs">
+                                <div class="bg-white rounded-xl border border-slate-100 p-3 sm:col-span-2"><p class="text-slate-400 font-bold">Current Location</p><p id="result-track-location" class="font-black text-emerald-700 mt-1 text-sm">-</p></div>
                                 <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">แผนกผู้รับ</p><p id="result-track-dept" class="font-bold text-slate-700 mt-1">-</p></div>
                                 <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">เส้นทาง</p><p id="result-track-route" class="font-bold text-slate-700 mt-1">-</p></div>
                                 <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">ผู้รับ</p><p id="result-track-recipient" class="font-bold text-slate-700 mt-1">-</p></div>
@@ -996,7 +1011,7 @@
                                 <span id="report-online-status" class="text-xs text-slate-400 pb-3"></span>
                             </div>
 
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                                 <div class="bg-slate-50 border border-slate-100 rounded-xl p-4">
                                     <p class="text-[10px] font-bold text-slate-400 uppercase">Total</p>
                                     <p id="report-kpi-total" class="text-xl font-black text-slate-800 mt-1">-</p>
@@ -1012,6 +1027,30 @@
                                 <div class="bg-rose-50 border border-rose-100 rounded-xl p-4">
                                     <p class="text-[10px] font-bold text-rose-600 uppercase">Returned</p>
                                     <p id="report-kpi-returned" class="text-xl font-black text-rose-700 mt-1">-</p>
+                                </div>
+                            </div>
+
+                            <!-- Requirement 12: Ari Hills → BTSVP breakdown + real Transit/Signature timing -->
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                                <div class="bg-sky-50 border border-sky-100 rounded-xl p-4">
+                                    <p class="text-[10px] font-bold text-sky-600 uppercase">Pending at Ari Hills</p>
+                                    <p id="report-kpi-pending-arihills" class="text-xl font-black text-sky-700 mt-1">-</p>
+                                </div>
+                                <div class="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                                    <p class="text-[10px] font-bold text-amber-600 uppercase">In Transit</p>
+                                    <p id="report-kpi-intransit" class="text-xl font-black text-amber-700 mt-1">-</p>
+                                </div>
+                                <div class="bg-purple-50 border border-purple-100 rounded-xl p-4">
+                                    <p class="text-[10px] font-bold text-purple-600 uppercase">Arrived / Awaiting E-Sign</p>
+                                    <p id="report-kpi-awaiting-esign" class="text-xl font-black text-purple-700 mt-1">-</p>
+                                </div>
+                                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+                                    <p class="text-[10px] font-bold text-indigo-600 uppercase">Avg. Ari Hills → BTSVP</p>
+                                    <p id="report-kpi-avg-transit" class="text-lg font-black text-indigo-700 mt-1">-</p>
+                                </div>
+                                <div class="bg-teal-50 border border-teal-100 rounded-xl p-4 col-span-2 md:col-span-1">
+                                    <p class="text-[10px] font-bold text-teal-600 uppercase">Avg. BTSVP → E-Sign</p>
+                                    <p id="report-kpi-avg-wait-signature" class="text-lg font-black text-teal-700 mt-1">-</p>
                                 </div>
                             </div>
 
@@ -3860,16 +3899,22 @@
                     payload.department
                 );
 
-                const readyCount = Object.values(workflowResults).filter(Boolean).length;
-                if (readyCount === 5) {
+                // Requirement 15: E-Sign is a workflow STAGE (only opens after Dispatch + Arrival
+                // Confirmation), not a pass/fail signal — a fresh Key In is expected to NOT be
+                // esignReady yet. Only the core modules below indicate a genuine problem.
+                const coreReady = workflowResults.track && workflowResults.operations &&
+                    workflowResults.dashboard && workflowResults.report;
+
+                if (coreReady) {
                     showSystemToast(
-                        'บันทึกและเชื่อมข้อมูลครบทุก Module • ' + (res.trackingId || payload.trackingId),
+                        res.message || ('Key In สำเร็จ พร้อมดำเนินการ Dispatch • ' + (res.trackingId || payload.trackingId)),
                         'success'
                     );
                 } else {
+                    const readyCount = Object.values(workflowResults).filter(Boolean).length;
                     showSystemToast(
                         'บันทึกสำเร็จ • เชื่อมข้อมูลพร้อมใช้ ' + readyCount + '/5 Module',
-                        readyCount >= 4 ? 'info' : 'error'
+                        readyCount >= 3 ? 'info' : 'error'
                     );
                 }
 
@@ -3907,33 +3952,127 @@
         async function loadOperationsControl() {
             if (!requireGas() || !getAuthToken()) return;
             const list = document.getElementById('ops-pending-list'); if (list) list.innerHTML = '<div class="p-6 text-center text-sm text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดข้อมูล...</div>';
+            const transitList = document.getElementById('ops-transit-list'); if (transitList) transitList.innerHTML = '<div class="p-6 text-center text-sm text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดข้อมูล...</div>';
             try {
                 const res = await apiCall('getOperationsSummary', { authToken: getAuthToken() }); if (handleAuthFailure(res)) return;
-                if (!res || !res.success) { if (list) list.innerHTML = '<div class="p-6 text-center text-sm text-rose-500">' + escapeHtml((res && res.message) || 'โหลดข้อมูลไม่สำเร็จ') + '</div>'; return; }
+                if (!res || !res.success) {
+                    const msg = '<div class="p-6 text-center text-sm text-rose-500">' + escapeHtml((res && res.message) || 'โหลดข้อมูลไม่สำเร็จ') + '</div>';
+                    if (list) list.innerHTML = msg;
+                    if (transitList) transitList.innerHTML = msg;
+                    return;
+                }
                 const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = Number(value || 0).toLocaleString('th-TH'); };
-                setText('ops-received', res.received); setText('ops-dispatched', res.dispatched); setText('ops-delivered', res.delivered); setText('ops-delivered-small', res.delivered); setText('ops-transit', res.inTransit); setText('ops-pending', res.pendingDispatch); setText('ops-returned', res.returned);
+                setText('ops-received', res.receivedAtAriHills);
+                setText('ops-pending', res.pendingDispatch);
+                setText('ops-transit', res.inTransit);
+                setText('ops-awaiting-esign', res.awaitingEsign);
+                setText('ops-delivered-small', res.delivered);
+                setText('ops-returned', res.returned);
                 const completion = Math.max(0, Math.min(100, Number(res.completionPercent || 0))); const label = document.getElementById('ops-completion-label'), bar = document.getElementById('ops-completion-bar'); if (label) label.textContent = completion.toFixed(0) + '%'; if (bar) bar.style.width = completion + '%';
-                renderOperationsPending(res.pendingItems || []);
-            } catch (err) { if (list) list.innerHTML = '<div class="p-6 text-center text-sm text-rose-500">เชื่อมต่อ Operations ไม่สำเร็จ</div>'; console.error(err); }
+                renderOperationsPending(res.waitingDispatchItems || res.pendingItems || []);
+                renderOperationsInTransit(res.inTransitItems || []);
+            } catch (err) {
+                const msg = '<div class="p-6 text-center text-sm text-rose-500">เชื่อมต่อ Operations ไม่สำเร็จ</div>';
+                if (list) list.innerHTML = msg;
+                if (transitList) transitList.innerHTML = msg;
+                console.error(err);
+            }
+        }
+
+        // Requirement 13: SLA/Aging groundwork — no hard-coded threshold yet, just a readable
+        // "elapsed since X" label computed from the real timestamp already returned by the API.
+        function formatAgingLabel(fromValue) {
+            if (!fromValue) return '';
+            const from = new Date(fromValue);
+            if (isNaN(from.getTime())) return '';
+            const minutes = Math.max(0, Math.round((Date.now() - from.getTime()) / 60000));
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            if (hours > 0) return hours + ' ชั่วโมง' + (mins > 0 ? ' ' + mins + ' นาที' : '');
+            return mins + ' นาที';
         }
 
         function renderOperationsPending(items) {
             const list = document.getElementById('ops-pending-list'); if (!list) return;
-            if (!items.length) { list.innerHTML = '<div class="p-8 text-center"><i class="fa-solid fa-circle-check text-3xl text-emerald-500"></i><p class="text-sm font-bold text-slate-700 mt-3">ไม่มีรายการรอ Dispatch</p><p class="text-xs text-slate-400 mt-1">รายการรับเข้าวันนี้ถูกส่งออกครบแล้ว</p></div>'; return; }
-            list.innerHTML = items.map(function(item) { return '<label class="flex items-start gap-3 p-4 hover:bg-slate-50 cursor-pointer"><input type="checkbox" class="ops-dispatch-check mt-1 w-4 h-4" value="' + escapeHtml(item.trackingId) + '"><div class="flex-1 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2"><p class="font-black text-slate-800 text-sm">' + escapeHtml(item.trackingId) + '</p><span class="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md">' + Number(item.qty || 1) + ' ชิ้น</span></div><p class="text-xs text-slate-600 mt-1">' + escapeHtml(item.department || '-') + (item.recipientName ? ' • ' + escapeHtml(item.recipientName) : '') + '</p><p class="text-[10px] text-slate-400 mt-1">รับเข้า Ari Hills • ' + escapeHtml(item.timeLabel || '') + '</p></div></label>'; }).join('');
+            if (!items.length) { list.innerHTML = '<div class="p-8 text-center"><i class="fa-solid fa-circle-check text-3xl text-emerald-500"></i><p class="text-sm font-bold text-slate-700 mt-3">ไม่มีรายการรอ Dispatch</p><p class="text-xs text-slate-400 mt-1">รายการรับเข้าถูกส่งออกครบแล้ว</p></div>'; return; }
+            list.innerHTML = items.map(function(item) { return '<label class="flex items-start gap-3 p-4 hover:bg-slate-50 cursor-pointer"><input type="checkbox" class="ops-dispatch-check mt-1 w-4 h-4" value="' + escapeHtml(item.trackingId) + '"><div class="flex-1 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2"><p class="font-black text-slate-800 text-sm break-all">' + escapeHtml(item.trackingId) + '</p><span class="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md shrink-0">' + Number(item.qty || 1) + ' ชิ้น</span></div><p class="text-xs text-slate-600 mt-1">' + escapeHtml(item.department || '-') + (item.recipientName ? ' • ' + escapeHtml(item.recipientName) : '') + '</p><p class="text-[10px] text-slate-400 mt-1">รับเข้า Ari Hills • ' + escapeHtml(item.timeLabel || '') + '</p></div></label>'; }).join('');
         }
 
         function toggleAllDispatchItems(checked) { document.querySelectorAll('.ops-dispatch-check').forEach(function(cb){ cb.checked = !!checked; }); }
 
         async function markSelectedDispatch() {
             const selected = Array.from(document.querySelectorAll('.ops-dispatch-check:checked')).map(function(cb){ return cb.value; });
-            if (!selected.length) { alert('กรุณาเลือกรายการที่จะส่งออกไป BTS อย่างน้อย 1 รายการ'); return; }
-            if (!confirm('ยืนยัน Dispatch ไป BTS จำนวน ' + selected.length + ' Tracking?')) return;
+            if (!selected.length) { alert('กรุณาเลือกรายการที่จะส่งออกไป BTSVP อย่างน้อย 1 รายการ'); return; }
+            if (!confirm('ยืนยัน Dispatch ไป BTSVP จำนวน ' + selected.length + ' Tracking?')) return;
             try {
                 const res = await apiCall('markDispatchToBTS', { trackingIds: selected, authToken: getAuthToken() }); if (handleAuthFailure(res)) return;
                 if (!res || !res.success) { alert((res && res.message) || 'บันทึก Dispatch ไม่สำเร็จ'); return; }
-                showSystemToast(res.message || 'บันทึก Dispatch เรียบร้อยแล้ว', 'success'); loadOperationsControl(); loadDashboardStats();
+                showOpsResultModal({
+                    icon: 'fa-truck-fast',
+                    color: 'blue',
+                    title: 'บันทึกการส่งออกสำเร็จ',
+                    lines: [
+                        'ส่งเอกสารจาก Ari Hills ไป BTSVP',
+                        'จำนวน ' + res.count + ' รายการ',
+                        'เวลา ' + (res.dispatchAt ? formatTrackTime(res.dispatchAt) : '')
+                    ]
+                });
+                loadOperationsControl(); loadDashboardStats();
             } catch (err) { alert('บันทึก Dispatch ไม่สำเร็จ: ' + normalizeError(err)); }
+        }
+
+        function renderOperationsInTransit(items) {
+            const list = document.getElementById('ops-transit-list'); if (!list) return;
+            if (!items.length) { list.innerHTML = '<div class="p-8 text-center"><i class="fa-solid fa-circle-check text-3xl text-emerald-500"></i><p class="text-sm font-bold text-slate-700 mt-3">ไม่มีรายการรอยืนยันถึง BTSVP</p><p class="text-xs text-slate-400 mt-1">ทุกรายการที่ Dispatch แล้วถูกยืนยันรับเข้าครบ</p></div>'; return; }
+            list.innerHTML = items.map(function(item) {
+                const aging = formatAgingLabel(item.dispatchAt);
+                return '<label class="flex items-start gap-3 p-4 hover:bg-slate-50 cursor-pointer"><input type="checkbox" class="ops-arrival-check mt-1 w-4 h-4" value="' + escapeHtml(item.trackingId) + '"><div class="flex-1 min-w-0"><div class="flex flex-wrap items-center justify-between gap-2"><p class="font-black text-slate-800 text-sm break-all">' + escapeHtml(item.trackingId) + '</p><span class="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-1 rounded-md shrink-0">' + Number(item.qty || 1) + ' ชิ้น</span></div><p class="text-xs text-slate-600 mt-1">' + escapeHtml(item.department || '-') + (item.recipientName ? ' • ' + escapeHtml(item.recipientName) : '') + '</p><p class="text-[10px] text-slate-400 mt-1">ส่งออกเมื่อ ' + escapeHtml(item.timeLabel || '') + (aging ? ' • In Transit — ' + escapeHtml(aging) : '') + '</p></div></label>';
+            }).join('');
+        }
+
+        function toggleAllArrivalItems(checked) { document.querySelectorAll('.ops-arrival-check').forEach(function(cb){ cb.checked = !!checked; }); }
+
+        async function confirmSelectedArrival() {
+            const selected = Array.from(document.querySelectorAll('.ops-arrival-check:checked')).map(function(cb){ return cb.value; });
+            if (!selected.length) { alert('กรุณาเลือกรายการที่ถึง BTSVP แล้วอย่างน้อย 1 รายการ'); return; }
+            if (!confirm('ยืนยันรับเอกสารที่ BTSVP จำนวน ' + selected.length + ' Tracking?')) return;
+            try {
+                const res = await apiCall('confirmArrivalAtBTSVP', { trackingIds: selected, authToken: getAuthToken() }); if (handleAuthFailure(res)) return;
+                if (!res || !res.success) { alert((res && res.message) || 'ยืนยันรับเอกสารไม่สำเร็จ'); return; }
+                showOpsResultModal({
+                    icon: 'fa-building-shield',
+                    color: 'purple',
+                    title: 'ยืนยันรับเอกสารที่ BTSVP สำเร็จ',
+                    lines: [
+                        'จำนวน ' + res.count + ' รายการ',
+                        'เวลา ' + (res.arrivedAt || ''),
+                        'รายการพร้อมเข้าสู่ขั้นตอน E-Sign'
+                    ]
+                });
+                loadOperationsControl(); loadDashboardStats();
+                esignQueueLoadedAt = 0; esignQueueAllItems = [];
+            } catch (err) { alert('ยืนยันรับเอกสารไม่สำเร็จ: ' + normalizeError(err)); }
+        }
+
+        function showOpsResultModal(opts) {
+            const modal = document.getElementById('ops-result-modal');
+            const icon = document.getElementById('ops-result-icon');
+            const title = document.getElementById('ops-result-title');
+            const message = document.getElementById('ops-result-message');
+            if (!modal) { showSystemToast(opts.lines.join(' • '), 'success'); return; }
+
+            const colorClass = opts.color === 'purple' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600';
+            if (icon) { icon.className = 'w-16 h-16 mx-auto rounded-full flex items-center justify-center text-3xl mb-4 ' + colorClass; icon.innerHTML = '<i class="fa-solid ' + opts.icon + '"></i>'; }
+            if (title) title.textContent = '✓ ' + opts.title;
+            if (message) message.textContent = opts.lines.filter(Boolean).join('\n');
+
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeOpsResultModal() {
+            document.getElementById('ops-result-modal')?.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
         }
 
         function resizeCanvas() {
@@ -4613,15 +4752,21 @@
                 ? allItems
                 : allItems.filter(function(item) { return String(item.department || '').trim() === department; });
 
-            let total = 0, pending = 0, delivered = 0, returned = 0;
+            let total = 0, pending = 0, delivered = 0, returned = 0, atAriHills = 0, inTransit = 0, awaitingEsign = 0;
             items.forEach(function(item) {
                 const s = String(item.status || '').toLowerCase();
+                const isRegistered = s === 'registered';
+                const isDispatchedLike = s === 'dispatched to btsvp' || s === 'dispatched to bts';
+                const isArrived = s === 'arrived at btsvp';
                 const isDelivered = s === 'delivered' || s === 'signed' || s === 'signed / delivered';
                 const isReturned = s === 'returned' || s === 'return';
                 total++;
                 if (isDelivered) delivered++;
                 else if (isReturned) returned++;
-                else pending++; // Registered, In Transit, Dispatched to BTS, etc.
+                else pending++; // Registered, In Transit, Arrived at BTSVP, etc.
+                if (isRegistered) atAriHills++;
+                if (isDispatchedLike) inTransit++;
+                if (isArrived) awaitingEsign++;
             });
 
             const setNum = function(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; };
@@ -4629,6 +4774,9 @@
             setNum('deptstatus-detail-pending', pending);
             setNum('deptstatus-detail-delivered', delivered);
             setNum('deptstatus-detail-returned', returned);
+            setNum('deptstatus-detail-atarihills', atAriHills);
+            setNum('deptstatus-detail-intransit', inTransit);
+            setNum('deptstatus-detail-awaitingesign', awaitingEsign);
 
             const emptyMessage = !allItems.length
                 ? 'ยังไม่มีรายการเอกสารในระบบ'
@@ -4661,7 +4809,7 @@
                         '<td class="px-4 py-3 font-bold text-slate-800 break-all">' + escapeHtml(item.trackingId || '-') + '</td>' +
                         '<td class="px-4 py-3 text-slate-600">' + escapeHtml(item.department || '-') + '</td>' +
                         '<td class="px-4 py-3 text-slate-600">' + escapeHtml(item.recipientName || '-') + '</td>' +
-                        '<td class="px-4 py-3 text-slate-600">' + escapeHtml(item.route || '-') + '</td>' +
+                        '<td class="px-4 py-3 text-slate-600">' + escapeHtml(item.currentLocation || '-') + '</td>' +
                         '<td class="px-4 py-3 text-right">' + Number(item.qty || 1) + '</td>' +
                         '<td class="px-4 py-3"><span class="text-[10px] font-bold px-2 py-1 rounded-full ' + statusBadgeClass(item.status) + '">' + escapeHtml(item.status || '-') + '</span></td>' +
                     '</tr>';
@@ -4676,7 +4824,7 @@
                             '<p class="text-sm font-black text-slate-800 break-all">' + escapeHtml(item.trackingId || '-') + '</p>' +
                             '<span class="text-[10px] font-bold px-2 py-1 rounded-full shrink-0 ' + statusBadgeClass(item.status) + '">' + escapeHtml(item.status || '-') + '</span>' +
                         '</div>' +
-                        '<p class="text-xs text-slate-500 mt-1.5">' + escapeHtml(item.department || '-') + '</p>' +
+                        '<p class="text-xs text-slate-500 mt-1.5">' + escapeHtml(item.department || '-') + ' • ' + escapeHtml(item.currentLocation || '-') + '</p>' +
                         '<p class="text-xs text-slate-700 mt-0.5">' + escapeHtml(item.recipientName || '-') + '</p>' +
                         '<p class="text-[11px] text-slate-400 mt-1">' + escapeHtml((item.route || '-') + ' • ' + Number(item.qty || 1) + ' ชิ้น') + '</p>' +
                         '<p class="text-[10px] text-slate-400 mt-0.5">' + escapeHtml(formatTrackTime(item.timestamp) || '-') + '</p>' +
@@ -4813,6 +4961,7 @@
             };
 
             setText('result-tracking-id', res.trackingId);
+            setText('result-track-location', res.currentLocation || 'Ari Hills');
             setText('result-track-dept', res.department);
             setText('result-track-route', res.route);
             setText('result-track-recipient', res.recipientName);
@@ -4860,6 +5009,7 @@
                         '</p><p class="text-slate-500 mt-1 break-words">' +
                         escapeHtml(item.detail || '') +
                         '</p>' +
+                        (item.by ? '<p class="text-[10px] text-slate-400 mt-1">By: ' + escapeHtml(item.by) + '</p>' : '') +
                         signatureBlock +
                         '</div></div>';
                 }).join('') : '<div class="text-slate-400">ยังไม่มี Timeline เพิ่มเติม</div>';
@@ -4971,6 +5121,15 @@
             setText('report-kpi-pending', reportSummaryData.summary.pending);
             setText('report-kpi-delivered', reportSummaryData.summary.delivered);
             setText('report-kpi-returned', reportSummaryData.summary.returned);
+            setText('report-kpi-pending-arihills', reportSummaryData.summary.pendingAtAriHills);
+            setText('report-kpi-intransit', reportSummaryData.summary.inTransit);
+            setText('report-kpi-awaiting-esign', reportSummaryData.summary.arrivedAwaitingEsign);
+
+            const timing = reportSummaryData.timing || {};
+            const transitEl = document.getElementById('report-kpi-avg-transit');
+            if (transitEl) transitEl.textContent = timing.avgTransitLabel || '-';
+            const waitEl = document.getElementById('report-kpi-avg-wait-signature');
+            if (waitEl) waitEl.textContent = timing.avgWaitSignatureLabel || '-';
 
             const deptBody = document.getElementById('report-dept-table-body');
             const depts = reportSummaryData.departments || [];
@@ -5143,6 +5302,16 @@
             </div>
             <button type="button" onclick="closeSignaturePreview()" class="mt-5 w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-800 transition">ปิด</button>
         </div>
+    </div>
+</div>
+
+<!-- Operations Result — Dispatch / Confirm Arrival Success Popup (Requirement 16) -->
+<div id="ops-result-modal" class="hidden fixed inset-0 z-[120] bg-slate-950/60 backdrop-blur-sm p-4 flex items-center justify-center" onclick="if(event.target===this)closeOpsResultModal()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 text-center animate-fade-in">
+        <div id="ops-result-icon" class="w-16 h-16 mx-auto rounded-full flex items-center justify-center text-3xl mb-4"></div>
+        <h3 id="ops-result-title" class="text-lg font-black text-slate-900">-</h3>
+        <p id="ops-result-message" class="text-sm text-slate-500 mt-2 whitespace-pre-line">-</p>
+        <button type="button" onclick="closeOpsResultModal()" class="mt-5 w-full bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm hover:bg-indigo-800 transition">ตกลง</button>
     </div>
 </div>
 
