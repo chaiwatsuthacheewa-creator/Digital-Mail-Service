@@ -1711,7 +1711,7 @@
         }
 
         function updateScanProgress() {
-            const qty = Math.max(1, Number(document.getElementById('keyin-qty')?.value || 1));
+            const qty = getKeyInQty();
             const text = document.getElementById('scan-progress-text'), bar = document.getElementById('scan-progress-bar'), hint = document.getElementById('scan-progress-hint');
             const percent = Math.min(100, Math.round((scanProgressCount / qty) * 100));
             if (text) text.textContent = 'สแกนแล้ว ' + scanProgressCount + ' / ' + qty + ' ชิ้น';
@@ -1723,9 +1723,20 @@
             }
         }
 
+        // v5.9.5 — Requirement: NaN-safe Qty parsing. A stray/non-numeric value in the Qty field
+        // (e.g. left over from a paste or a mobile keyboard quirk) used to turn Math.max(1,
+        // Number(value || 1)) into NaN, which then silently broke the scan-progress bar and the
+        // Save payload. This always resolves to a clamped whole number between 1 and 50.
+        function getKeyInQty() {
+            const raw = document.getElementById('keyin-qty')?.value;
+            const n = Number(raw);
+            if (!isFinite(n) || isNaN(n) || n < 1) return 1;
+            return Math.min(50, Math.round(n));
+        }
+
         function registerSuccessfulScan(detail) {
             const now = Date.now(); if (now - scanProgressLastAt < 450) return; scanProgressLastAt = now; scanProgressCount++; updateScanProgress();
-            const qty = Math.max(1, Number(document.getElementById('keyin-qty')?.value || 1));
+            const qty = getKeyInQty();
             if (scanProgressCount < qty) showSystemToast('สแกนสำเร็จ ' + scanProgressCount + '/' + qty + (detail ? ' • ' + detail : ''), 'info');
             else if (scanProgressCount === qty) { showSystemToast('สแกนครบ ' + qty + '/' + qty + ' ชิ้น พร้อมบันทึก', 'success'); if (navigator.vibrate) navigator.vibrate([80,50,80]); }
             else showSystemToast('สแกนเกินจำนวนที่เลือก (' + scanProgressCount + '/' + qty + ')', 'error');
@@ -3854,7 +3865,7 @@
                 recipientPostcode: document.getElementById('keyin-recipient-postcode').value.trim(),
                 recipientAddress: document.getElementById('keyin-recipient-address').value.trim(),
                 ocrConfidence: latestSmartCapture ? Math.round(((latestSmartCapture.tracking?.score || 0) + (latestSmartCapture.fields?.overallConfidence || 0)) / ((latestSmartCapture.tracking && latestSmartCapture.fields?.overallConfidence) ? 2 : 1)) : '',
-                qty: Number(document.getElementById('keyin-qty').value || 1),
+                qty: getKeyInQty(),
                 trackingId: document.getElementById('keyin-tracking').value.trim(),
                 remarks: document.getElementById('keyin-remarks').value.trim(), images: capturedImages.slice(), status: 'Registered', createdBy: audit.username, createdByRole: audit.role, authToken: getAuthToken()
             };
@@ -3864,7 +3875,19 @@
             const payload = collectKeyInPayload();
             if (!payload.route || !payload.department || !payload.trackingId) { showSystemToast('กรุณากรอกเส้นทาง แผนก และ Tracking / Barcode ให้ครบ','error'); return; }
             if (payload.qty < 1) { showSystemToast('จำนวนพัสดุต้องไม่น้อยกว่า 1','error'); return; }
-            if (payload.qty > 1 && scanProgressCount !== payload.qty) { showSystemToast('จำนวนการสแกนไม่ตรงกับ Quantity ('+scanProgressCount+'/'+payload.qty+')','error'); return; }
+            // v5.9.5 — Root cause fix: Qty describes how many physical pieces belong to this ONE
+            // Tracking; it is NOT a requirement to physically barcode-scan that many times. The
+            // old code HARD-BLOCKED Save whenever scanProgressCount !== qty, which meant anyone
+            // typing Qty > 1 by hand (not using the live scanner) could never save at all — the
+            // button looked "stuck" with only a small toast explaining why. This is now a
+            // dismissible confirmation, never a dead end.
+            if (payload.qty > 1 && scanProgressCount !== payload.qty) {
+                const proceed = confirm(
+                    'จำนวนที่สแกน (' + scanProgressCount + ') ไม่ตรงกับ Quantity (' + payload.qty + ')\n\n' +
+                    'ต้องการบันทึกต่อหรือไม่? (Qty ที่ระบุจะถูกบันทึกตามที่กรอกไว้)'
+                );
+                if (!proceed) return;
+            }
             const summary=document.getElementById('keyin-confirm-summary');
             if(summary) summary.innerHTML = [
               ['Tracking ID',payload.trackingId],['Recipient Name',payload.recipientName||'-'],['Department',payload.department],['Phone',payload.recipientPhone||'-'],['Route',payload.route],['Remarks',payload.remarks||'-'],['รูปพัสดุ',payload.images.length+' รูป']
