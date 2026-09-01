@@ -542,6 +542,19 @@
                             </div>
 
                             <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Document Sender / ผู้ส่งเอกสาร <span class="text-rose-500">*</span></label>
+                                <select id="keyin-sender" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                                    <option value="">-- กรุณาเลือกผู้ส่งเอกสาร --</option>
+                                    <option value="Preedapon">Preedapon</option>
+                                    <option value="Thanakorn">Thanakorn</option>
+                                    <option value="Nuthawut">Nuthawut</option>
+                                    <option value="Supakan">Supakan</option>
+                                    <option value="Auntrika">Auntrika</option>
+                                </select>
+                                <p class="text-[10px] text-slate-400 mt-1.5">ผู้ที่ส่งมอบเอกสารจริง — คนละความหมายกับบัญชีผู้ใช้ที่ Login (Created By)</p>
+                            </div>
+
+                            <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Select Department / แผนกผู้รับ <span class="text-rose-500">*</span></label>
                                 <select id="keyin-dept" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
                                     <option value="">-- กรุณาเลือกแผนก --</option>
@@ -954,10 +967,14 @@
                         <div id="track-detail-panel" class="pt-4">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5 text-xs">
                                 <div class="bg-white rounded-xl border border-slate-100 p-3 sm:col-span-2"><p class="text-slate-400 font-bold">Current Location</p><p id="result-track-location" class="font-black text-emerald-700 mt-1 text-sm">-</p></div>
+                                <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">ผู้ส่งเอกสาร / Sender</p><p id="result-track-sender" class="font-bold text-slate-700 mt-1">-</p></div>
                                 <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">แผนกผู้รับ</p><p id="result-track-dept" class="font-bold text-slate-700 mt-1">-</p></div>
                                 <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">เส้นทาง</p><p id="result-track-route" class="font-bold text-slate-700 mt-1">-</p></div>
                                 <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">ผู้รับ</p><p id="result-track-recipient" class="font-bold text-slate-700 mt-1">-</p></div>
+                                <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">เบอร์โทร</p><p id="result-track-phone" class="font-bold text-slate-700 mt-1">-</p></div>
+                                <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">รหัสไปรษณีย์</p><p id="result-track-postcode" class="font-bold text-slate-700 mt-1">-</p></div>
                                 <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">จำนวน</p><p id="result-track-qty" class="font-bold text-slate-700 mt-1">-</p></div>
+                                <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">หมายเหตุ</p><p id="result-track-remarks" class="font-bold text-slate-700 mt-1 break-words">-</p></div>
                             </div>
                             <div id="result-track-timeline" class="space-y-4 text-xs"></div>
                         </div>
@@ -1013,7 +1030,7 @@
                                 <button onclick="setReportRange('daily')" id="report-btn-daily" class="report-range-btn text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-sky-50 hover:text-sky-600 transition cursor-pointer flex items-center gap-1.5"><i class="fa-regular fa-calendar"></i> รายงานรายวัน</button>
                                 <button onclick="setReportRange('monthly')" id="report-btn-monthly" class="report-range-btn text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-sky-50 hover:text-sky-600 transition cursor-pointer flex items-center gap-1.5"><i class="fa-regular fa-calendar-days"></i> รายงานรายเดือน</button>
                                 <button onclick="setReportRange('dept')" id="report-btn-dept" class="report-range-btn text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-sky-50 hover:text-sky-600 transition cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-sitemap"></i> รายงานรายแผนก</button>
-                                <button onclick="exportReport()" class="text-xs font-bold px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-file-excel"></i> Export ข้อมูล</button>
+                                <button onclick="openExportReportModal()" class="text-xs font-bold px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition cursor-pointer flex items-center gap-1.5 min-h-[40px]"><i class="fa-solid fa-file-export"></i> Export Report</button>
                             </div>
                         </div>
 
@@ -1110,11 +1127,12 @@
                                 </div>
                             </div>
                             <div class="overflow-x-auto border border-slate-100 rounded-xl">
-                                <table class="w-full text-xs min-w-[680px]">
+                                <table class="w-full text-xs min-w-[760px]">
                                     <thead class="bg-slate-50 text-slate-500">
                                         <tr>
                                             <th class="text-left font-bold px-4 py-3">Date</th>
                                             <th class="text-left font-bold px-4 py-3">Tracking ID</th>
+                                            <th class="text-left font-bold px-4 py-3">Sender</th>
                                             <th class="text-left font-bold px-4 py-3">Department</th>
                                             <th class="text-left font-bold px-4 py-3">Recipient</th>
                                             <th class="text-right font-bold px-4 py-3">Qty</th>
@@ -1122,7 +1140,7 @@
                                         </tr>
                                     </thead>
                                     <tbody id="report-detail-table-body" class="divide-y divide-slate-100">
-                                        <tr><td colspan="6" class="text-center text-slate-400 py-8">กำลังโหลดข้อมูล...</td></tr>
+                                        <tr><td colspan="7" class="text-center text-slate-400 py-8">กำลังโหลดข้อมูล...</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -3993,6 +4011,7 @@
             const audit = getAuditUser();
             const payload = {
                 route: document.getElementById('keyin-route').value,
+                senderName: document.getElementById('keyin-sender').value,
                 department: document.getElementById('keyin-dept').value,
                 recipientName: document.getElementById('keyin-recipient-name').value.trim(),
                 // Requirement 1: Recipient Email removed from Key In UI. Sent as '' only for
@@ -4020,9 +4039,11 @@
             if (!requireGas()) return;
             const payload = collectKeyInPayload();
 
-            // Requirement 4: validation is per CURRENT ITEM only — Tracking, Route, Department
-            // present, and this item hasn't already been saved. Never gate on scan/photo counts.
+            // Requirement 4: validation is per CURRENT ITEM only — Tracking, Route, Sender,
+            // Department present, and this item hasn't already been saved. Never gate on
+            // scan/photo counts.
             if (!payload.route || !payload.department || !payload.trackingId) { showSystemToast('กรุณากรอกเส้นทาง แผนก และ Tracking / Barcode ให้ครบ','error'); return; }
+            if (!payload.senderName) { showSystemToast('กรุณาเลือกผู้ส่งเอกสาร','error'); return; }
 
             if (batchActive && batchSavedTrackingIds.includes(payload.trackingId)) {
                 showSystemToast('Tracking นี้ถูกบันทึกไปแล้วในชุดนี้: ' + payload.trackingId, 'error');
@@ -4033,7 +4054,7 @@
                 // Quantity === 1: unchanged existing single-item review-before-save flow.
                 const summary=document.getElementById('keyin-confirm-summary');
                 if(summary) summary.innerHTML = [
-                  ['Tracking ID',payload.trackingId],['Recipient Name',payload.recipientName||'-'],['Department',payload.department],['Phone',payload.recipientPhone||'-'],['Route',payload.route],['Remarks',payload.remarks||'-'],['รูปพัสดุ',payload.images.length+' รูป']
+                  ['Tracking ID',payload.trackingId],['Sender',payload.senderName||'-'],['Recipient Name',payload.recipientName||'-'],['Department',payload.department],['Phone',payload.recipientPhone||'-'],['Route',payload.route],['Remarks',payload.remarks||'-'],['รูปพัสดุ',payload.images.length+' รูป']
                 ].map(x=>'<div class="grid grid-cols-3 gap-2 py-2 border-b border-slate-100"><span class="text-xs font-bold text-slate-500">'+escapeHtml(x[0])+'</span><span class="col-span-2 text-sm text-slate-800 break-words">'+escapeHtml(String(x[1]))+'</span></div>').join('');
                 window.pendingKeyInPayload=payload; document.getElementById('keyin-confirm-modal')?.classList.remove('hidden'); document.body.classList.add('overflow-hidden');
                 return;
@@ -4136,7 +4157,7 @@
                 // Clear only after verified save + workflow refresh.
                 resetItemSpecificFields();
                 clearForm([
-                    'keyin-route','keyin-dept','keyin-recipient-name',
+                    'keyin-route','keyin-sender','keyin-dept','keyin-recipient-name',
                     'keyin-recipient-phone','keyin-recipient-postcode','keyin-recipient-address',
                     'keyin-remarks'
                 ]);
@@ -5080,7 +5101,7 @@
         function formatTrackTime(value) {
             if (!value) return '-';
             const d = new Date(value);
-            if (Number.isNaN(d.getTime())) return String(value);
+            if (Number.isNaN(d.getTime())) return '-'; // Requirement: unparseable historical Timestamp shows '-', never raw garbage
             return d.toLocaleString('th-TH', {
                 day: '2-digit', month: 'short', year: 'numeric',
                 hour: '2-digit', minute: '2-digit'
@@ -5168,10 +5189,14 @@
 
             setText('result-tracking-id', res.trackingId);
             setText('result-track-location', res.currentLocation || 'Ari Hills');
+            setText('result-track-sender', res.senderName);
             setText('result-track-dept', res.department);
             setText('result-track-route', res.route);
             setText('result-track-recipient', res.recipientName);
+            setText('result-track-phone', res.recipientPhone);
+            setText('result-track-postcode', res.recipientPostcode);
             setText('result-track-qty', String(res.qty || 1));
+            setText('result-track-remarks', res.remarks);
             setText('result-track-summary', (res.timeline || []).length + ' เหตุการณ์ • แตะเพื่อย่อ/ขยาย');
 
             const badge = document.getElementById('result-status-badge');
@@ -5180,17 +5205,29 @@
                 badge.className = 'text-xs px-3 py-1 rounded-full font-bold ' +
                     (/deliver/i.test(res.status || '') ? 'bg-emerald-100 text-emerald-800' :
                      /return/i.test(res.status || '') ? 'bg-rose-100 text-rose-800' :
+                     /arrived/i.test(res.status || '') ? 'bg-purple-100 text-purple-800' :
                      /dispatch|transit/i.test(res.status || '') ? 'bg-amber-100 text-amber-800' :
                      'bg-sky-100 text-sky-800');
             }
+
+            // Requirement 11: distinct color per event type — but always paired with visible text,
+            // never color alone, so the timeline stays readable for colorblind users too.
+            const EVENT_VISUAL = {
+                REGISTERED: { dot: 'text-sky-500', icon: 'fa-inbox', actorLabel: 'ผู้ดำเนินการ' },
+                DISPATCHED: { dot: 'text-amber-500', icon: 'fa-truck-fast', actorLabel: 'ผู้ดำเนินการ' },
+                ARRIVED: { dot: 'text-purple-500', icon: 'fa-building-shield', actorLabel: 'ผู้ยืนยัน' },
+                DELIVERED: { dot: 'text-emerald-500', icon: 'fa-circle-check', actorLabel: 'ผู้เซ็นรับ' },
+                RETURNED: { dot: 'text-rose-500', icon: 'fa-rotate-left', actorLabel: 'บันทึกโดย' }
+            };
 
             const timeline = document.getElementById('result-track-timeline');
             if (timeline) {
                 const items = Array.isArray(res.timeline) ? res.timeline.slice().reverse() : [];
                 timeline.innerHTML = items.length ? items.map(function(item, index) {
                     const active = index === 0;
+                    const visual = EVENT_VISUAL[item.type] || { dot: 'text-slate-400', icon: 'fa-circle-dot', actorLabel: 'ผู้ดำเนินการ' };
 
-                    // Requirement 3: never link/img straight to the Google Drive URL — that
+                    // Requirement 3/12: never link/img straight to the Google Drive URL — that
                     // triggers Drive's "You need access" prompt. Instead, queue this entry and
                     // load it lazily (authenticated, base64) only when the user asks to view it.
                     let signatureBlock = '';
@@ -5198,7 +5235,7 @@
                         const sigIndex = trackSignatureEntries.length;
                         trackSignatureEntries.push({
                             signatureUrl: item.signatureUrl,
-                            recipientName: res.recipientName || '',
+                            recipientName: item.signedByName || res.recipientName || '',
                             time: item.time
                         });
                         signatureBlock =
@@ -5208,14 +5245,32 @@
                             '</button>';
                     }
 
+                    // Requirement 3/10: structured, labeled detail lines per event type — rather
+                    // than a single opaque sentence — matching the required Timeline layout.
+                    let extraLines = '';
+                    if (item.type === 'REGISTERED') {
+                        extraLines =
+                            '<p class="text-[11px] text-slate-500 mt-1.5">ผู้ส่ง: ' + escapeHtml(item.senderName || '-') + '</p>' +
+                            '<p class="text-[11px] text-slate-500">ผู้รับ: ' + escapeHtml(item.recipientName || '-') + '</p>' +
+                            '<p class="text-[11px] text-slate-500">แผนก: ' + escapeHtml(item.department || '-') + '</p>';
+                    } else if (item.type === 'DELIVERED') {
+                        extraLines = '<p class="text-[11px] text-slate-500 mt-1.5">แผนก: ' + escapeHtml(item.department || '-') + '</p>';
+                    } else if (item.type === 'RETURNED') {
+                        extraLines =
+                            '<p class="text-[11px] text-slate-500 mt-1.5">ประเภท: ' + escapeHtml(item.returnType || '-') + '</p>' +
+                            '<p class="text-[11px] text-slate-500">สาเหตุ: ' + escapeHtml(item.returnReason || '-') + '</p>' +
+                            '<p class="text-[11px] text-slate-500">หมายเหตุ: ' + escapeHtml(item.returnRemarks || '-') + '</p>';
+                    }
+
                     return '<div class="flex gap-3">' +
-                        '<i class="fa-solid fa-circle ' + (active ? 'text-emerald-500' : 'text-slate-300') + ' mt-1"></i>' +
+                        '<i class="fa-solid ' + visual.icon + ' ' + (active ? visual.dot : 'text-slate-300') + ' mt-1"></i>' +
                         '<div class="min-w-0 flex-1"><p class="font-bold text-slate-700">' +
                         escapeHtml(formatTrackTime(item.time) + ' • ' + (item.title || 'อัปเดตสถานะ')) +
                         '</p><p class="text-slate-500 mt-1 break-words">' +
                         escapeHtml(item.detail || '') +
                         '</p>' +
-                        (item.by ? '<p class="text-[10px] text-slate-400 mt-1">By: ' + escapeHtml(item.by) + '</p>' : '') +
+                        extraLines +
+                        (item.by ? '<p class="text-[10px] text-slate-400 mt-1.5">' + escapeHtml(visual.actorLabel) + ': ' + escapeHtml(item.by) + '</p>' : '') +
                         signatureBlock +
                         '</div></div>';
                 }).join('') : '<div class="text-slate-400">ยังไม่มี Timeline เพิ่มเติม</div>';
@@ -5352,11 +5407,14 @@
             }
 
             const deptFilter = document.getElementById('report-filter-department');
-            if (deptFilter) {
-                const previousValue = deptFilter.value;
-                deptFilter.innerHTML = '<option value="">ทุกแผนก</option>' +
-                    depts.map(function(d) { return '<option value="' + escapeHtml(d.department) + '">' + escapeHtml(d.department) + '</option>'; }).join('');
-                if (previousValue) deptFilter.value = previousValue;
+            if (deptFilter && deptFilter.options.length <= 1) {
+                // Requirement 2: Report Department dropdown must ALWAYS show the full 24-department
+                // master list (+ "All Departments") — never only the departments that happen to
+                // have data this month. Built once from the shared SMART_DEPARTMENTS constant.
+                deptFilter.innerHTML = '<option value="">ทุกแผนก / All Departments</option>' +
+                    SMART_DEPARTMENTS.map(function(name) {
+                        return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + '</option>';
+                    }).join('');
             }
 
             renderReportDocumentDetail();
@@ -5367,7 +5425,7 @@
             if (!tbody) return;
 
             if (!reportSummaryData) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-8">กำลังโหลดข้อมูล...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-8">กำลังโหลดข้อมูล...</td></tr>';
                 return;
             }
 
@@ -5390,7 +5448,7 @@
             });
 
             if (!filtered.length) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-slate-400 py-8">ไม่พบรายการที่ตรงกับเงื่อนไข</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-8">ไม่พบรายการที่ตรงกับเงื่อนไข</td></tr>';
                 return;
             }
 
@@ -5405,6 +5463,7 @@
                 return '<tr class="hover:bg-slate-50 cursor-pointer" onclick="openTrackFromDeptStatus(\'' + escapeHtml(item.trackingId).replace(/'/g, "\\'") + '\')">' +
                     '<td class="px-4 py-2.5 text-slate-500">' + escapeHtml(formatTrackTime(item.timestamp)) + '</td>' +
                     '<td class="px-4 py-2.5 font-bold text-slate-800 break-all">' + escapeHtml(item.trackingId) + '</td>' +
+                    '<td class="px-4 py-2.5 text-slate-600">' + escapeHtml(item.senderName || '-') + '</td>' +
                     '<td class="px-4 py-2.5 text-slate-600">' + escapeHtml(item.department || '-') + '</td>' +
                     '<td class="px-4 py-2.5 text-slate-600">' + escapeHtml(item.recipientName || '-') + '</td>' +
                     '<td class="px-4 py-2.5 text-right">' + Number(item.qty || 1) + '</td>' +
@@ -5421,21 +5480,80 @@
             if(label) label.innerText='กำลังแสดง: '+(labels[range]||range);
         }
 
-        function exportReport() {
+        function openExportReportModal() {
+            const periodLabel = document.getElementById('export-report-period-label');
+            if (periodLabel) periodLabel.textContent = formatMonthLabelJs(reportSelectedMonth, reportSelectedYear);
+
+            const deptSelect = document.getElementById('export-report-department');
+            if (deptSelect && deptSelect.options.length <= 1) {
+                deptSelect.innerHTML = '<option value="__ALL__">ทุกแผนก / All Departments</option>' +
+                    SMART_DEPARTMENTS.map(function(name) {
+                        return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + '</option>';
+                    }).join('');
+            }
+
+            const status = document.getElementById('export-report-status');
+            if (status) status.textContent = '';
+
+            document.getElementById('export-report-modal')?.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeExportReportModal() {
+            document.getElementById('export-report-modal')?.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        function formatMonthLabelJs(month, year) {
+            const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const idx = Math.max(1, Math.min(12, Number(month) || 1)) - 1;
+            return names[idx] + ' ' + year;
+        }
+
+        async function runExportReport(format) {
             if (!requireGas()) return;
-            apiCall('exportReportData', {
-                range: currentReportRange,
-                authToken: getAuthToken()
-            })
-                .then(function(res) {
-                    if (handleAuthFailure(res)) return;
-                    const fileUrl=typeof res==='string'?res:res&&(res.url||res.fileUrl);
-                    if(fileUrl) window.open(fileUrl,'_blank');
-                    else alert((res&&res.message)||'Export ไม่สำเร็จ');
-                })
-                .catch(function(err) {
-                    alert('Export ไม่สำเร็จ: '+normalizeError(err));
+
+            const pdfBtn = document.getElementById('export-report-pdf-btn');
+            const excelBtn = document.getElementById('export-report-excel-btn');
+            const status = document.getElementById('export-report-status');
+            const department = document.getElementById('export-report-department')?.value || '__ALL__';
+
+            // Requirement — EXPORT LOADING UX: disable both buttons to prevent double-click/double-tap
+            // creating duplicate files while generation is in progress.
+            [pdfBtn, excelBtn].forEach(function(btn) { if (btn) { btn.disabled = true; btn.classList.add('opacity-50','cursor-wait'); } });
+            if (status) status.textContent = format === 'pdf' ? 'กำลังสร้าง PDF...' : 'กำลังสร้าง Excel...';
+
+            try {
+                const action = format === 'pdf' ? 'exportReportPdf' : 'exportReportData';
+                const res = await apiCall(action, {
+                    month: reportSelectedMonth,
+                    year: reportSelectedYear,
+                    department: department,
+                    authToken: getAuthToken()
                 });
+
+                if (handleAuthFailure(res)) return;
+
+                if (res && res.code === 'NO_DATA') {
+                    if (status) { status.textContent = res.message; status.classList.add('text-rose-500'); }
+                    return;
+                }
+
+                const fileUrl = res && (res.url || res.fileUrl);
+                if (!res || !res.success || !fileUrl) {
+                    if (status) { status.textContent = (res && res.message) || 'Export ไม่สำเร็จ'; status.classList.add('text-rose-500'); }
+                    return;
+                }
+
+                if (status) { status.textContent = '✓ สร้างรายงานสำเร็จ'; status.classList.remove('text-rose-500'); status.classList.add('text-emerald-600'); }
+                window.open(fileUrl, '_blank');
+                setTimeout(closeExportReportModal, 900);
+
+            } catch (err) {
+                if (status) { status.textContent = 'Export ไม่สำเร็จ: ' + normalizeError(err); status.classList.add('text-rose-500'); }
+            } finally {
+                [pdfBtn, excelBtn].forEach(function(btn) { if (btn) { btn.disabled = false; btn.classList.remove('opacity-50','cursor-wait'); } });
+            }
         }
 
         // Professional keyboard support for Track & Trace.
@@ -5518,6 +5636,38 @@
                 <p class="text-slate-600"><span class="text-slate-400 font-bold">วันที่:</span> <span id="signature-preview-time">-</span></p>
             </div>
             <button type="button" onclick="closeSignaturePreview()" class="mt-5 w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-800 transition">ปิด</button>
+        </div>
+    </div>
+</div>
+
+<!-- Export Report Modal — Requirement 3: Period / Department / Format, before PDF or Excel generation -->
+<div id="export-report-modal" class="hidden fixed inset-0 z-[125] bg-slate-950/60 backdrop-blur-sm p-4 flex items-center justify-center sm:items-center items-end" onclick="if(event.target===this)closeExportReportModal()">
+    <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-5 md:p-6" style="max-width: 92vw;">
+        <div class="flex items-center justify-between gap-3 mb-4">
+            <h3 class="text-base font-black text-slate-900">Export Report</h3>
+            <button type="button" onclick="closeExportReportModal()" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center shrink-0"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Period</label>
+                <p id="export-report-period-label" class="text-sm font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">-</p>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Department</label>
+                <select id="export-report-department" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="__ALL__">ทุกแผนก / All Departments</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Format</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="runExportReport('pdf')" id="export-report-pdf-btn" class="min-h-[44px] flex items-center justify-center gap-2 border border-rose-200 bg-rose-50 text-rose-700 font-bold text-sm rounded-xl hover:bg-rose-100 transition"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+                    <button type="button" onclick="runExportReport('excel')" id="export-report-excel-btn" class="min-h-[44px] flex items-center justify-center gap-2 border border-emerald-200 bg-emerald-50 text-emerald-700 font-bold text-sm rounded-xl hover:bg-emerald-100 transition"><i class="fa-solid fa-file-excel"></i> Export Excel</button>
+                </div>
+            </div>
+            <p id="export-report-status" class="text-xs text-slate-400 text-center min-h-[16px]"></p>
+            <button type="button" onclick="closeExportReportModal()" class="w-full border border-slate-200 text-slate-600 py-3 rounded-xl font-bold text-sm hover:bg-slate-50 transition min-h-[44px]">Cancel</button>
         </div>
     </div>
 </div>
