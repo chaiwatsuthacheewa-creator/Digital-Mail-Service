@@ -213,10 +213,10 @@
 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Username / Corporate Email</label>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Username</label>
                         <div class="relative">
                             <i class="fa-regular fa-envelope absolute left-4 top-3.5 text-slate-400"></i>
-                            <input type="text" id="login-username" placeholder="name@ntl.co.th" class="w-full bg-slate-800/80 border border-slate-700 text-white pl-11 p-3 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all font-medium">
+                            <input type="text" id="login-username" placeholder="Name" class="w-full bg-slate-800/80 border border-slate-700 text-white pl-11 p-3 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all font-medium">
                         </div>
                     </div>
                     <div>
@@ -300,8 +300,8 @@
                             <i class="fa-regular fa-user"></i>
                         </div>
                         <div>
-                            <p class="text-xs font-bold text-white leading-tight" id="sidebar-user-role">Admin</p>
-                            <p class="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Active session</p>
+                            <p class="text-xs font-bold text-white leading-tight" id="sidebar-user-name">Admin</p>
+                            <p class="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> <span id="sidebar-user-role-label">Active session</span></p>
                         </div>
                     </div>
                     <button onclick="handleLogout()" class="text-slate-400 hover:text-rose-400 transition-colors p-2 rounded-lg hover:bg-slate-800" title="Logout">
@@ -327,7 +327,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <div class="flex items-center gap-1.5 text-xs bg-indigo-950/80 border border-indigo-700/50 px-2.5 py-1.5 rounded-lg text-indigo-200 font-bold flex-shrink-0">
-                        <i class="fa-solid fa-shield-halved text-indigo-400"></i> <span id="mobile-user-role">Admin</span>
+                        <i class="fa-solid fa-shield-halved text-indigo-400"></i> <span id="mobile-user-name">Admin</span>
                     </div>
                     <button onclick="toggleTheme()" class="theme-toggle-btn text-slate-400 p-2 hover:text-indigo-300" title="Toggle theme">
                         <i class="fa-solid fa-moon" id="theme-icon-mobile"></i>
@@ -1636,10 +1636,20 @@
         }
 
         function showMainApp(role) {
-            const sideRole = document.getElementById('sidebar-user-role');
-            const mobileRole = document.getElementById('mobile-user-role');
-            if (sideRole) sideRole.innerText = role;
-            if (mobileRole) mobileRole.innerText = role;
+            // Requirement 2: Username ≠ Role. currentUser (set by saveSession() before this is
+            // ever called, both on fresh Login and on Session Restore) already carries
+            // username/displayName — no extra API call needed to show it.
+            const user = currentUser || getSession() || {};
+            const displayName = user.displayName || user.username || 'User';
+
+            const sideName = document.getElementById('sidebar-user-name');
+            const sideRoleLabel = document.getElementById('sidebar-user-role-label');
+            const mobileName = document.getElementById('mobile-user-name');
+
+            if (sideName) sideName.innerText = displayName;
+            if (sideRoleLabel) sideRoleLabel.innerText = (role ? role + ' • ' : '') + 'Active session';
+            if (mobileName) mobileName.innerText = displayName;
+
             const loginView = document.getElementById('view-login');
             if (loginView) {
                 loginView.classList.add('hidden');
@@ -1647,6 +1657,7 @@
             }
             hideStartupView();
             document.getElementById('view-app').classList.remove('hidden');
+            // Permission logic is untouched — still keyed on Role, never Username.
             applyRoleVisibility(role);
             navigateTo('home');
             loadDashboardStats();
@@ -5439,14 +5450,31 @@
                     return;
                 }
 
-                const fileUrl = res && (res.url || res.fileUrl);
-                if (!res || !res.success || !fileUrl) {
+                if (!res || !res.success) {
                     if (status) { status.textContent = (res && res.message) || 'Export ไม่สำเร็จ'; status.classList.add('text-rose-500'); }
                     return;
                 }
 
+                if (format === 'pdf') {
+                    // Requirement 4: PDF Content comes back as Base64 in the response itself —
+                    // never a Drive URL — so a user with no Google Drive permission on this
+                    // account never hits "Request Access". The Drive file stays fully Private.
+                    if (!res.base64) {
+                        if (status) { status.textContent = 'Export PDF ไม่สำเร็จ: ไม่พบข้อมูลไฟล์'; status.classList.add('text-rose-500'); }
+                        return;
+                    }
+                    openBase64FileInBrowser(res.base64, res.mimeType || 'application/pdf', res.fileName || 'report.pdf');
+                } else {
+                    // Excel export path is unchanged this round (out of scope) — still Drive-URL based.
+                    const fileUrl = res.url || res.fileUrl;
+                    if (!fileUrl) {
+                        if (status) { status.textContent = 'Export ไม่สำเร็จ'; status.classList.add('text-rose-500'); }
+                        return;
+                    }
+                    window.open(fileUrl, '_blank');
+                }
+
                 if (status) { status.textContent = '✓ สร้างรายงานสำเร็จ'; status.classList.remove('text-rose-500'); status.classList.add('text-emerald-600'); }
-                window.open(fileUrl, '_blank');
                 setTimeout(closeExportReportModal, 900);
 
             } catch (err) {
@@ -5454,6 +5482,35 @@
             } finally {
                 [pdfBtn, excelBtn].forEach(function(btn) { if (btn) { btn.disabled = false; btn.classList.remove('opacity-50','cursor-wait'); } });
             }
+        }
+
+        // Requirement 4: Base64 → Blob → Object URL, opened directly in the browser — no Google
+        // Drive URL is ever touched by the Frontend, so no "Request Access" prompt is possible
+        // for a user who isn't a Drive collaborator on the owning account.
+        function openBase64FileInBrowser(base64, mimeType, fileName) {
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            const blob = new Blob([bytes], { type: mimeType || 'application/octet-stream' });
+            const blobUrl = URL.createObjectURL(blob);
+
+            const opened = window.open(blobUrl, '_blank');
+            // Some mobile browsers (notably iPad/iPhone Safari) block window.open for blob: URLs
+            // or fail to render them as a new tab — fall back to a forced <a download> click,
+            // which works reliably across devices.
+            if (!opened) {
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = fileName || 'report.pdf';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            }
+
+            // Give the browser/tab time to actually load the Blob before releasing it.
+            setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 60000);
         }
 
         // Professional keyboard support for Track & Trace.
