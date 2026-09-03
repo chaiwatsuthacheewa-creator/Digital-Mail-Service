@@ -538,23 +538,17 @@
 
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Select Route / เส้นทาง <span class="text-rose-500">*</span></label>
-                                <select id="keyin-route" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                                <select id="keyin-route" onchange="onKeyInRouteChange()" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
                                     <option value="">-- กรุณาเลือกเส้นทาง --</option>
-                                    <option value="Ari Hill">Ari Hill</option>
-                                    <option value="BTS Tower">BTS Tower</option>
+                                    <option value="Ari Hills">Ari Hills</option>
+                                    <option value="BTSVP">BTSVP</option>
                                 </select>
+                                <p id="keyin-route-hint" class="text-[10px] text-slate-400 mt-1.5">Ari Hills = นำส่งภายในอาคาร พร้อมเซ็นรับทันทีหลัง Key In • BTSVP = ต้องผ่าน Operations Control (Dispatch → Confirm Arrival) ก่อนจึงเซ็นรับได้</p>
                             </div>
 
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Document Sender / ผู้ส่งเอกสาร <span class="text-rose-500">*</span></label>
-                                <select id="keyin-sender" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-                                    <option value="">-- กรุณาเลือกผู้ส่งเอกสาร --</option>
-                                    <option value="Preedapon">Preedapon</option>
-                                    <option value="Thanakorn">Thanakorn</option>
-                                    <option value="Nuthawut">Nuthawut</option>
-                                    <option value="Supakan">Supakan</option>
-                                    <option value="Auntrika">Auntrika</option>
-                                </select>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Document Sender / ชื่อผู้ส่งเอกสาร <span class="text-rose-500">*</span></label>
+                                <input type="text" id="keyin-sender" placeholder="ระบุชื่อผู้ส่งเอกสาร" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
                                 <p class="text-[10px] text-slate-400 mt-1.5">ผู้ที่ส่งมอบเอกสารจริง — คนละความหมายกับบัญชีผู้ใช้ที่ Login (Created By)</p>
                             </div>
 
@@ -587,48 +581,6 @@
                                     <option value="A&D">A&D</option>
                                     <option value="HeyGoody">HeyGoody</option>
                                 </select>
-                            </div>
-
-                            <div class="relative">
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Recipient Name / ผู้รับเอกสาร</label>
-                                <div class="relative">
-                                    <i class="fa-regular fa-id-card absolute left-4 top-3.5 text-slate-400"></i>
-                                    <input type="text" id="keyin-recipient-name" autocomplete="off"
-                                        placeholder="พิมพ์ชื่อผู้รับ, อีเมล, แผนก หรือรหัสพนักงาน..."
-                                        oninput="onRecipientNameInput()"
-                                        onfocus="onRecipientNameInput()"
-                                        onblur="scheduleHideRecipientDropdown()"
-                                        class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-                                </div>
-                                <div id="keyin-recipient-dropdown"
-                                    class="hidden absolute z-30 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl max-h-64 overflow-y-auto">
-                                </div>
-                                <p class="text-[10px] text-slate-400 mt-1.5">เลือกจากรายชื่อ RecipientMaster หรือพิมพ์ชื่อเองได้ตามปกติ • สามารถแก้ไขได้หลังเลือก</p>
-                            </div>
-
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Phone / เบอร์โทร</label>
-                                    <div class="relative">
-                                        <i class="fa-solid fa-phone absolute left-4 top-3.5 text-slate-400"></i>
-                                        <input type="text" id="keyin-recipient-phone" placeholder="ระบบจะอ่านจากหน้าพัสดุ" inputmode="tel"
-                                            class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Postcode / รหัสไปรษณีย์</label>
-                                    <div class="relative">
-                                        <i class="fa-solid fa-location-dot absolute left-4 top-3.5 text-slate-400"></i>
-                                        <input type="text" id="keyin-recipient-postcode" placeholder="ระบบจะอ่านจากหน้าพัสดุ" inputmode="numeric"
-                                            class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Recipient Address / ที่อยู่ผู้รับ</label>
-                                <textarea id="keyin-recipient-address" rows="3" placeholder="ระบบจะสกัดที่อยู่จากหน้าพัสดุให้อัตโนมัติ"
-                                    class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"></textarea>
                             </div>
 
                             <div>
@@ -731,14 +683,10 @@
                                             <p id="smart-tracking-value" class="text-xs font-black text-slate-800 break-all mt-1">ยังไม่พบ</p>
                                         </div>
                                         <div class="rounded-xl bg-slate-50 border border-slate-100 p-3">
-                                            <div class="flex justify-between gap-2"><span class="text-[10px] uppercase font-bold text-slate-400">Recipient</span><span id="smart-name-confidence" class="text-[10px] font-bold text-slate-400">-</span></div>
-                                            <p id="smart-name-value" class="text-xs font-black text-slate-800 break-words mt-1">ยังไม่พบ</p>
+                                            <span class="text-[10px] uppercase font-bold text-slate-400">Route</span>
+                                            <p id="smart-route-value" class="text-xs font-bold text-slate-700 mt-1">-</p>
                                         </div>
-                                        <div class="rounded-xl bg-slate-50 border border-slate-100 p-3">
-                                            <span class="text-[10px] uppercase font-bold text-slate-400">Phone</span>
-                                            <p id="smart-phone-value" class="text-xs font-bold text-slate-700 mt-1">-</p>
-                                        </div>
-                                        <div class="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                                        <div class="rounded-xl bg-slate-50 border border-slate-100 p-3 sm:col-span-2">
                                             <span class="text-[10px] uppercase font-bold text-slate-400">Department</span>
                                             <p id="smart-department-value" class="text-xs font-bold text-slate-700 mt-1">-</p>
                                         </div>
@@ -781,7 +729,8 @@
                             <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-lg"><i class="fa-solid fa-file-signature"></i></div>
                             <div>
                                 <h3 class="text-lg font-bold text-slate-800">E-Signature รับพัสดุแบบกลุ่ม</h3>
-                                <p class="text-xs text-slate-500">รายการพัสดุที่ BTSVP ยืนยันรับเข้าแล้วและรอผู้รับเซ็น — เลือกแผนก → ตรวจรายการ → เซ็นรับครั้งเดียวสำหรับหลาย Tracking</p>
+                                <p class="text-xs text-slate-500">รายการเอกสารที่พร้อมสำหรับการเซ็นรับ — เลือกแผนก → ตรวจรายการ → เซ็นรับครั้งเดียวสำหรับหลาย Tracking</p>
+                                <p class="text-[10px] text-slate-400 mt-1">Ari Hills: เอกสารภายในอาคารพร้อมเซ็นหลัง Key In • BTSVP: เอกสารพร้อมเซ็นหลังยืนยันรับเข้า BTSVP</p>
                             </div>
                         </div>
                         <span id="esign-pending-badge" class="text-xs font-bold text-purple-700 bg-purple-50 border border-purple-100 px-3 py-1.5 rounded-full">รอรับ 0 รายการ</span>
@@ -1746,7 +1695,6 @@
                 if (signaturePad) setTimeout(resizeCanvas, 100);
                 loadEsignDepartments();
             }
-            if (pageId === 'keyin') loadRecipientMaster();
             if (pageId === 'deptstatus') loadDepartmentStatusMonitor();
             if (pageId === 'dashboard') loadDashboardStats();
             if (pageId === 'operations') loadOperationsControl();
@@ -2219,12 +2167,10 @@
             options = options || {};
             const existingTracking = String(options.existingTracking || '').trim();
             let trackingCandidates = [];
+            let recipientOcrPromise = null;
 
             const original = await loadSmartImage(dataUrl);
             const variants = await buildSmartImageVariants(original);
-
-            // Start recipient OCR immediately. Barcode decoding continues in parallel.
-            const recipientOcrPromise = runPreferredRecipientOcr(dataUrl, variants);
 
             if (options.skipTracking && existingTracking) {
                 trackingCandidates = [{
@@ -2232,13 +2178,18 @@
                     score: 99,
                     source: 'Barcode'
                 }];
-                setScannerStatus('Tracking ยืนยันแล้ว • กำลังอ่านชื่อและข้อมูลผู้รับ…', 'info');
+                setScannerStatus('Tracking ยืนยันแล้ว • กำลังตรวจแผนก/เส้นทางจากภาพ…', 'info');
+                // Tracking is already confirmed — a light OCR pass is still worth it only to
+                // auto-fill Department/Route (Recipient data no longer exists at all).
+                recipientOcrPromise = runPreferredRecipientOcr(dataUrl, variants);
             } else {
                 setScannerStatus('กำลังตรวจ Barcode / QR ในภาพ…', 'info');
 
                 const barcodeCandidates = await scanBarcodeCandidatesFromVariants(variants);
                 trackingCandidates = rankBarcodeCandidates(barcodeCandidates)
                     .filter(isValidTrackingCandidate);
+
+                const barcodeFound = trackingCandidates.some(function(c) { return c.source === 'Barcode'; });
 
                 if (!trackingCandidates.length) {
                     setScannerStatus('ยังไม่พบ Barcode • กำลังอ่านเลข Tracking เฉพาะบริเวณฉลาก…', 'info');
@@ -2271,9 +2222,19 @@
                     const input = document.getElementById('keyin-tracking');
                     if (input) input.dataset.source = top.source;
                 }
+
+                // Requirement — IMPORTANT PERFORMANCE TARGET: once Barcode has already decoded
+                // the Tracking, do NOT run the general Tesseract tha+eng pass at all — that pass
+                // only ever existed to extract Recipient/Phone/Postcode/Address, which are gone.
+                // Only run it when Barcode failed, since the user is already on the slower
+                // Tracking-OCR-fallback path regardless, so a Department/Route auto-fill pass
+                // there still earns its cost.
+                if (!barcodeFound) {
+                    recipientOcrPromise = runPreferredRecipientOcr(dataUrl, variants);
+                }
             }
 
-            const ocrBest = await recipientOcrPromise;
+            const ocrBest = recipientOcrPromise ? await recipientOcrPromise : null;
             const text = ocrBest ? ocrBest.text : '';
             latestOcrText = text;
 
@@ -2299,17 +2260,15 @@
 
             const hasUsefulData = !!(
                 topTracking ||
-                extracted.recipientName ||
-                extracted.phone ||
-                extracted.address ||
-                extracted.department
+                extracted.department ||
+                extracted.route
             );
 
             if (hasUsefulData) {
                 setScannerStatus(
                     topTracking
                         ? 'วิเคราะห์สำเร็จ • Tracking: ' + topTracking.value + ' • ตรวจข้อมูลที่ไฮไลต์ก่อนบันทึก'
-                        : 'อ่านข้อมูลผู้รับแล้ว แต่ยังไม่ยืนยัน Tracking • กรุณาสแกน Barcode ในกรอบอีกครั้ง',
+                        : 'อ่านข้อมูลแล้ว แต่ยังไม่ยืนยัน Tracking • กรุณาสแกน Barcode ในกรอบอีกครั้ง',
                     topTracking ? 'success' : 'info'
                 );
             } else {
@@ -2933,158 +2892,20 @@
             return Math.max(0, Math.min(100, score));
         }
 
-        function normalizeThaiPhone(value) {
-            let digits = String(value || '').replace(/\D/g, '');
-            if (digits.startsWith('66') && digits.length >= 11) digits = '0' + digits.slice(2);
-            if ((digits.length === 9 || digits.length === 10) && digits.startsWith('0')) return digits;
-            return '';
-        }
-
+        // v5.9.10 — Requirement: Recipient Name/Phone/Postcode/Address OCR extraction removed
+        // entirely (not just hidden) — this used to run an expensive per-line Thai-text scoring
+        // pass on every single image even after a Barcode/QR Tracking was already found. Now this
+        // only ever detects Department (alias match) and Route (keyword match) — both cheap,
+        // single-pass regex checks — keeping Barcode → Tracking the fast, primary path.
         function extractParcelFields(text, ocrLines) {
             const raw = String(text || '');
 
-            const lineObjects = (ocrLines && ocrLines.length)
-                ? ocrLines
-                    .map(function(x) {
-                        return {
-                            text: String(x.text || '').replace(/\s+/g, ' ').trim(),
-                            confidence: Number(x.confidence || 0)
-                        };
-                    })
-                    .filter(x => x.text)
-                : raw.split(/\r?\n/)
-                    .map(x => ({ text: x.replace(/\s+/g, ' ').trim(), confidence: 50 }))
-                    .filter(x => x.text);
-
-            const lines = lineObjects.map(x => x.text);
-
             const result = {
-                recipientName: '',
-                recipientNameConfidence: 0,
-                phone: '',
-                postcode: '',
-                address: '',
                 department: '',
                 departmentConfidence: 0,
                 route: '',
                 overallConfidence: 0
             };
-
-            // PHONE
-            const phoneMatches = raw.match(/(?:\+66[\s\-]?\d{1,2}[\s\-]?\d{3,4}[\s\-]?\d{4}|0\d[\s\-]?\d{3,4}[\s\-]?\d{4})/g) || [];
-            for (const match of phoneMatches) {
-                const phone = normalizeThaiPhone(match);
-                if (phone) {
-                    result.phone = phone;
-                    break;
-                }
-            }
-
-            // POSTCODE
-            const postcodes = (raw.match(/(?<!\d)\d{5}(?!\d)/g) || [])
-                .filter(x => !/^0{5}$/.test(x));
-            if (postcodes.length) result.postcode = postcodes[postcodes.length - 1];
-
-            // RECIPIENT SECTION
-            let toIndex = lines.findIndex(line =>
-                /ชื่อและที่อยู่ผู้รับ|(?:^|\s)TO(?:\s|$|\/)|ผู้รับ|recipient/i.test(line)
-            );
-
-            const senderIndex = lines.findIndex(line =>
-                /ชื่อและที่อยู่ผู้ฝาก|(?:^|\s)FROM(?:\s|$|\/)|ผู้ฝาก|sender/i.test(line)
-            );
-
-            let targetObjects = lineObjects;
-            let hasExplicitRecipientSection = false;
-
-            if (toIndex >= 0) {
-                targetObjects = lineObjects.slice(toIndex + 1, Math.min(lineObjects.length, toIndex + 8));
-                hasExplicitRecipientSection = true;
-            } else if (senderIndex >= 0 && senderIndex < Math.floor(lineObjects.length / 2)) {
-                targetObjects = lineObjects.slice(Math.floor(lineObjects.length / 2));
-            }
-
-            const noise = /(THAILAND|POSTAGE|\bKG\b|BARCODE|tracking|track|waybill|postcode|รหัสไปรษณีย์|โทร|tel|phone|ผู้ฝาก|FROM|ผู้รับ|\/TO|EMS|ลงทะเบียน|น้ำหนัก)/i;
-
-            const nameCandidates = targetObjects.map(function(obj, index) {
-                const clean = obj.text
-                    .replace(/[|_=~]+/g, ' ')
-                    .replace(/\s+/g, ' ')
-                    .trim();
-
-                const lineConfidence = Number(obj.confidence || 0);
-                let score = lineConfidence * 0.45;
-
-                const thai = (clean.match(/[ก-๙]/g) || []).length;
-                const latin = (clean.match(/[A-Za-z]/g) || []).length;
-                const digits = (clean.match(/\d/g) || []).length;
-                const letters = thai + latin;
-                const weird = (clean.match(/[^\sA-Za-z0-9ก-๙().,&\/\-]/g) || []).length;
-                const charCount = Math.max(1, clean.replace(/\s/g,'').length);
-
-                if (noise.test(clean)) score -= 35;
-                if (digits > 3) score -= 24;
-                if (thai >= 5) score += 18;
-                if (latin >= 5 && thai === 0) score += 8;
-                if (clean.split(' ').length >= 2) score += 8;
-                if (clean.length >= 6 && clean.length <= 75) score += 7;
-                if (hasExplicitRecipientSection) score += 12;
-
-                // Mixed Thai + random Latin fragments often indicate garbled OCR.
-                if (thai >= 4 && latin >= 3 && latin / Math.max(1, letters) > 0.22) score -= 20;
-                if (weird / charCount > 0.06) score -= 25;
-                if (lineConfidence < 40) score -= 25;
-
-                score += Math.max(0, 6 - index);
-
-                return {
-                    value: clean,
-                    score: score,
-                    confidence: lineConfidence
-                };
-            })
-            .filter(x => x.value && x.score >= 45)
-            .sort((a,b) => b.score - a.score);
-
-            if (nameCandidates.length) {
-                const bestName = nameCandidates[0];
-
-                // Auto-fill recipient only when quality is genuinely strong.
-                const finalConfidence = Math.max(
-                    0,
-                    Math.min(96, Math.round(bestName.score))
-                );
-
-                if (finalConfidence >= 72) {
-                    result.recipientName = bestName.value;
-                    result.recipientNameConfidence = finalConfidence;
-                }
-            }
-
-            // ADDRESS
-            const addressLines = targetObjects
-                .filter(function(obj) {
-                    const clean = obj.text.trim();
-                    if (!clean || clean === result.recipientName) return false;
-                    if (Number(obj.confidence || 0) < 38) return false;
-                    if (noise.test(clean)) return false;
-
-                    const weird = (clean.match(/[^\sA-Za-z0-9ก-๙().,&\/\-]/g) || []).length;
-                    if (weird / Math.max(1, clean.length) > 0.08) return false;
-
-                    return (
-                        /[ก-๙]/.test(clean) ||
-                        /(road|rd\.|soi|street|bangkok|กรุงเทพ|ถนน|ซอย|แขวง|เขต|ตำบล|อำเภอ|จังหวัด|หมู่|เลขที่|ชั้น|อาคาร)/i.test(clean)
-                    );
-                })
-                .map(x => x.text)
-                .slice(0, 4);
-
-            result.address = addressLines.join(' ').replace(/\s+/g, ' ').trim();
-
-            if (result.postcode && result.address && !result.address.includes(result.postcode)) {
-                result.address += ' ' + result.postcode;
-            }
 
             // DEPARTMENT
             const normalizedRaw = raw.toLowerCase().replace(/\s+/g, '');
@@ -3137,17 +2958,14 @@
                 result.departmentConfidence = deptBest.score;
             }
 
-            // ROUTE
-            if (/BTS\s*TOWER|บีทีเอส\s*ทาวเวอร์/i.test(raw)) {
-                result.route = 'BTS Tower';
-            } else if (/ARI\s*HILL|ARI\s*HILLS|อารีย์\s*ฮิล/i.test(raw)) {
-                result.route = 'Ari Hill';
+            // ROUTE — canonical values match the Key In dropdown ("Ari Hills" / "BTSVP").
+            if (/BTS\s*TOWER|BTSVP|บีทีเอส\s*ทาวเวอร์/i.test(raw)) {
+                result.route = 'BTSVP';
+            } else if (/ARI\s*HILL(S)?|อารีย์\s*ฮิล/i.test(raw)) {
+                result.route = 'Ari Hills';
             }
 
             const conf = [];
-            if (result.recipientName) conf.push(result.recipientNameConfidence);
-            if (result.phone) conf.push(90);
-            if (result.postcode) conf.push(88);
             if (result.department) conf.push(result.departmentConfidence);
 
             result.overallConfidence = conf.length
@@ -3170,32 +2988,15 @@
             }
         }
 
+        // v5.9.10 — Requirement: Recipient Name/Phone/Postcode/Address removed from Key In —
+        // Smart Capture now only ever auto-fills Department/Route, never runs recipient OCR at all
+        // (see extractParcelFields()/analyzeEvidenceOcr() for the matching Backend-side reduction).
         function applySmartParcelFields(fields) {
             if (!fields) return;
 
-            const name = document.getElementById('keyin-recipient-name');
-            const phone = document.getElementById('keyin-recipient-phone');
-            const postcode = document.getElementById('keyin-recipient-postcode');
-            const address = document.getElementById('keyin-recipient-address');
             const dept = document.getElementById('keyin-dept');
             const route = document.getElementById('keyin-route');
 
-            if (fields.recipientName && name && !name.value.trim()) {
-                name.value = fields.recipientName;
-                setFieldSmartState('keyin-recipient-name', fields.recipientNameConfidence);
-            }
-            if (fields.phone && phone && !phone.value.trim()) {
-                phone.value = fields.phone;
-                setFieldSmartState('keyin-recipient-phone', 90);
-            }
-            if (fields.postcode && postcode && !postcode.value.trim()) {
-                postcode.value = fields.postcode;
-                setFieldSmartState('keyin-recipient-postcode', 88);
-            }
-            if (fields.address && address && !address.value.trim()) {
-                address.value = fields.address;
-                setFieldSmartState('keyin-recipient-address', fields.recipientNameConfidence >= 80 ? 82 : 65);
-            }
             if (fields.department && dept && !dept.value) {
                 dept.value = fields.department;
                 setFieldSmartState('keyin-dept', fields.departmentConfidence);
@@ -3203,6 +3004,7 @@
             if (fields.route && route && !route.value) {
                 route.value = fields.route;
                 setFieldSmartState('keyin-route', 92);
+                onKeyInRouteChange();
             }
 
             setupOcrTapToFill();
@@ -3225,14 +3027,11 @@
                     ? tracking.value + (tracking.source ? ' • ' + tracking.source : '')
                     : 'ยังไม่พบ Tracking ที่น่าเชื่อถือ'
             );
-            setText('smart-name-value', f.recipientName || 'ยังไม่พบชื่อที่มั่นใจเพียงพอ');
-            setText('smart-phone-value', f.phone || '-');
+            setText('smart-route-value', f.route || '-');
             setText('smart-department-value', f.department || '-');
 
             const tc = document.getElementById('smart-tracking-confidence');
-            const nc = document.getElementById('smart-name-confidence');
             if (tc) tc.textContent = tracking ? Math.round(tracking.score) + '%' : '-';
-            if (nc) nc.textContent = f.recipientName ? Math.round(f.recipientNameConfidence || 0) + '%' : '-';
 
             const vals = [];
             if (tracking) vals.push(tracking.score);
@@ -3248,10 +3047,10 @@
                      'bg-rose-100 text-rose-700');
             }
 
+            // Requirement: review prompt now only cares whether Tracking itself is confident —
+            // Recipient/Phone/Postcode/Address no longer factor into "needs review" at all.
             const needsReview = (
                 !tracking ||
-                !f.recipientName ||
-                (f.recipientName && f.recipientNameConfidence < 80) ||
                 (data?.trackingCandidates?.length > 1 && data.trackingCandidates[1].score >= (tracking?.score || 0) - 10)
             );
 
@@ -3409,8 +3208,7 @@
             const summary = document.getElementById('ocr-summary');
             if (!summary) return;
             const tracking = document.getElementById('keyin-tracking')?.value || '-';
-            const name = document.getElementById('keyin-recipient-name')?.value || '-';
-            summary.textContent = `Tracking: ${tracking} • ชื่อ: ${name}`;
+            summary.textContent = `Tracking: ${tracking}`;
         }
 
         function toggleOcrRawText() {
@@ -3418,12 +3216,11 @@
         }
 
 
+        // v5.9.10 — Requirement: OCR now targets Tracking ID only (plus Department/Route tap-to-fill
+        // assist) — Recipient Name/Phone/Postcode/Address extraction was removed entirely along
+        // with the fields themselves, so general Thai-text OCR no longer runs on every image.
         const OCR_FIELD_CONFIG = {
             'keyin-tracking': { label: 'Tracking ID', type: 'tracking' },
-            'keyin-recipient-name': { label: 'Recipient Name / ชื่อ-นามสกุล', type: 'name' },
-            'keyin-recipient-phone': { label: 'Phone / เบอร์โทร', type: 'phone' },
-            'keyin-recipient-postcode': { label: 'Postcode / รหัสไปรษณีย์', type: 'postcode' },
-            'keyin-recipient-address': { label: 'Recipient Address / ที่อยู่ผู้รับ', type: 'address' },
             'keyin-dept': { label: 'Department / แผนกผู้รับ', type: 'department' },
             'keyin-route': { label: 'Route / เส้นทาง', type: 'route' }
         };
@@ -3532,44 +3329,6 @@
                     });
             }
 
-            if (cfg.type === 'name') {
-                candidates.push(candidateObject(fields.recipientName, 'Smart Extract', fields.recipientNameConfidence || 0, 'ระบบคาดว่าเป็นชื่อผู้รับ'));
-                rawLines.forEach(function(line, index) {
-                    const digitCount = (line.match(/\d/g) || []).length;
-                    const thai = (line.match(/[ก-๙]/g) || []).length;
-                    const latin = (line.match(/[A-Za-z]/g) || []).length;
-                    if (digitCount <= 3 && (thai >= 4 || latin >= 5) && line.length <= 90) {
-                        candidates.push(candidateObject(line, 'OCR', Math.max(40, 68 - index), 'ข้อความที่อ่านได้จากหน้าพัสดุ'));
-                    }
-                });
-            }
-
-            if (cfg.type === 'phone') {
-                candidates.push(candidateObject(fields.phone, 'Smart Extract', 90, 'ตรวจพบรูปแบบเบอร์โทร'));
-                const joined = rawLines.join(' ');
-                const matches = joined.match(/(?:\+66[\s\-]?\d{1,2}[\s\-]?\d{3,4}[\s\-]?\d{4}|0\d[\s\-]?\d{3,4}[\s\-]?\d{4})/g) || [];
-                matches.forEach(function(value) {
-                    candidates.push(candidateObject(value, 'OCR', 80, 'ตรวจพบรูปแบบเบอร์โทร'));
-                });
-            }
-
-            if (cfg.type === 'postcode') {
-                candidates.push(candidateObject(fields.postcode, 'Smart Extract', 88, 'ตรวจพบรูปแบบรหัสไปรษณีย์'));
-                const matches = (rawLines.join(' ').match(/(?<!\d)\d{5}(?!\d)/g) || []);
-                matches.forEach(function(value) {
-                    candidates.push(candidateObject(value, 'OCR', 72, 'เลข 5 หลักที่ตรวจพบ'));
-                });
-            }
-
-            if (cfg.type === 'address') {
-                candidates.push(candidateObject(fields.address, 'Smart Extract', fields.recipientNameConfidence >= 80 ? 82 : 65, 'ระบบรวมข้อความที่คาดว่าเป็นที่อยู่'));
-                rawLines.forEach(function(line, index) {
-                    if (/[ก-๙]/.test(line) || /(road|rd\.|soi|street|bangkok|กรุงเทพ|ถนน|ซอย|แขวง|เขต|ตำบล|อำเภอ|จังหวัด|หมู่|เลขที่)/i.test(line)) {
-                        candidates.push(candidateObject(line, 'OCR', Math.max(38, 64 - index), 'บรรทัดข้อความจากหน้าพัสดุ'));
-                    }
-                });
-            }
-
             if (cfg.type === 'department') {
                 candidates.push(candidateObject(fields.department, 'Smart Extract', fields.departmentConfidence || 0, 'จับคู่กับ Master Department'));
                 const sourceText = (latestOcrText || '').toLowerCase().replace(/\s+/g,'');
@@ -3584,11 +3343,11 @@
             if (cfg.type === 'route') {
                 candidates.push(candidateObject(fields.route, 'Smart Extract', fields.route ? 92 : 0, 'ตรวจพบสถานที่จากหน้าพัสดุ'));
                 const raw = latestOcrText || '';
-                if (/BTS\s*TOWER|บีทีเอส\s*ทาวเวอร์/i.test(raw)) {
-                    candidates.push(candidateObject('BTS Tower', 'Route Match', 92, 'พบ BTS Tower'));
+                if (/BTS\s*TOWER|BTSVP|บีทีเอส\s*ทาวเวอร์/i.test(raw)) {
+                    candidates.push(candidateObject('BTSVP', 'Route Match', 92, 'พบ BTSVP'));
                 }
-                if (/ARI\s*HILL|ARI\s*HILLS|อารีย์\s*ฮิล/i.test(raw)) {
-                    candidates.push(candidateObject('Ari Hill', 'Route Match', 92, 'พบ Ari Hill'));
+                if (/ARI\s*HILL(S)?|อารีย์\s*ฮิล/i.test(raw)) {
+                    candidates.push(candidateObject('Ari Hills', 'Route Match', 92, 'พบ Ari Hills'));
                 }
             }
 
@@ -3736,65 +3495,30 @@
             }
         }
 
-        async function refreshWorkflowAfterKeyIn(trackingId, department) {
-            latestSavedTracking = trackingId || '';
-            latestSavedDepartment = department || '';
+        // v5.9.10 — Performance Optimization #1: saveKeyIn() already computes and returns the
+        // full workflow snapshot (`res.sync`, `res.operationsRequired`, `res.esignReady`) in its
+        // ONE response — this derives the Frontend's readiness flags directly from that, with
+        // ZERO extra network round trip (previously called verifyWorkflowModules() again here).
+        function deriveWorkflowResultsFromSave(res) {
+            latestSavedTracking = res.trackingId || '';
+            latestSavedDepartment = res.sync && res.sync.department ? res.sync.department : latestSavedDepartment;
 
+            const sync = res.sync || {};
             const results = {
-                track: false,
-                esign: false,
-                operations: false,
-                dashboard: false,
-                report: false
+                track: !!sync.trackReady,
+                esign: !!(res.esignReady != null ? res.esignReady : sync.esignReady),
+                operations: !!sync.operationsReady,
+                operationsRequired: res.operationsRequired != null ? !!res.operationsRequired : !!sync.operationsRequired,
+                dashboard: !!sync.dashboardReady,
+                report: !!sync.reportReady
             };
 
-            try {
-                // v5.9 verifies every module from the same authoritative KeyIn row in one backend request.
-                const res = await apiCall('verifyWorkflowModules', {
-                    trackingId: trackingId,
-                    department: department,
-                    authToken: getAuthToken()
-                });
+            // Force E-Sign page to fetch the newly-saved KeyIn record on next open.
+            esignQueueLoadedAt = 0;
+            esignQueueAllItems = [];
+            loadDashboardStats();
 
-                if (handleAuthFailure(res)) return results;
-
-                if (res) {
-                    results.track = !!res.trackReady;
-                    results.esign = !!res.esignReady;
-                    results.operations = !!res.operationsReady;
-                    results.dashboard = !!res.dashboardReady;
-                    results.report = !!res.reportReady;
-                }
-
-                // Force E-Sign page to fetch the newly-saved KeyIn record on next open.
-                esignQueueLoadedAt = 0;
-                esignQueueAllItems = [];
-                loadDashboardStats();
-
-                return results;
-
-            } catch (err) {
-                console.warn('verifyWorkflowModules failed; using direct snapshot fallback', err);
-
-                try {
-                    const snapshot = await apiCall('getKeyInWorkflowSnapshot', {
-                        trackingId: trackingId,
-                        authToken: getAuthToken()
-                    });
-
-                    if (snapshot && snapshot.sync) {
-                        results.track = !!snapshot.sync.trackReady;
-                        results.esign = !!snapshot.sync.esignReady;
-                        results.operations = !!snapshot.sync.operationsReady;
-                        results.dashboard = !!snapshot.sync.dashboardReady;
-                        results.report = !!snapshot.sync.reportReady;
-                    }
-                } catch (fallbackErr) {
-                    console.warn('Workflow snapshot fallback failed', fallbackErr);
-                }
-
-                return results;
-            }
+            return results;
         }
 
         function showWorkflowSyncToast(sync, trackingId) {
@@ -3819,7 +3543,10 @@
         }
 
         /** ===================== RECIPIENT MASTER (Requirement 1) ===================== **/
-
+        // v5.9.10 — Requirement: Key In no longer has a Recipient Name field, so this is no
+        // longer auto-loaded on page open (see navigateTo()). The function itself, and the
+        // RecipientMaster Sheet / Backend API, are intentionally kept intact for potential
+        // reuse elsewhere — only the Key In autocomplete UI that consumed it has been removed.
         async function loadRecipientMaster(forceRefresh) {
             if (!requireGas() || !getAuthToken()) return;
             // Loaded once per session unless forced — never re-fetch per keystroke.
@@ -3837,88 +3564,31 @@
             }
         }
 
-        function onRecipientNameInput() {
-            if (recipientDropdownHideTimer) { clearTimeout(recipientDropdownHideTimer); recipientDropdownHideTimer = null; }
-            const input = document.getElementById('keyin-recipient-name');
-            const dropdown = document.getElementById('keyin-recipient-dropdown');
-            if (!input || !dropdown) return;
-
-            const query = input.value.trim().toLowerCase();
-
-            if (!recipientMasterItems.length) {
-                dropdown.classList.add('hidden');
-                return;
-            }
-
-            const matches = (query
-                ? recipientMasterItems.filter(function(item) {
-                    return (
-                        String(item.recipientName || '').toLowerCase().includes(query) ||
-                        String(item.recipientEmail || '').toLowerCase().includes(query) ||
-                        String(item.department || '').toLowerCase().includes(query) ||
-                        String(item.recipientId || '').toLowerCase().includes(query)
-                    );
-                })
-                : recipientMasterItems
-            ).slice(0, 30);
-
-            if (!matches.length) {
-                dropdown.innerHTML = '<div class="p-4 text-xs text-slate-400 text-center">ไม่พบรายชื่อที่ตรงกัน • สามารถพิมพ์ชื่อเองได้</div>';
-                dropdown.classList.remove('hidden');
-                return;
-            }
-
-            dropdown.innerHTML = matches.map(function(item, idx) {
-                return '<button type="button" onmousedown="event.preventDefault();selectRecipientFromMaster(' + idx + ')" ' +
-                    'data-recipient-idx="' + idx + '" ' +
-                    'class="w-full text-left px-4 py-2.5 hover:bg-indigo-50 border-b border-slate-50 last:border-b-0 cursor-pointer">' +
-                    '<p class="text-sm font-bold text-slate-800">' + escapeHtml(item.recipientName) + '</p>' +
-                    '<p class="text-[11px] text-slate-500 mt-0.5">' +
-                        (item.department ? escapeHtml(item.department) + ' • ' : '') +
-                        escapeHtml(item.recipientEmail || '-') +
-                    '</p>' +
-                '</button>';
-            }).join('');
-
-            // Keep the currently-rendered match list addressable by index for selection.
-            dropdown.__matches = matches;
-            dropdown.classList.remove('hidden');
-        }
-
-        function selectRecipientFromMaster(idx) {
-            const dropdown = document.getElementById('keyin-recipient-dropdown');
-            const matches = dropdown && dropdown.__matches ? dropdown.__matches : [];
-            const item = matches[idx];
-            if (!item) return;
-
-            const nameInput = document.getElementById('keyin-recipient-name');
-            const phoneInput = document.getElementById('keyin-recipient-phone');
-            const deptSelect = document.getElementById('keyin-dept');
-
-            // Autofill only the fields Key In still uses (Requirement 1.4 — Email dropped from Key In UI).
-            if (nameInput) nameInput.value = item.recipientName || '';
-            if (phoneInput) phoneInput.value = item.recipientPhone || '';
-            if (deptSelect && item.department) {
-                const hasOption = Array.from(deptSelect.options).some(function(opt) { return opt.value === item.department; });
-                if (hasOption) deptSelect.value = item.department;
-            }
-
-            dropdown.classList.add('hidden');
-        }
-
-        function scheduleHideRecipientDropdown() {
-            // Delay so the onmousedown selection handler still fires before the dropdown disappears.
-            recipientDropdownHideTimer = setTimeout(function() {
-                const dropdown = document.getElementById('keyin-recipient-dropdown');
-                if (dropdown) dropdown.classList.add('hidden');
-            }, 150);
-        }
-
         /** ===================== BATCH KEY IN MODE (v5.9.6) ===================== **/
         // Business rule: 1 Tracking ID = 1 Document = 1 KeyIn Row = 1 item in Operations/E-Sign/Track.
         // Quantity > 1 means "how many separate Tracking Documents to enter in this session" —
         // it NEVER means "how many physical pieces share one Tracking". Each item is saved to the
         // Backend individually and verified before the UI advances (Requirement 7).
+
+        // v5.9.10 — Requirement 3: purely informational — Route decides the actual workflow
+        // server-side inside saveKeyIn(); this only keeps the on-screen hint in sync so the user
+        // understands what will happen next (Backend is the source of truth, never the Frontend).
+        function onKeyInRouteChange() {
+            const route = document.getElementById('keyin-route')?.value || '';
+            const hint = document.getElementById('keyin-route-hint');
+            if (!hint) return;
+
+            if (route === 'Ari Hills') {
+                hint.textContent = 'Ari Hills = นำส่งภายในอาคาร — เอกสารจะพร้อมสำหรับ E-Sign ทันทีหลัง Key In (ข้าม Operations Control)';
+                hint.className = 'text-[10px] text-emerald-600 font-bold mt-1.5';
+            } else if (route === 'BTSVP') {
+                hint.textContent = 'BTSVP = ต้องผ่าน Operations Control (Dispatch → Confirm Arrival) ก่อนจึงเข้าสู่ E-Sign ได้';
+                hint.className = 'text-[10px] text-amber-600 font-bold mt-1.5';
+            } else {
+                hint.textContent = 'Ari Hills = นำส่งภายในอาคาร พร้อมเซ็นรับทันทีหลัง Key In • BTSVP = ต้องผ่าน Operations Control (Dispatch → Confirm Arrival) ก่อนจึงเซ็นรับได้';
+                hint.className = 'text-[10px] text-slate-400 mt-1.5';
+            }
+        }
 
         function onKeyInQtyChange() {
             const qty = getKeyInQty();
@@ -4037,15 +3707,17 @@
             const audit = getAuditUser();
             const payload = {
                 route: document.getElementById('keyin-route').value,
-                senderName: document.getElementById('keyin-sender').value,
+                senderName: document.getElementById('keyin-sender').value.trim(),
                 department: document.getElementById('keyin-dept').value,
-                recipientName: document.getElementById('keyin-recipient-name').value.trim(),
-                // Requirement 1: Recipient Email removed from Key In UI. Sent as '' only for
-                // backend/Sheet compatibility — saveKeyIn() and the KeyIn sheet still accept it.
+                // v5.9.10 — Requirement 1: Recipient Name/Email/Phone/Postcode/Address removed
+                // from the Key In UI entirely. Sent as '' only for Backend/Sheet compatibility —
+                // saveKeyIn() and the KeyIn sheet columns still accept and preserve them for
+                // historical rows; no DOM element for these is ever read anymore.
+                recipientName: '',
                 recipientEmail: '',
-                recipientPhone: document.getElementById('keyin-recipient-phone').value.trim(),
-                recipientPostcode: document.getElementById('keyin-recipient-postcode').value.trim(),
-                recipientAddress: document.getElementById('keyin-recipient-address').value.trim(),
+                recipientPhone: '',
+                recipientPostcode: '',
+                recipientAddress: '',
                 ocrConfidence: latestSmartCapture ? Math.round(((latestSmartCapture.tracking?.score || 0) + (latestSmartCapture.fields?.overallConfidence || 0)) / ((latestSmartCapture.tracking && latestSmartCapture.fields?.overallConfidence) ? 2 : 1)) : '',
                 // Requirement 5: every KeyIn row is exactly 1 Document. The "Quantity" field only
                 // ever controls how many separate items this Batch session will collect.
@@ -4080,7 +3752,7 @@
                 // Quantity === 1: unchanged existing single-item review-before-save flow.
                 const summary=document.getElementById('keyin-confirm-summary');
                 if(summary) summary.innerHTML = [
-                  ['Tracking ID',payload.trackingId],['Sender',payload.senderName||'-'],['Recipient Name',payload.recipientName||'-'],['Department',payload.department],['Phone',payload.recipientPhone||'-'],['Route',payload.route],['Remarks',payload.remarks||'-'],['รูปพัสดุ',payload.images.length+' รูป']
+                  ['Tracking ID',payload.trackingId],['Sender',payload.senderName||'-'],['Route',payload.route],['Department',payload.department],['Remarks',payload.remarks||'-'],['รูปพัสดุ',payload.images.length+' รูป']
                 ].map(x=>'<div class="grid grid-cols-3 gap-2 py-2 border-b border-slate-100"><span class="text-xs font-bold text-slate-500">'+escapeHtml(x[0])+'</span><span class="col-span-2 text-sm text-slate-800 break-words">'+escapeHtml(String(x[1]))+'</span></div>').join('');
                 window.pendingKeyInPayload=payload; document.getElementById('keyin-confirm-modal')?.classList.remove('hidden'); document.body.classList.add('overflow-hidden');
                 return;
@@ -4130,16 +3802,17 @@
                     return;
                 }
 
-                const workflowResults = await refreshWorkflowAfterKeyIn(
-                    res.trackingId || payload.trackingId,
-                    payload.department
-                );
+                // Performance Optimization #1: derive readiness directly from saveKeyIn()'s own
+                // response — zero extra network round trip (no second verifyWorkflowModules call).
+                const workflowResults = deriveWorkflowResultsFromSave(res);
 
-                // Requirement 15: E-Sign is a workflow STAGE (only opens after Dispatch + Arrival
-                // Confirmation), not a pass/fail signal — a fresh Key In is expected to NOT be
-                // esignReady yet. Only the core modules below indicate a genuine problem.
-                const coreReady = workflowResults.track && workflowResults.operations &&
-                    workflowResults.dashboard && workflowResults.report;
+                // Requirement 15 / Route: E-Sign is a workflow STAGE, not a pass/fail signal — a
+                // fresh BTSVP Key In is expected to NOT be esignReady yet (still needs Dispatch +
+                // Arrival Confirmation), while a fresh Ari Hills Key In IS expected to be
+                // esignReady immediately. Operations is only relevant at all when the Route
+                // requires it — Ari Hills must never be penalized for skipping a stage it doesn't need.
+                const coreReady = workflowResults.track && workflowResults.dashboard && workflowResults.report &&
+                    (!workflowResults.operationsRequired || workflowResults.operations);
 
                 if (batchActive) {
                     // ----- Batch Entry Mode: advance ONLY after this verified save (Requirement 7) -----
@@ -4168,14 +3841,26 @@
 
                 // ----- Single-item Mode (Qty === 1): unchanged existing behaviour -----
                 if (coreReady) {
+                    // Requirement 3: message reflects the actual Route decision the Backend made.
+                    const isAriHillsRoute = String(res.route || '').toLowerCase() === 'ari hills';
                     showSystemToast(
-                        res.message || ('Key In สำเร็จ พร้อมดำเนินการ Dispatch • ' + (res.trackingId || payload.trackingId)),
+                        res.message || (isAriHillsRoute
+                            ? '✓ บันทึกเอกสารสำเร็จ • Route: Ari Hills • เอกสารพร้อมสำหรับ E-Sign'
+                            : 'Key In สำเร็จ พร้อมดำเนินการ Dispatch • ' + (res.trackingId || payload.trackingId)),
                         'success'
                     );
                 } else {
-                    const readyCount = Object.values(workflowResults).filter(Boolean).length;
+                    // Count only the 4 core modules that actually matter for this Route
+                    // (Operations auto-counts as satisfied when the Route doesn't require it).
+                    const coreModules = [
+                        workflowResults.track,
+                        workflowResults.dashboard,
+                        workflowResults.report,
+                        (!workflowResults.operationsRequired || workflowResults.operations)
+                    ];
+                    const readyCount = coreModules.filter(Boolean).length;
                     showSystemToast(
-                        'บันทึกสำเร็จ • เชื่อมข้อมูลพร้อมใช้ ' + readyCount + '/5 Module',
+                        'บันทึกสำเร็จ • เชื่อมข้อมูลพร้อมใช้ ' + readyCount + '/4 Module',
                         readyCount >= 3 ? 'info' : 'error'
                     );
                 }
@@ -4183,8 +3868,7 @@
                 // Clear only after verified save + workflow refresh.
                 resetItemSpecificFields();
                 clearForm([
-                    'keyin-route','keyin-sender','keyin-dept','keyin-recipient-name',
-                    'keyin-recipient-phone','keyin-recipient-postcode','keyin-recipient-address',
+                    'keyin-route','keyin-sender','keyin-dept',
                     'keyin-remarks'
                 ]);
                 document.getElementById('keyin-qty').value = 1;
