@@ -846,12 +846,25 @@
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">เลือกแผนก / Department</label>
-                            <select id="deptstatus-department-select" onchange="renderDepartmentStatusDetail()"
-                                class="w-full sm:w-80 border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                                <option value="__ALL__">ทุกแผนก / All Departments</option>
-                            </select>
+                        <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:max-w-xl">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">เลือกแผนก / Department</label>
+                                <select id="deptstatus-department-select" onchange="renderDepartmentStatusDetail()"
+                                    class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                    <option value="__ALL__">ทุกแผนก / All Departments</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">วันที่ตรวจสอบ / Date</label>
+                                <div class="flex gap-2">
+                                    <input type="date" id="deptstatus-date-filter" onchange="renderDepartmentStatusDetail()"
+                                        class="flex-1 min-w-0 border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                                    <button type="button" onclick="clearDeptStatusDateFilter()" title="ล้างวันที่"
+                                        class="shrink-0 w-11 h-11 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 flex items-center justify-center">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div id="deptstatus-detail-summary" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
@@ -929,6 +942,9 @@
                                 <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">จำนวน</p><p id="result-track-qty" class="font-bold text-slate-700 mt-1">-</p></div>
                                 <div class="bg-white rounded-xl border border-slate-100 p-3"><p class="text-slate-400 font-bold">หมายเหตุ</p><p id="result-track-remarks" class="font-bold text-slate-700 mt-1 break-words">-</p></div>
                             </div>
+                            <button type="button" id="track-evidence-btn" onclick="openEvidencePreview()" class="hidden mb-5 inline-flex items-center gap-2 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 border border-indigo-100 px-3 py-2.5 rounded-xl active:scale-[0.98] transition min-h-[44px]">
+                                <i class="fa-regular fa-images"></i> <span id="track-evidence-btn-label">ดูรูปหลักฐาน</span>
+                            </button>
                             <div id="result-track-timeline" class="space-y-4 text-xs"></div>
                         </div>
                     </div>
@@ -953,9 +969,19 @@
                         <div class="border-t border-amber-200 pt-4">
                             <p class="text-xs font-black text-slate-800 mb-2">นำส่งเอกสารใหม่ / Redelivery</p>
                             <label class="block text-[11px] font-bold text-slate-600 mb-1.5">แผนกปลายทางใหม่</label>
-                            <select id="return-redelivery-department" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-3">
+                            <select id="return-redelivery-department" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-4">
                                 <option value="">-- กรุณาเลือกแผนก --</option>
                             </select>
+
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label class="text-[11px] font-bold text-slate-600">ลายเซ็นยืนยันการรับเอกสารตีกลับ <span class="text-rose-500">*</span></label>
+                                <button type="button" onclick="clearReturnSignature()" class="text-[11px] font-bold text-rose-500 hover:underline cursor-pointer"><i class="fa-solid fa-eraser"></i> ล้างลายเซ็น</button>
+                            </div>
+                            <div class="border-2 border-dashed border-amber-300 rounded-2xl bg-white overflow-hidden touch-none relative mb-4">
+                                <canvas id="return-signature-pad" class="w-full h-40 block cursor-crosshair"></canvas>
+                                <p id="return-signature-placeholder" class="absolute inset-0 flex items-center justify-center text-xs text-slate-300 font-bold pointer-events-none">Sign Here</p>
+                            </div>
+
                             <button type="button" id="return-redelivery-confirm-btn" onclick="confirmRedelivery()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-emerald-700 transition min-h-[44px]">ยืนยันนำส่งใหม่</button>
                         </div>
                     </div>
@@ -1010,13 +1036,25 @@
 
                         <p id="report-range-label" class="text-xs text-slate-400 mb-4 font-medium">กำลังแสดง: รายงานรายเดือน (Default) — ใช้สำหรับปุ่ม Export ด้านบน</p>
 
-                        <!-- Online Report — real data from KeyIn via getReportSummary (Requirement 5) -->
+                        <!-- Online Report — real data from KeyIn via getReportSummary (Requirement 4) -->
                         <div class="border-t border-slate-100 pt-5">
                             <div class="flex flex-wrap items-end gap-3 mb-5">
-                                <div>
+                                <div id="report-period-monthly-wrap">
                                     <label class="block text-xs font-bold text-slate-700 mb-1.5">เลือกเดือน / Month</label>
                                     <input type="month" id="report-month-input" onchange="onReportMonthChange()"
                                         class="border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                                </div>
+                                <div id="report-period-daily-wrap" class="hidden">
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">วันที่ / Date</label>
+                                    <input type="date" id="report-date-input" onchange="onReportDateChange()"
+                                        class="border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                                </div>
+                                <div id="report-period-dept-wrap" class="hidden">
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">แผนก / Department</label>
+                                    <select id="report-dept-period-select" onchange="onReportDeptModeChange()"
+                                        class="border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 min-w-[180px]">
+                                        <option value="__ALL__">ทุกแผนก / All Departments</option>
+                                    </select>
                                 </div>
                                 <span id="report-online-status" class="text-xs text-slate-400 pb-3"></span>
                             </div>
@@ -1199,6 +1237,7 @@
         let reportSummaryData = null;
         let reportSelectedMonth = new Date().getMonth() + 1;
         let reportSelectedYear = new Date().getFullYear();
+        let reportSelectedDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD, for Daily mode
         let esignApiMode = 'unknown';
         let esignLastSyncError = '';
         let currentReportRange = 'monthly';
@@ -4684,21 +4723,43 @@
             }
         }
 
+        function clearDeptStatusDateFilter() {
+            const dateInput = document.getElementById('deptstatus-date-filter');
+            if (dateInput) dateInput.value = '';
+            renderDepartmentStatusDetail();
+        }
+
+        // Requirement 1 (v5.9.13): "YYYY-MM-DD" → explicit Y/M/D components, compared directly
+        // against Date object components — never `new Date(str)` (UTC-parsing can silently shift
+        // the calendar day) and never a raw string/Thai-formatted comparison.
+        function isSameCalendarDateJs(isoDateStr, value) {
+            if (!isoDateStr || !value) return false;
+            const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(isoDateStr);
+            if (!m) return false;
+            const d = new Date(value);
+            if (isNaN(d.getTime())) return false;
+            return d.getFullYear() === Number(m[1]) && (d.getMonth() + 1) === Number(m[2]) && d.getDate() === Number(m[3]);
+        }
+
         function renderDepartmentStatusDetail() {
             const select = document.getElementById('deptstatus-department-select');
             const department = select ? (select.value || '__ALL__') : '__ALL__';
+            const dateFilter = document.getElementById('deptstatus-date-filter')?.value || '';
             const statusLine = document.getElementById('deptstatus-status-line');
             const tbody = document.getElementById('deptstatus-table-body');
             const cardList = document.getElementById('deptstatus-card-list');
 
             if (!deptStatusData) return; // still loading / failed — loadDepartmentStatusMonitor already shows that state
 
-            // Requirement 2.5 / 2.9: filter + recompute KPIs from the array already in memory —
-            // never call the API again just because the Department dropdown changed.
+            // Requirement 1: Department AND Date filter together, entirely in the Browser from
+            // the array already loaded once by loadDepartmentStatusMonitor() — never a new API
+            // call just because either filter changed (Performance).
             const allItems = deptStatusData.items || [];
-            const items = (department === '__ALL__')
-                ? allItems
-                : allItems.filter(function(item) { return String(item.department || '').trim() === department; });
+            const items = allItems.filter(function(item) {
+                if (department !== '__ALL__' && String(item.department || '').trim() !== department) return false;
+                if (dateFilter && !isSameCalendarDateJs(dateFilter, item.registeredTime || item.timestamp)) return false;
+                return true;
+            });
 
             let total = 0, pending = 0, delivered = 0, returned = 0, atAriHills = 0, inTransit = 0, awaitingEsign = 0;
             items.forEach(function(item) {
@@ -4849,6 +4910,85 @@
         // Requirement 3: Signature Preview — lazy-loaded, authenticated (no direct Drive links).
         let trackSignatureEntries = [];
 
+        // Requirement 2 (v5.9.13): Evidence Preview state — images are only fetched from the
+        // Backend once the user actually clicks "ดูรูปหลักฐาน" (Lazy Loading).
+        let evidencePreviewTrackingId = '';
+        let evidencePreviewImages = [];
+        let evidencePreviewIndex = 0;
+
+        async function openEvidencePreview() {
+            if (!evidencePreviewTrackingId) return;
+            if (!requireGas() || !getAuthToken()) return;
+
+            const modal = document.getElementById('evidence-preview-modal');
+            const loading = document.getElementById('evidence-preview-loading');
+            const errorBox = document.getElementById('evidence-preview-error');
+            const imgEl = document.getElementById('evidence-preview-image');
+            if (!modal) return;
+
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            if (imgEl) { imgEl.classList.add('hidden'); imgEl.removeAttribute('src'); }
+            if (errorBox) errorBox.classList.add('hidden');
+            if (loading) loading.classList.remove('hidden');
+            document.getElementById('evidence-preview-nav')?.classList.add('hidden');
+
+            // Cache per Tracking within this Track & Trace session — avoid re-fetching if the
+            // user closes and reopens the same result without a new Search.
+            if (!evidencePreviewImages.length) {
+                try {
+                    const res = await apiCall('getEvidenceImages', {
+                        trackingId: evidencePreviewTrackingId,
+                        authToken: getAuthToken()
+                    });
+                    if (handleAuthFailure(res)) return;
+                    if (!res || res.success === false) throw new Error((res && res.message) || 'โหลดรูปหลักฐานไม่สำเร็จ');
+
+                    evidencePreviewImages = res.images || [];
+                    if (!evidencePreviewImages.length) {
+                        if (loading) loading.classList.add('hidden');
+                        if (errorBox) { errorBox.textContent = 'ไม่มีรูปหลักฐาน'; errorBox.classList.remove('hidden'); }
+                        return;
+                    }
+                } catch (err) {
+                    if (loading) loading.classList.add('hidden');
+                    if (errorBox) { errorBox.textContent = normalizeError(err); errorBox.classList.remove('hidden'); }
+                    return;
+                }
+            }
+
+            evidencePreviewIndex = 0;
+            showEvidenceAt(0);
+        }
+
+        function showEvidenceAt(index) {
+            const imgEl = document.getElementById('evidence-preview-image');
+            const loading = document.getElementById('evidence-preview-loading');
+            const counter = document.getElementById('evidence-preview-counter');
+            const nav = document.getElementById('evidence-preview-nav');
+            if (!evidencePreviewImages.length) return;
+
+            evidencePreviewIndex = Math.max(0, Math.min(evidencePreviewImages.length - 1, index));
+            const item = evidencePreviewImages[evidencePreviewIndex];
+
+            if (loading) loading.classList.add('hidden');
+            if (imgEl && item) {
+                imgEl.src = item.dataUrl;
+                imgEl.classList.remove('hidden');
+            }
+            if (counter) counter.textContent = (evidencePreviewIndex + 1) + ' / ' + evidencePreviewImages.length;
+            if (nav) nav.classList.toggle('hidden', evidencePreviewImages.length <= 1);
+        }
+
+        function nextEvidenceImage() { showEvidenceAt(evidencePreviewIndex + 1 >= evidencePreviewImages.length ? 0 : evidencePreviewIndex + 1); }
+        function prevEvidenceImage() { showEvidenceAt(evidencePreviewIndex - 1 < 0 ? evidencePreviewImages.length - 1 : evidencePreviewIndex - 1); }
+
+        function closeEvidencePreview() {
+            document.getElementById('evidence-preview-modal')?.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+
         async function openSignaturePreview(index) {
             const entry = trackSignatureEntries[index];
             if (!entry) return;
@@ -4919,6 +5059,18 @@
             setText('result-track-qty', String(res.qty || 1));
             setText('result-track-remarks', res.remarks);
             setText('result-track-summary', (res.timeline || []).length + ' เหตุการณ์ • แตะเพื่อย่อ/ขยาย');
+
+            // Requirement 2: Evidence metadata (count/URLs) is already in this same searchTracking()
+            // response — the actual image bytes are only ever fetched lazily when the user clicks
+            // the button below (Performance — Lazy Loading, never sent up front with every search).
+            evidencePreviewTrackingId = res.trackingId || '';
+            evidencePreviewImages = [];
+            evidencePreviewIndex = 0;
+            const evidenceCount = Array.isArray(res.imageUrls) ? res.imageUrls.length : 0;
+            const evidenceBtn = document.getElementById('track-evidence-btn');
+            const evidenceBtnLabel = document.getElementById('track-evidence-btn-label');
+            if (evidenceBtn) evidenceBtn.classList.toggle('hidden', evidenceCount === 0);
+            if (evidenceBtnLabel) evidenceBtnLabel.textContent = evidenceCount > 1 ? 'ดูรูปหลักฐาน (' + evidenceCount + ')' : 'ดูรูปหลักฐาน';
 
             const badge = document.getElementById('result-status-badge');
             if (badge) {
@@ -5046,6 +5198,45 @@
         /** ===================== REDELIVERY (v5.9.9 — Requirement 3) ===================== **/
         let returnRedeliveryContext = null; // { trackingId, fromDepartment }
 
+        // Requirement 3 (v5.9.13): Return Acknowledgement Signature — a SEPARATE SignaturePad
+        // instance from the main E-Sign pad, using the same Mouse/Touch/Apple Pencil +
+        // devicePixelRatio pattern so it stays sharp on iPad Retina.
+        let returnSignaturePad = null;
+
+        function initReturnSignaturePad() {
+            const canvas = document.getElementById('return-signature-pad');
+            if (!canvas) return;
+            if (!returnSignaturePad) {
+                returnSignaturePad = new SignaturePad(canvas, {
+                    backgroundColor: 'rgba(255, 255, 255, 0)',
+                    penColor: 'rgb(30, 27, 65)'
+                });
+                canvas.addEventListener('pointerdown', hideReturnSignaturePlaceholder, { once: false });
+                canvas.addEventListener('touchstart', hideReturnSignaturePlaceholder, { passive: true });
+            }
+            resizeReturnSignatureCanvas();
+        }
+
+        function resizeReturnSignatureCanvas() {
+            const canvas = document.getElementById('return-signature-pad');
+            if (!canvas || !returnSignaturePad) return;
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext('2d').scale(ratio, ratio);
+            returnSignaturePad.clear();
+            document.getElementById('return-signature-placeholder')?.classList.remove('hidden');
+        }
+
+        function hideReturnSignaturePlaceholder() {
+            document.getElementById('return-signature-placeholder')?.classList.add('hidden');
+        }
+
+        function clearReturnSignature() {
+            if (returnSignaturePad) returnSignaturePad.clear();
+            document.getElementById('return-signature-placeholder')?.classList.remove('hidden');
+        }
+
         async function checkReturnTrackingStatus() {
             const trackingId = document.getElementById('return-tracking')?.value.trim();
             const card = document.getElementById('return-redelivery-card');
@@ -5080,6 +5271,8 @@
 
                 returnRedeliveryContext = { trackingId: res.trackingId, fromDepartment: res.department || '' };
                 card?.classList.remove('hidden');
+                // Canvas must be visible/sized before SignaturePad can size itself correctly.
+                setTimeout(initReturnSignaturePad, 50);
 
             } catch (err) {
                 card?.classList.add('hidden');
@@ -5092,6 +5285,13 @@
             const nextDepartment = document.getElementById('return-redelivery-department')?.value;
             if (!nextDepartment) { showSystemToast('กรุณาเลือกแผนกปลายทางใหม่', 'error'); return; }
 
+            // Requirement 3: Return Acknowledgement Signature is REQUIRED before Redelivery —
+            // Backend also independently verifies this; the Frontend check is just fast feedback.
+            if (!returnSignaturePad || returnSignaturePad.isEmpty()) {
+                showSystemToast('กรุณาลงลายเซ็นยืนยันการรับเอกสารตีกลับก่อนนำส่งใหม่', 'error');
+                return;
+            }
+
             const btn = document.getElementById('return-redelivery-confirm-btn');
             if (btn) { btn.disabled = true; btn.classList.add('opacity-60','cursor-wait'); btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังบันทึก...'; }
 
@@ -5099,6 +5299,7 @@
                 const res = await apiCall('redeliverReturnedDocument', {
                     trackingId: returnRedeliveryContext.trackingId,
                     nextDepartment: nextDepartment,
+                    returnSignatureImage: returnSignaturePad.toDataURL('image/png'),
                     authToken: getAuthToken()
                 });
                 if (handleAuthFailure(res)) return;
@@ -5106,6 +5307,7 @@
 
                 showSystemToast(res.message || 'บันทึกการนำส่งใหม่สำเร็จ', 'success');
                 document.getElementById('return-redelivery-card')?.classList.add('hidden');
+                if (returnSignaturePad) returnSignaturePad.clear();
                 returnRedeliveryContext = null;
                 clearForm(['return-tracking']);
                 esignQueueLoadedAt = 0;
@@ -5119,6 +5321,7 @@
                 if (btn) { btn.disabled = false; btn.classList.remove('opacity-60','cursor-wait'); btn.innerHTML = 'ยืนยันนำส่งใหม่'; }
             }
         }
+
 
         /** ===================== NOTIFICATION CENTER (v5.9.9 — Requirement 1) ===================== **/
         let notificationItems = [];
@@ -5241,7 +5444,7 @@
         function closeDashboardDetail(){document.getElementById('dashboard-detail-modal')?.classList.add('hidden');document.body.classList.remove('overflow-hidden');}
         function openTrackingFromDashboard(encoded){closeDashboardDetail();navigateTo('track');setTimeout(()=>{const el=document.getElementById('track-search-input');if(el){el.value=decodeURIComponent(encoded);el.focus();searchTracking();}},100);}
 
-        /** ===================== REPORT — Online View (Requirement 5) ===================== **/
+        /** ===================== REPORT — Online View (Requirement 4/5) ===================== **/
 
         function onReportMonthChange() {
             const input = document.getElementById('report-month-input');
@@ -5249,7 +5452,26 @@
             const parts = input.value.split('-'); // YYYY-MM
             reportSelectedYear = Number(parts[0]);
             reportSelectedMonth = Number(parts[1]);
+            updateReportRangeLabel();
             loadReportSummaryForSelectedMonth();
+        }
+
+        function onReportDateChange() {
+            const input = document.getElementById('report-date-input');
+            if (!input || !input.value) return;
+            reportSelectedDate = input.value; // YYYY-MM-DD
+            updateReportRangeLabel();
+            loadReportSummaryForSelectedMonth();
+        }
+
+        function onReportDeptModeChange() {
+            // Requirement 4: Department Report reuses the currently selected Period (Daily/Monthly
+            // above) and simply pins the Document Detail filter to the chosen Department.
+            const value = document.getElementById('report-dept-period-select')?.value || '__ALL__';
+            const deptFilter = document.getElementById('report-filter-department');
+            if (deptFilter) deptFilter.value = value === '__ALL__' ? '' : value;
+            updateReportRangeLabel();
+            renderReportDocumentDetail();
         }
 
         async function loadReportSummaryForSelectedMonth() {
@@ -5259,20 +5481,29 @@
             if (monthInput && !monthInput.value) {
                 monthInput.value = String(reportSelectedYear) + '-' + String(reportSelectedMonth).padStart(2, '0');
             }
+            const dateInput = document.getElementById('report-date-input');
+            if (dateInput && !dateInput.value) dateInput.value = reportSelectedDate;
 
             const statusEl = document.getElementById('report-online-status');
             if (statusEl) statusEl.textContent = 'กำลังโหลดข้อมูล...';
 
+            // Requirement 4: Daily / Monthly / Department Report all query through the SAME
+            // getReportSummary() → buildReportDataset_() Filter Logic — never separate Logic sets.
+            const periodType = currentReportRange === 'daily' ? 'daily' : 'monthly';
+            const requestPayload = { periodType: periodType, authToken: getAuthToken() };
+            if (periodType === 'daily') {
+                requestPayload.date = reportSelectedDate;
+            } else {
+                requestPayload.month = reportSelectedMonth;
+                requestPayload.year = reportSelectedYear;
+            }
+
             try {
-                const res = await apiCall('getReportSummary', {
-                    month: reportSelectedMonth,
-                    year: reportSelectedYear,
-                    authToken: getAuthToken()
-                });
+                const res = await apiCall('getReportSummary', requestPayload);
                 if (handleAuthFailure(res)) return;
                 if (!res || res.success === false) throw new Error((res && res.message) || 'โหลด Report ไม่สำเร็จ');
 
-                reportSummaryData = res; // single load per Month — filters below run in Browser only.
+                reportSummaryData = res; // single load per Period — filters below run in Browser only.
                 if (statusEl) statusEl.textContent = 'ข้อมูลจริงจาก KeyIn • ' + res.items.length + ' รายการ';
 
                 renderReportSummaryUI();
@@ -5387,13 +5618,65 @@
             currentReportRange = range;
             document.querySelectorAll('.report-range-btn').forEach(btn => { btn.classList.remove('bg-sky-600','text-white'); btn.classList.add('bg-slate-50','text-slate-600'); });
             const activeBtn=document.getElementById('report-btn-'+range); if(activeBtn){activeBtn.classList.remove('bg-slate-50','text-slate-600');activeBtn.classList.add('bg-sky-600','text-white');}
-            const label=document.getElementById('report-range-label'); const labels={daily:'รายงานรายวัน',monthly:'รายงานรายเดือน',dept:'รายงานรายแผนก'};
-            if(label) label.innerText='กำลังแสดง: '+(labels[range]||range);
+
+            // Requirement 4: switching Mode must actually change the Filter UI AND re-Query —
+            // never just relabel the button (that was the "just a UI button" bug).
+            const monthlyWrap = document.getElementById('report-period-monthly-wrap');
+            const dailyWrap = document.getElementById('report-period-daily-wrap');
+            const deptWrap = document.getElementById('report-period-dept-wrap');
+            monthlyWrap?.classList.toggle('hidden', range === 'daily');
+            dailyWrap?.classList.toggle('hidden', range !== 'daily');
+            deptWrap?.classList.toggle('hidden', range !== 'dept');
+
+            if (range === 'dept') {
+                const deptSelect = document.getElementById('report-dept-period-select');
+                if (deptSelect && deptSelect.options.length <= 1) {
+                    deptSelect.innerHTML = '<option value="__ALL__">ทุกแผนก / All Departments</option>' +
+                        SMART_DEPARTMENTS.map(function(name) {
+                            return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + '</option>';
+                        }).join('');
+                }
+            }
+
+            updateReportRangeLabel();
+            loadReportSummaryForSelectedMonth();
+        }
+
+        function updateReportRangeLabel() {
+            const label = document.getElementById('report-range-label');
+            if (!label) return;
+            if (currentReportRange === 'daily') {
+                label.innerText = 'กำลังแสดง: รายงานรายวัน — ' + (reportSelectedDate || '-');
+            } else if (currentReportRange === 'dept') {
+                const dept = document.getElementById('report-dept-period-select')?.value || '__ALL__';
+                label.innerText = 'กำลังแสดง: รายงานรายแผนก — ' + (dept === '__ALL__' ? 'ทุกแผนก' : dept) + ' • ' + formatMonthLabelJs(reportSelectedMonth, reportSelectedYear);
+            } else {
+                label.innerText = 'กำลังแสดง: รายงานรายเดือน — ' + formatMonthLabelJs(reportSelectedMonth, reportSelectedYear);
+            }
         }
 
         function openExportReportModal() {
-            const periodLabel = document.getElementById('export-report-period-label');
-            if (periodLabel) periodLabel.textContent = formatMonthLabelJs(reportSelectedMonth, reportSelectedYear);
+            // Requirement 5: pre-fill Period controls with the Report Online page's currently
+            // selected Period, then let the user change Period Type freely before Export.
+            const periodTypeSelect = document.getElementById('export-report-period-type');
+            if (periodTypeSelect) periodTypeSelect.value = currentReportRange === 'daily' ? 'daily' : 'monthly';
+
+            const dateInput = document.getElementById('export-report-date-input');
+            if (dateInput) dateInput.value = reportSelectedDate;
+
+            const monthInput = document.getElementById('export-report-month-input');
+            if (monthInput) monthInput.value = String(reportSelectedYear) + '-' + String(reportSelectedMonth).padStart(2, '0');
+
+            const yearSelect = document.getElementById('export-report-year-select');
+            if (yearSelect && yearSelect.options.length === 0) {
+                const currentYear = new Date().getFullYear();
+                let optionsHtml = '';
+                for (let y = currentYear; y >= currentYear - 5; y--) {
+                    optionsHtml += '<option value="' + y + '">' + y + '</option>';
+                }
+                yearSelect.innerHTML = optionsHtml;
+            }
+            if (yearSelect) yearSelect.value = String(reportSelectedYear);
 
             const deptSelect = document.getElementById('export-report-department');
             if (deptSelect && deptSelect.options.length <= 1) {
@@ -5403,12 +5686,21 @@
                     }).join('');
             }
 
+            onExportPeriodTypeChange();
+
             const status = document.getElementById('export-report-status');
             if (status) { status.textContent = ''; status.classList.remove('text-rose-500','text-emerald-600'); }
             resetGeneratedReportFile();
 
             document.getElementById('export-report-modal')?.classList.remove('hidden');
             document.body.classList.add('overflow-hidden');
+        }
+
+        function onExportPeriodTypeChange() {
+            const periodType = document.getElementById('export-report-period-type')?.value || 'monthly';
+            document.getElementById('export-report-daily-wrap')?.classList.toggle('hidden', periodType !== 'daily');
+            document.getElementById('export-report-monthly-wrap')?.classList.toggle('hidden', periodType !== 'monthly');
+            document.getElementById('export-report-yearly-wrap')?.classList.toggle('hidden', periodType !== 'yearly');
         }
 
         function closeExportReportModal() {
@@ -5464,6 +5756,26 @@
             const status = document.getElementById('export-report-status');
             const department = document.getElementById('export-report-department')?.value || '__ALL__';
 
+            // Requirement 5: build the request from whichever Period Type control is active.
+            const periodType = document.getElementById('export-report-period-type')?.value || 'monthly';
+            const exportPayload = { periodType: periodType, department: department, authToken: getAuthToken() };
+
+            if (periodType === 'daily') {
+                const dateVal = document.getElementById('export-report-date-input')?.value;
+                if (!dateVal) { if (status) { status.textContent = 'กรุณาเลือกวันที่'; status.classList.add('text-rose-500'); } return; }
+                exportPayload.date = dateVal;
+            } else if (periodType === 'yearly') {
+                const yearVal = document.getElementById('export-report-year-select')?.value;
+                if (!yearVal) { if (status) { status.textContent = 'กรุณาเลือกปี'; status.classList.add('text-rose-500'); } return; }
+                exportPayload.year = Number(yearVal);
+            } else {
+                const monthVal = document.getElementById('export-report-month-input')?.value;
+                if (!monthVal) { if (status) { status.textContent = 'กรุณาเลือกเดือน'; status.classList.add('text-rose-500'); } return; }
+                const parts = monthVal.split('-');
+                exportPayload.year = Number(parts[0]);
+                exportPayload.month = Number(parts[1]);
+            }
+
             resetGeneratedReportFile();
             status?.classList.remove('text-rose-500','text-emerald-600');
 
@@ -5474,12 +5786,7 @@
 
             try {
                 const action = format === 'pdf' ? 'exportReportPdf' : 'exportReportData';
-                const res = await apiCall(action, {
-                    month: reportSelectedMonth,
-                    year: reportSelectedYear,
-                    department: department,
-                    authToken: getAuthToken()
-                });
+                const res = await apiCall(action, exportPayload);
 
                 if (handleAuthFailure(res)) return;
 
@@ -5614,6 +5921,36 @@
     </div>
 </div>
 
+<!-- Evidence Preview Modal — Requirement 2: secure, lazy-loaded Capture Evidence images from Key In -->
+<div id="evidence-preview-modal" class="hidden fixed inset-0 z-[130] bg-slate-950/70 backdrop-blur-sm p-4 flex items-center justify-center" onclick="if(event.target===this)closeEvidencePreview()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg" style="max-width: 92vw;">
+        <div class="flex items-center justify-between gap-3 p-4 md:p-5 border-b border-slate-100">
+            <h3 class="text-base font-black text-slate-900">รูปหลักฐาน (Key In)</h3>
+            <button type="button" onclick="closeEvidencePreview()" class="w-11 h-11 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="p-4 md:p-5">
+            <div class="relative rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center min-h-[240px] overflow-hidden">
+                <div id="evidence-preview-loading" class="py-10 text-center text-slate-400 text-xs">
+                    <i class="fa-solid fa-spinner fa-spin text-xl mb-2"></i>
+                    <p>กำลังโหลดรูปหลักฐาน...</p>
+                </div>
+                <div id="evidence-preview-error" class="hidden py-10 px-4 text-center text-rose-500 text-xs"></div>
+                <img id="evidence-preview-image" class="hidden w-full h-auto max-w-full max-h-[60vh] object-contain" alt="รูปหลักฐาน">
+
+                <div id="evidence-preview-nav" class="hidden absolute inset-x-0 bottom-0 top-0 flex items-center justify-between px-1 pointer-events-none">
+                    <button type="button" onclick="prevEvidenceImage()" class="pointer-events-auto w-11 h-11 rounded-full bg-slate-900/60 text-white flex items-center justify-center hover:bg-slate-900/80"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button type="button" onclick="nextEvidenceImage()" class="pointer-events-auto w-11 h-11 rounded-full bg-slate-900/60 text-white flex items-center justify-center hover:bg-slate-900/80"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </div>
+            <p id="evidence-preview-counter" class="text-center text-xs text-slate-400 mt-3">-</p>
+            <button type="button" onclick="closeEvidencePreview()" class="mt-3 w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-800 transition min-h-[44px]">ปิด</button>
+        </div>
+    </div>
+</div>
+
+
 <!-- Export Report Modal — Requirement 3: Period / Department / Format, before PDF or Excel generation -->
 <div id="export-report-modal" class="hidden fixed inset-0 z-[125] bg-slate-950/60 backdrop-blur-sm p-4 flex items-center justify-center sm:items-center items-end" onclick="if(event.target===this)closeExportReportModal()">
     <div class="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-5 md:p-6" style="max-width: 92vw;">
@@ -5624,8 +5961,24 @@
 
         <div class="space-y-4">
             <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1.5">Period</label>
-                <p id="export-report-period-label" class="text-sm font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">-</p>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Period Type</label>
+                <select id="export-report-period-type" onchange="onExportPeriodTypeChange()" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <option value="daily">รายวัน / Daily</option>
+                    <option value="monthly" selected>รายเดือน / Monthly</option>
+                    <option value="yearly">รายปี / Yearly</option>
+                </select>
+            </div>
+            <div id="export-report-daily-wrap" class="hidden">
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Date</label>
+                <input type="date" id="export-report-date-input" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div id="export-report-monthly-wrap">
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Month</label>
+                <input type="month" id="export-report-month-input" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div id="export-report-yearly-wrap" class="hidden">
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">Year</label>
+                <select id="export-report-year-select" class="w-full border border-slate-200 p-3 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"></select>
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1.5">Department</label>
