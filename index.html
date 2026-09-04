@@ -5404,7 +5404,8 @@
             }
 
             const status = document.getElementById('export-report-status');
-            if (status) status.textContent = '';
+            if (status) { status.textContent = ''; status.classList.remove('text-rose-500','text-emerald-600'); }
+            resetGeneratedReportFile();
 
             document.getElementById('export-report-modal')?.classList.remove('hidden');
             document.body.classList.add('overflow-hidden');
@@ -5413,12 +5414,46 @@
         function closeExportReportModal() {
             document.getElementById('export-report-modal')?.classList.add('hidden');
             document.body.classList.remove('overflow-hidden');
+            resetGeneratedReportFile();
         }
 
         function formatMonthLabelJs(month, year) {
             const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
             const idx = Math.max(1, Math.min(12, Number(month) || 1)) - 1;
             return names[idx] + ' ' + year;
+        }
+
+        // Requirement 2 (v5.9.12): the generated PDF Blob is kept in memory only, and opened/
+        // downloaded exclusively via a DIRECT user click on "เปิด PDF" / "ดาวน์โหลด PDF" — never
+        // auto-opened right after an async apiCall(). Safari (especially iPad/iPhone) blocks
+        // window.open() calls that don't originate synchronously from a user gesture; calling it
+        // from a real click handler, rather than from inside the async response handler, sidesteps
+        // that entirely on every browser tested.
+        let generatedReportBlobUrl = null;
+        let generatedReportFileName = '';
+
+        function resetGeneratedReportFile() {
+            if (generatedReportBlobUrl) {
+                try { URL.revokeObjectURL(generatedReportBlobUrl); } catch (e) {}
+            }
+            generatedReportBlobUrl = null;
+            generatedReportFileName = '';
+            document.getElementById('export-report-result')?.classList.add('hidden');
+        }
+
+        function openGeneratedReportFile() {
+            if (!generatedReportBlobUrl) return;
+            window.open(generatedReportBlobUrl, '_blank');
+        }
+
+        function downloadGeneratedReportFile() {
+            if (!generatedReportBlobUrl) return;
+            const link = document.createElement('a');
+            link.href = generatedReportBlobUrl;
+            link.download = generatedReportFileName || 'report.pdf';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
         }
 
         async function runExportReport(format) {
@@ -5428,6 +5463,9 @@
             const excelBtn = document.getElementById('export-report-excel-btn');
             const status = document.getElementById('export-report-status');
             const department = document.getElementById('export-report-department')?.value || '__ALL__';
+
+            resetGeneratedReportFile();
+            status?.classList.remove('text-rose-500','text-emerald-600');
 
             // Requirement — EXPORT LOADING UX: disable both buttons to prevent double-click/double-tap
             // creating duplicate files while generation is in progress.
@@ -5463,7 +5501,15 @@
                         if (status) { status.textContent = 'Export PDF ไม่สำเร็จ: ไม่พบข้อมูลไฟล์'; status.classList.add('text-rose-500'); }
                         return;
                     }
-                    openBase64FileInBrowser(res.base64, res.mimeType || 'application/pdf', res.fileName || 'report.pdf');
+                    const binary = atob(res.base64);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                    const blob = new Blob([bytes], { type: res.mimeType || 'application/pdf' });
+                    generatedReportBlobUrl = URL.createObjectURL(blob);
+                    generatedReportFileName = res.fileName || 'report.pdf';
+
+                    document.getElementById('export-report-result')?.classList.remove('hidden');
+                    if (status) { status.textContent = '✓ สร้าง PDF สำเร็จ — กด "เปิด PDF" หรือ "ดาวน์โหลด PDF"'; status.classList.remove('text-rose-500'); status.classList.add('text-emerald-600'); }
                 } else {
                     // Excel export path is unchanged this round (out of scope) — still Drive-URL based.
                     const fileUrl = res.url || res.fileUrl;
@@ -5472,10 +5518,9 @@
                         return;
                     }
                     window.open(fileUrl, '_blank');
+                    if (status) { status.textContent = '✓ สร้างรายงานสำเร็จ'; status.classList.remove('text-rose-500'); status.classList.add('text-emerald-600'); }
+                    setTimeout(closeExportReportModal, 900);
                 }
-
-                if (status) { status.textContent = '✓ สร้างรายงานสำเร็จ'; status.classList.remove('text-rose-500'); status.classList.add('text-emerald-600'); }
-                setTimeout(closeExportReportModal, 900);
 
             } catch (err) {
                 if (status) { status.textContent = 'Export ไม่สำเร็จ: ' + normalizeError(err); status.classList.add('text-rose-500'); }
@@ -5484,34 +5529,6 @@
             }
         }
 
-        // Requirement 4: Base64 → Blob → Object URL, opened directly in the browser — no Google
-        // Drive URL is ever touched by the Frontend, so no "Request Access" prompt is possible
-        // for a user who isn't a Drive collaborator on the owning account.
-        function openBase64FileInBrowser(base64, mimeType, fileName) {
-            const binary = atob(base64);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-                bytes[i] = binary.charCodeAt(i);
-            }
-            const blob = new Blob([bytes], { type: mimeType || 'application/octet-stream' });
-            const blobUrl = URL.createObjectURL(blob);
-
-            const opened = window.open(blobUrl, '_blank');
-            // Some mobile browsers (notably iPad/iPhone Safari) block window.open for blob: URLs
-            // or fail to render them as a new tab — fall back to a forced <a download> click,
-            // which works reliably across devices.
-            if (!opened) {
-                const link = document.createElement('a');
-                link.href = blobUrl;
-                link.download = fileName || 'report.pdf';
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-            }
-
-            // Give the browser/tab time to actually load the Blob before releasing it.
-            setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 60000);
-        }
 
         // Professional keyboard support for Track & Trace.
         document.getElementById('track-search-input')?.addEventListener('keydown', function(event) {
@@ -5624,6 +5641,15 @@
                 </div>
             </div>
             <p id="export-report-status" class="text-xs text-slate-400 text-center min-h-[16px]"></p>
+
+            <!-- Requirement 2 (v5.9.12): explicit user-gesture buttons — never auto-opened — so
+                 Safari/iPad/iPhone popup blockers can never interfere. Shown only after the PDF
+                 Blob is ready in memory. -->
+            <div id="export-report-result" class="hidden grid grid-cols-2 gap-2">
+                <button type="button" onclick="openGeneratedReportFile()" class="min-h-[44px] flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700 transition"><i class="fa-solid fa-up-right-from-square"></i> เปิด PDF</button>
+                <button type="button" onclick="downloadGeneratedReportFile()" class="min-h-[44px] flex items-center justify-center gap-2 bg-slate-800 text-white font-bold text-sm rounded-xl hover:bg-slate-900 transition"><i class="fa-solid fa-download"></i> ดาวน์โหลด PDF</button>
+            </div>
+
             <button type="button" onclick="closeExportReportModal()" class="w-full border border-slate-200 text-slate-600 py-3 rounded-xl font-bold text-sm hover:bg-slate-50 transition min-h-[44px]">Cancel</button>
         </div>
     </div>
