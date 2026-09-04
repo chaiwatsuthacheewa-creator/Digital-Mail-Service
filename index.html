@@ -524,7 +524,7 @@
                         <span id="keyin-batch-sticky-text" class="text-xs font-bold truncate">รายการ 1/1 | บันทึกแล้ว 0 | เหลือ 0</span>
                         <button type="button" onclick="cancelKeyInForm()" class="text-[10px] font-bold text-white/80 hover:text-white underline shrink-0 min-h-[32px] px-2">ยกเลิก Batch</button>
                     </div>
-                    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                    <div class="flex items-center gap-3 mb-5 pb-4 border-b border-slate-100">
                         <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-lg"><i class="fa-solid fa-file-circle-plus"></i></div>
                         <div>
                             <h3 class="text-lg font-bold text-slate-800">Document Entry (Key In)</h3>
@@ -532,8 +532,22 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div class="space-y-5">
+                    <!-- Requirement: 2-Step Wizard progress indicator — plain, no animation -->
+                    <div class="flex items-center justify-center gap-3 mb-6 select-none">
+                        <div class="flex items-center gap-2">
+                            <span id="keyin-step-badge-1" class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold shrink-0">1</span>
+                            <span id="keyin-step-indicator-1" class="text-xs font-bold text-indigo-600">ข้อมูลจัดส่ง</span>
+                        </div>
+                        <span class="w-8 sm:w-16 h-0.5 bg-slate-200 shrink-0"></span>
+                        <div class="flex items-center gap-2">
+                            <span id="keyin-step-badge-2" class="w-7 h-7 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold shrink-0">2</span>
+                            <span id="keyin-step-indicator-2" class="text-xs font-bold text-slate-400">หลักฐาน &amp; Tracking</span>
+                        </div>
+                    </div>
+                    <p id="keyin-step-label" class="text-center text-[11px] text-slate-400 mb-6">ขั้นตอนที่ 1 จาก 2 — เลือกอาคาร ผู้ส่ง และแผนก</p>
+
+                    <div class="max-w-2xl mx-auto">
+                        <div id="keyin-step-1" class="space-y-5">
                             <h4 class="text-xs font-bold text-indigo-900 uppercase tracking-wider border-b border-indigo-100 pb-2">1. ข้อมูลสถานที่จัดส่ง</h4>
 
                             <div>
@@ -611,7 +625,7 @@
                             </div>
                         </div>
 
-                        <div class="space-y-5">
+                        <div id="keyin-step-2" class="hidden space-y-5">
                             <h4 class="text-xs font-bold text-indigo-900 uppercase tracking-wider border-b border-indigo-100 pb-2">2. หลักฐานและหมายเลขพัสดุ</h4>
 
                             <div>
@@ -716,8 +730,15 @@
                         </div>
                     </div>
 
-                    <div class="flex gap-3 pt-6 mt-6 border-t border-slate-100">
-                        <button id="keyin-cancel-btn" onclick="cancelKeyInForm()" class="w-1/3 bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-bold text-sm hover:bg-slate-50 transition cursor-pointer">ยกเลิก</button>
+                    <!-- Step 1 footer: Cancel + Next (Frontend-only navigation, no API call) -->
+                    <div id="keyin-step-1-footer" class="flex gap-3 pt-6 mt-6 border-t border-slate-100">
+                        <button type="button" onclick="cancelKeyInForm()" class="w-1/3 bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-bold text-sm hover:bg-slate-50 transition cursor-pointer min-h-[44px]">ยกเลิก</button>
+                        <button type="button" onclick="goToKeyInNextStep()" class="w-2/3 bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-200 hover:bg-indigo-800 transition cursor-pointer min-h-[44px]">ถัดไป <i class="fa-solid fa-arrow-right ml-1"></i></button>
+                    </div>
+
+                    <!-- Step 2 footer: Back (no API call, keeps data) + the existing real Save -->
+                    <div id="keyin-step-2-footer" class="hidden flex gap-3 pt-6 mt-6 border-t border-slate-100">
+                        <button type="button" onclick="goToKeyInPreviousStep()" class="w-1/3 bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-bold text-sm hover:bg-slate-50 transition cursor-pointer min-h-[44px]"><i class="fa-solid fa-arrow-left mr-1"></i> ย้อนกลับ</button>
                         <button id="keyin-save-btn" onclick="submitKeyInForm()" class="w-2/3 bg-indigo-700 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-200 hover:bg-indigo-800 transition cursor-pointer min-h-[44px]">บันทึกข้อมูลเข้าระบบ</button>
                     </div>
                 </section>
@@ -1213,6 +1234,10 @@
         let scanProgressCount = 0;
         // v5.9.6 — Batch Key In Mode state (Requirement 14: separate from scan/OCR success).
         // batchSavedCount only ever increments after a Backend-verified saveKeyIn() response.
+        // Requirement (2-Step Wizard): purely a Frontend presentation state — Next/Back/Step
+        // switching NEVER call the Backend. Only Save (Step 2) does.
+        let keyInCurrentStep = 1;
+
         let batchActive = false;
         let batchTotal = 1;
         let batchSavedCount = 0;
@@ -1749,6 +1774,13 @@
             if (pageId === 'dashboard') loadDashboardStats();
             if (pageId === 'operations') loadOperationsControl();
             if (pageId === 'report') loadReportSummaryForSelectedMonth();
+
+            // Requirement (2-Step Wizard): fresh visits to Key In always start at Step 1 — but a
+            // Batch Entry already in progress must never be knocked back to Step 1 just because
+            // navigateTo('keyin') fires again (e.g. clicking the sidebar item while mid-batch).
+            if (pageId === 'keyin' && !batchActive) {
+                showKeyInStep(1);
+            }
 
             if (pageId === 'track' && latestSavedTracking) {
                 const trackInput = document.getElementById('track-search-input');
@@ -3620,6 +3652,72 @@
         // it NEVER means "how many physical pieces share one Tracking". Each item is saved to the
         // Backend individually and verified before the UI advances (Requirement 7).
 
+        /** ===================== 2-STEP WIZARD (v5.9.14) ===================== **/
+        // Presentation-only. Same DOM fields, same collectKeyInPayload()/saveKeyIn() as before —
+        // this just controls which half of the existing form is visible at any moment.
+
+        function showKeyInStep(step) {
+            keyInCurrentStep = step;
+            document.getElementById('keyin-step-1')?.classList.toggle('hidden', step !== 1);
+            document.getElementById('keyin-step-2')?.classList.toggle('hidden', step !== 2);
+            document.getElementById('keyin-step-1-footer')?.classList.toggle('hidden', step !== 1);
+            document.getElementById('keyin-step-2-footer')?.classList.toggle('hidden', step !== 2);
+
+            const badge1 = document.getElementById('keyin-step-badge-1');
+            const badge2 = document.getElementById('keyin-step-badge-2');
+            const ind1 = document.getElementById('keyin-step-indicator-1');
+            const ind2 = document.getElementById('keyin-step-indicator-2');
+            const label = document.getElementById('keyin-step-label');
+
+            if (step === 1) {
+                if (badge1) { badge1.textContent = '1'; badge1.className = 'w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold shrink-0'; }
+                if (badge2) { badge2.textContent = '2'; badge2.className = 'w-7 h-7 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold shrink-0'; }
+                if (ind1) ind1.className = 'text-xs font-bold text-indigo-600';
+                if (ind2) ind2.className = 'text-xs font-bold text-slate-400';
+                if (label) label.textContent = 'ขั้นตอนที่ 1 จาก 2 — เลือกอาคาร ผู้ส่ง และแผนก';
+            } else {
+                if (badge1) { badge1.innerHTML = '<i class="fa-solid fa-check"></i>'; badge1.className = 'w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0'; }
+                if (badge2) { badge2.textContent = '2'; badge2.className = 'w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold shrink-0'; }
+                if (ind1) ind1.className = 'text-xs font-bold text-emerald-600';
+                if (ind2) ind2.className = 'text-xs font-bold text-indigo-600';
+                if (label) label.textContent = 'ขั้นตอนที่ 2 จาก 2 — สแกน Tracking และถ่ายรูปเอกสาร';
+            }
+
+            // Long form on mobile — keep the user oriented at the top of the card, not stranded
+            // mid-scroll on the field that used to be further down the old single-page layout.
+            document.getElementById('page-keyin')?.scrollIntoView({ block: 'start' });
+        }
+
+        // Only the fields that actually live in Step 1 — never calls the Backend.
+        function validateKeyInStep1() {
+            const route = document.getElementById('keyin-route')?.value || '';
+            const sender = document.getElementById('keyin-sender')?.value.trim() || '';
+            const department = document.getElementById('keyin-dept')?.value || '';
+
+            if (!route) { showSystemToast('กรุณาเลือกเส้นทาง', 'error'); return false; }
+            if (!sender) { showSystemToast('กรุณาระบุชื่อผู้ส่งเอกสาร', 'error'); return false; }
+            if (!department) { showSystemToast('กรุณาเลือกแผนกผู้รับ', 'error'); return false; }
+            return true;
+        }
+
+        function goToKeyInNextStep() {
+            if (!validateKeyInStep1()) return; // Frontend-only check — never apiCall()/saveKeyIn() here.
+            showKeyInStep(2);
+            // Lazy: only focuses the Tracking field — Camera/Scanner/OCR still don't start until
+            // the user explicitly taps "เปิดกล้องสแกนพัสดุ" (Requirement: Camera Performance).
+            setTimeout(function() { document.getElementById('keyin-tracking')?.focus(); }, 60);
+        }
+
+        function goToKeyInPreviousStep() {
+            // No data is cleared — Step 1's fields (Route/Sender/Department/Qty) and Step 2's
+            // in-progress Tracking/Evidence all remain exactly as the user left them.
+            showKeyInStep(1);
+        }
+
+        function resetKeyInWizard() {
+            showKeyInStep(1);
+        }
+
         // v5.9.10 — Requirement 3: purely informational — Route decides the actual workflow
         // server-side inside saveKeyIn(); this only keeps the on-screen hint in sync so the user
         // understands what will happen next (Backend is the source of truth, never the Frontend).
@@ -3741,6 +3839,7 @@
             resetBatchState();
             document.getElementById('keyin-qty').value = 1;
             renderBatchProgressUI();
+            resetKeyInWizard();
             navigateTo('home');
         }
 
@@ -3750,6 +3849,7 @@
             resetBatchState();
             document.getElementById('keyin-qty').value = 1;
             renderBatchProgressUI();
+            resetKeyInWizard(); // Acceptance Test 8: back to Step 1 once the Batch (N/N) is complete.
             navigateTo('home');
         }
 
@@ -3922,6 +4022,7 @@
                     'keyin-remarks'
                 ]);
                 document.getElementById('keyin-qty').value = 1;
+                resetKeyInWizard(); // Acceptance Test 6: back to Step 1 on single-document success.
 
                 // Stay briefly so user sees confirmed state; then return Home.
                 setTimeout(function() {
