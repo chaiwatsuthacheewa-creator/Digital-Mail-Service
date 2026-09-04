@@ -641,6 +641,16 @@
                             </div>
 
                             <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">จำนวนเอกสารใน Tracking นี้ / Document Count</label>
+                                <div class="relative w-1/2">
+                                    <i class="fa-regular fa-copy absolute left-4 top-3.5 text-slate-400"></i>
+                                    <input type="number" id="keyin-document-count" value="1" min="1" max="999"
+                                        class="w-full border border-slate-200 pl-11 p-3 rounded-xl text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition font-bold">
+                                </div>
+                                <p class="text-[10px] text-slate-400 mt-1.5">ปกติปล่อยเป็น 1 — เปลี่ยนเฉพาะเมื่อ Tracking นี้เป็นเอกสารมัดรวมหลายชิ้น (เช่น 8 ฉบับในซองเดียว ยังคงเป็น 1 Tracking)</p>
+                            </div>
+
+                            <div>
                                 <label class="flex justify-between items-center text-xs font-bold text-slate-700 mb-1.5">
                                     <span>Capture Evidence / ถ่ายภาพหลักฐาน</span>
                                     <span id="photo-count" class="text-[10px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md font-bold">0 แนบแล้ว</span>
@@ -1828,6 +1838,16 @@
             const n = Number(raw);
             if (!isFinite(n) || isNaN(n) || n < 1) return 1;
             return Math.min(50, Math.round(n));
+        }
+
+        // Part 4: DocumentCount is DISTINCT from Qty — "how many physical documents exist under
+        // THIS ONE Tracking" (Bundle case), never "how many Tracking Records this batch collects".
+        // Same NaN-safe clamping pattern as getKeyInQty(); default 1 for the common case.
+        function getKeyInDocumentCount() {
+            const raw = document.getElementById('keyin-document-count')?.value;
+            const n = Number(raw);
+            if (!isFinite(n) || isNaN(n) || n < 1) return 1;
+            return Math.min(999, Math.round(n));
         }
 
         function registerSuccessfulScan(detail) {
@@ -3869,9 +3889,13 @@
                 recipientPostcode: '',
                 recipientAddress: '',
                 ocrConfidence: latestSmartCapture ? Math.round(((latestSmartCapture.tracking?.score || 0) + (latestSmartCapture.fields?.overallConfidence || 0)) / ((latestSmartCapture.tracking && latestSmartCapture.fields?.overallConfidence) ? 2 : 1)) : '',
-                // Requirement 5: every KeyIn row is exactly 1 Document. The "Quantity" field only
-                // ever controls how many separate items this Batch session will collect.
+                // Requirement 5: every KeyIn row is exactly 1 Document RECORD. The "Quantity" field
+                // only ever controls how many separate Tracking Records this Batch session will
+                // collect — that is a completely different concept from DocumentCount below.
                 qty: 1,
+                // Part 4/6: how many physical documents exist under THIS ONE Tracking (Bundle case).
+                // Defaults to 1 — the common case never needs the user to touch this at all.
+                documentCount: getKeyInDocumentCount(),
                 trackingId: document.getElementById('keyin-tracking').value.trim(),
                 remarks: document.getElementById('keyin-remarks').value.trim(), images: capturedImages.slice(), status: 'Registered', createdBy: audit.username, createdByRole: audit.role, authToken: getAuthToken()
             };
@@ -3916,12 +3940,14 @@
         function openParcelImage(index){ const src=capturedImages[index]; if(!src)return; const img=document.getElementById('parcel-lightbox-image'); img.src=src; img.alt='Parcel image '+(index+1); document.getElementById('parcel-lightbox')?.classList.remove('hidden'); document.body.classList.add('overflow-hidden'); }
         function closeParcelImage(){ document.getElementById('parcel-lightbox')?.classList.add('hidden'); document.body.classList.remove('overflow-hidden'); }
 
-        // Requirement 13: reset only ITEM-specific state after each successful save. Common fields
-        // (Route/Department/Recipient/.../Remarks) are deliberately left untouched.
+        // Requirement 13 / Part 5: reset only ITEM-specific state after each successful save.
+        // Common fields (Route/Sender/Department/Quantity) are deliberately left untouched;
+        // DocumentCount is per-Tracking, so it resets back to the default 1 (Reset Rule).
         function resetItemSpecificFields() {
             capturedImages = [];
             renderImagePreviews();
             document.getElementById('keyin-tracking').value = '';
+            document.getElementById('keyin-document-count').value = 1;
             scanProgressCount = 0;
             updateScanProgress();
             renderOcrTrackingCandidates([]);
@@ -3980,7 +4006,7 @@
                         resetItemSpecificFields();
                     } else {
                         batchCurrentIndex = batchSavedCount + 1;
-                        showSystemToast('✓ บันทึกรายการที่ ' + batchSavedCount + '/' + batchTotal + ' สำเร็จ (' + (res.trackingId || payload.trackingId) + ')', 'success');
+                        showSystemToast('✓ บันทึกรายการที่ ' + batchSavedCount + '/' + batchTotal + ' สำเร็จ (' + (res.trackingId || payload.trackingId) + (res.documentCount > 1 ? ' • ' + res.documentCount + ' เอกสาร' : '') + ')', 'success');
                         resetItemSpecificFields();
                         renderBatchProgressUI();
                         // Keep the user on Key In, ready to scan the next item — no navigation away.
